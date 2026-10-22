@@ -4,7 +4,7 @@ import type { ProviderAccount, Review } from "@/types/leva-ja";
 import type { ProvidersRepository } from "../repositories/providers";
 import { RepositoryError } from "../repositories/errors";
 import type { MockContext, MockDatabase } from "./database";
-import { hydrateRequest, refreshProvider, reviewFromRequest } from "./domain";
+import { hydrateRequest, refreshProvider, requiredDocuments, reviewFromRequest } from "./domain";
 import { byNewest, findOr404, matchesQuery, paginate, requireReason } from "./helpers";
 
 const ACCOUNT_LABELS: Record<ProviderAccount["accountStatus"], string> = {
@@ -64,8 +64,8 @@ export function createMockProviders(db: MockDatabase): ProvidersRepository {
         if (provider.accountStatus !== "pending_approval") {
           throw new RepositoryError("invalid_transition", "Só é possível aprovar prestadores que aguardam aprovação.");
         }
-        if (!documentsVerified(provider, ctx.today)) {
-          throw new RepositoryError("validation", "Valide os quatro documentos antes de aprovar o prestador.");
+        if (!documentsVerified(provider, ctx.today, requiredDocuments(ctx.state))) {
+          throw new RepositoryError("validation", "Valide os documentos exigidos antes de aprovar o prestador.");
         }
         return changeStatus(ctx, provider, "active", "provider.approve", requireReason(reason));
       }),

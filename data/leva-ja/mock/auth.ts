@@ -43,7 +43,8 @@ export function createMockAuth(db: MockDatabase): AdminAuthRepository {
         const session: AdminSession = {
           token: `mock-${user.id}-${now.toString(36)}`,
           user: { ...user },
-          expiresAt: isoAt(now + 12 * HOUR),
+          expiresAt: isoAt(now + db.state.settings.security.sessionHours * HOUR),
+          rolePermissions: db.state.rolePermissions,
         };
         db.session = session;
         db.saveSession();

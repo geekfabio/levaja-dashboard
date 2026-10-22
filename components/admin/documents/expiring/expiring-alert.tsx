@@ -16,11 +16,11 @@ function daysUntil(day: string, today: string) {
 }
 
 export default function ExpiringAlert({ today, onReview }: { today: string; onReview: (item: DocumentReviewItem) => void }) {
-  const query = useExpiringDocuments(30);
+  const query = useExpiringDocuments();
 
   return (
     <SettingsPanel
-      title="A expirar nos próximos 30 dias"
+      title="Documentos a expirar"
       description="Documentos verificados que deixam de ser válidos em breve. Quando expiram, o prestador deixa de receber pedidos."
       className="bg-card"
     >

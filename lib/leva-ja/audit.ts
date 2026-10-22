@@ -31,6 +31,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "admin_user.activate": "Utilizador activado",
   "session.login": "Início de sessão",
   "session.logout": "Fim de sessão",
+  "settings.update": "Definições alteradas",
+  "roles.update": "Permissões alteradas",
   "demo.reset": "Dados de demonstração repostos",
 };
 
@@ -46,5 +48,7 @@ export const AUDIT_ENTITY_LABELS: Record<AuditEntityKind, string> = {
   sos: "Alerta SOS",
   review: "Avaliação",
   admin_user: "Utilizador do painel",
+  settings: "Definições",
+  roles: "Papéis",
   session: "Sessão",
 };

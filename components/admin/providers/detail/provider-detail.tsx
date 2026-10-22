@@ -18,7 +18,7 @@ import { useProvider, useProviderRequests, useProviderReviews } from "@/hooks/ad
 import { useZones } from "@/hooks/admin/use-zones";
 import { useClock } from "@/hooks/admin/use-clock";
 import { formatDateNumeric, formatDecimal, formatKz, formatNumber, luandaDay } from "@/lib/format";
-import { eligibilityIssues, ELIGIBILITY_ISSUE_LABELS, documentsVerified } from "@/lib/leva-ja/eligibility";
+import { eligibilityIssues, ELIGIBILITY_ISSUE_LABELS } from "@/lib/leva-ja/eligibility";
 import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
 import { hasPermission } from "@/lib/leva-ja/permissions";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
@@ -122,10 +122,10 @@ export default function ProviderDetail({ id }: { id: string }) {
                 <div className="flex flex-wrap items-center gap-2">
                   {provider.accountStatus === "pending_approval" && (
                     <>
-                      {!documentsVerified(provider, today) && (
-                        <span className="caption-style text-subtle">Valide os quatro documentos para poder aprovar.</span>
+                      {!provider.verified && (
+                        <span className="caption-style text-subtle">Valide os documentos exigidos para poder aprovar.</span>
                       )}
-                      <Button variant="primary" size="sm" disabled={!documentsVerified(provider, today)} onClick={() => setAction("approve")}>
+                      <Button variant="primary" size="sm" disabled={!provider.verified} onClick={() => setAction("approve")}>
                         Aprovar
                       </Button>
                     </>
@@ -199,7 +199,8 @@ export default function ProviderDetail({ id }: { id: string }) {
                 <SettingsPanel title="Elegibilidade para receber pedidos" className="bg-card">
                   <ul className="flex flex-col gap-2">
                     {provider.services.map((service) => {
-                      const issues = eligibilityIssues(provider, { kind: service, zoneId: provider.zoneIds[0] }, today).filter((issue) => issue !== "zone");
+                      const issues = eligibilityIssues(provider, { kind: service, zoneId: provider.zoneIds[0] }, today, []).filter((issue) => issue !== "zone");
+                      if (!provider.verified) issues.push("documents");
                       return (
                         <li key={service} className="flex flex-wrap items-center justify-between gap-2">
                           <span className="lead-style">{SERVICE_SHORT_LABELS[service]}</span>

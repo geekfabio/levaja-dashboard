@@ -176,6 +176,7 @@ export class MockDatabase {
       throw new RepositoryError("unauthorized", "A sua conta foi desactivada.");
     }
     if (user.role !== session.user.role) session.user = { ...user };
+    session.rolePermissions = this.state.rolePermissions;
     return session;
   }
 
@@ -193,8 +194,9 @@ export class MockDatabase {
     await this.delay();
     const session = this.requireSession();
     const required = access.permission ? (Array.isArray(access.permission) ? access.permission : [access.permission]) : [];
-    const missing = required.some((permission) => !hasPermission(session.user.role, permission));
-    const anyMissing = access.anyOf ? !access.anyOf.some((permission) => hasPermission(session.user.role, permission)) : false;
+    const matrix = this.state.rolePermissions;
+    const missing = required.some((permission) => !hasPermission(session.user.role, permission, matrix));
+    const anyMissing = access.anyOf ? !access.anyOf.some((permission) => hasPermission(session.user.role, permission, matrix)) : false;
     if (missing || anyMissing) {
       throw new RepositoryError("forbidden", "O seu papel não tem permissão para esta acção.");
     }

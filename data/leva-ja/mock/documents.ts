@@ -49,9 +49,9 @@ export function createMockDocuments(db: MockDatabase): DocumentsRepository {
         return paginate(items, filters);
       }),
 
-    expiring: (withinDays = 30) =>
+    expiring: (withinDays) =>
       db.run({ permission: "documents.review" }, ({ state, today }) => {
-        const limit = addDays(today, withinDays);
+        const limit = addDays(today, withinDays ?? state.settings.documents.expiryWarningDays);
         return allDocuments(state)
           .filter((item) => item.document.state === "verified" && item.document.validUntil >= today && item.document.validUntil <= limit)
           .sort((a, b) => (a.document.validUntil < b.document.validUntil ? -1 : 1));
@@ -64,6 +64,12 @@ export function createMockDocuments(db: MockDatabase): DocumentsRepository {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day <= ctx.today) {
           throw new RepositoryError("validation", "A validade tem de ser uma data futura.", [
             { field: "validUntil", message: "A validade tem de ser uma data futura." },
+          ]);
+        }
+        const minimumDays = ctx.state.settings.documents.requirements.find((item) => item.icon === document.icon)?.minValidityDays ?? 0;
+        if (day < addDays(ctx.today, minimumDays)) {
+          throw new RepositoryError("validation", `Este documento tem de ser válido por pelo menos ${minimumDays} dias.`, [
+            { field: "validUntil", message: `Este documento tem de ser válido por pelo menos ${minimumDays} dias.` },
           ]);
         }
         if (document.state === "verified" && document.validUntil === day) {

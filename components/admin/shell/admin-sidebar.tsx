@@ -23,18 +23,44 @@ import SupportIcon from "@/public/assets/images/companies/sidebar/message-questi
 import UsersIcon from "@/public/assets/images/companies/sidebar/user-plus.svg";
 import AuditIcon from "@/public/assets/images/companies/sidebar/list.svg";
 import SettingsIcon from "@/public/assets/images/_common/filter.svg";
+import CalendarIcon from "@/public/assets/images/_common/calendar.svg";
+import ScaleIcon from "@/public/assets/images/admin/sidebar/scale.svg";
+import InboxIcon from "@/public/assets/images/admin/sidebar/inbox.svg";
+import TruckIcon from "@/public/assets/images/admin/sidebar/truck.svg";
+import BriefcaseIcon from "@/public/assets/images/admin/sidebar/briefcase.svg";
+import ReceiptIcon from "@/public/assets/images/admin/sidebar/receipt.svg";
+import RefundIcon from "@/public/assets/images/admin/sidebar/refund.svg";
+import TagIcon from "@/public/assets/images/admin/sidebar/tag.svg";
+import ShieldIcon from "@/public/assets/images/admin/sidebar/shield.svg";
+import MegaphoneIcon from "@/public/assets/images/admin/sidebar/megaphone.svg";
+import ChartIcon from "@/public/assets/images/admin/sidebar/chart.svg";
+import LockIcon from "@/public/assets/images/admin/sidebar/lock.svg";
+import PlugIcon from "@/public/assets/images/admin/sidebar/plug.svg";
 
 const SECTION_ICONS: Record<AdminSection, ComponentType<SVGProps<SVGSVGElement>>> = {
   overview: OverviewIcon,
   requests: RequestsIcon,
+  scheduled: CalendarIcon,
+  disputes: ScaleIcon,
   map: MapIcon,
+  applications: InboxIcon,
   providers: ProvidersIcon,
+  fleets: TruckIcon,
   documents: DocumentsIcon,
   clients: ClientsIcon,
+  business: BriefcaseIcon,
   finance: FinanceIcon,
+  billing: ReceiptIcon,
+  refunds: RefundIcon,
   pricing: PricingIcon,
+  promotions: TagIcon,
   support: SupportIcon,
+  claims: ShieldIcon,
+  communications: MegaphoneIcon,
+  reports: ChartIcon,
   users: UsersIcon,
+  privacy: LockIcon,
+  integrations: PlugIcon,
   audit: AuditIcon,
   settings: SettingsIcon,
 };
@@ -42,8 +68,9 @@ const SECTION_ICONS: Record<AdminSection, ComponentType<SVGProps<SVGSVGElement>>
 export default function AdminSidebar() {
   const pathname = usePathname();
   const role = useAdminSessionStore((state) => state.session?.user.role);
+  const matrix = useAdminSessionStore((state) => state.session?.rolePermissions);
   const active = sectionForPath(pathname);
-  const visible = (section: AdminSection) => (role ? canAccessSection(role, section) : false);
+  const visible = (section: AdminSection) => (role ? canAccessSection(role, section, matrix) : false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

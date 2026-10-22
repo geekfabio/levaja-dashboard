@@ -239,3 +239,53 @@ test("contrato: avaliação baixa revista com nota e utilizadores do painel", as
   await admin.auth.setActive(created.id, false, "Saiu da empresa");
   await rejectsWith(admin.auth.login("delcio.mateus@levaja.ao", "123456"), "unauthorized");
 });
+
+test("contrato: definições validadas, com permissão por secção e efeito nas regras", async () => {
+  const repos = await setup("operacoes@levaja.ao");
+  const settings = await repos.settings.get();
+  await rejectsWith(repos.settings.update("tax", { ...settings.tax, vatRate: 0.2 }, "Teste"), "forbidden");
+  await rejectsWith(repos.settings.update("dispatch", { ...settings.dispatch, maxRadiusKm: 2 }, "Teste"), "validation");
+  await rejectsWith(repos.settings.update("dispatch", settings.dispatch, "Teste"), "validation");
+  await rejectsWith(repos.settings.update("dispatch", { ...settings.dispatch, stalledAfterMinutes: 60 }, ""), "validation");
+  const before = await repos.metrics.attention();
+  await repos.settings.update("dispatch", { ...settings.dispatch, stalledAfterMinutes: 60 }, "Menos alertas");
+  const after = await repos.metrics.attention();
+  assert.ok(before.stalledSearching.length > 0);
+  assert.equal(after.stalledSearching.length, 0);
+  const pending = (await repos.documents.queue({ pageSize: 1 })).items[0];
+  await repos.settings.update(
+    "documents",
+    { ...settings.documents, requirements: settings.documents.requirements.map((item) => ({ ...item, minValidityDays: 365 })) },
+    "Exigir um ano de validade",
+  );
+  await rejectsWith(repos.documents.approve(pending.document.id, "2027-01-15"), "validation");
+  await repos.auth.logout();
+  await repos.auth.login("admin@levaja.ao", "123456");
+  const audit = await repos.audit.list({ action: ["settings.update"] });
+  assert.equal(audit.items.length, 2);
+  assert.equal(audit.items[1].changes?.[0].field, "Pedido parado ao fim de");
+});
+
+test("contrato: levantamento abaixo do mínimo é recusado", async () => {
+  const repos = await setup("financas@levaja.ao");
+  const provider = (await repos.providers.list({ pageSize: 50 })).items.find((item) => item.balance > 50_000);
+  assert.ok(provider);
+  await rejectsWith(repos.finance.requestWithdrawal(provider.id, 1000), "validation");
+});
+
+test("contrato: a matriz de permissões aplica-se a seguir à alteração", async () => {
+  const repos = await setup();
+  await rejectsWith((await setup("operacoes@levaja.ao")).settings.rolePermissions(), "forbidden");
+  const matrix = await repos.settings.rolePermissions();
+  await repos.settings.updateRolePermissions(
+    { ...matrix, operations: matrix.operations.filter((permission) => permission !== "requests.operate"), admin: [] },
+    "Operações só consulta",
+  );
+  const saved = await repos.settings.rolePermissions();
+  assert.ok(saved.admin.includes("users.manage"));
+  await repos.auth.logout();
+  const session = await repos.auth.login("operacoes@levaja.ao", "123456");
+  assert.equal(session.rolePermissions?.operations.includes("requests.operate"), false);
+  const searching = (await repos.requests.list({ status: ["searching"], pageSize: 1 })).items[0];
+  await rejectsWith(repos.requests.cancel(searching.id, "Sem permissão"), "forbidden");
+});

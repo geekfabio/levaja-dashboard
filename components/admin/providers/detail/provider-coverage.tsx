@@ -44,7 +44,7 @@ export default function ProviderCoverage({ provider, zones }: { provider: Provid
           </ul>
         </div>
         <p className="caption-style text-subtle">
-          Só recebe pedidos destas zonas e serviços, quando está online e com os quatro documentos verificados.
+          Só recebe pedidos destas zonas e serviços, quando está online e com os documentos exigidos verificados.
         </p>
       </div>
     </div>

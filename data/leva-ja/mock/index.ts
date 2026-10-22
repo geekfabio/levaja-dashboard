@@ -10,6 +10,7 @@ import { createMockMetrics } from "./metrics";
 import { createMockPricing } from "./pricing";
 import { createMockProviders } from "./providers";
 import { createMockRequests } from "./requests";
+import { createMockSettings } from "./settings";
 import { createMockSupport } from "./support";
 import { tick } from "./ticker";
 import { createMockZones } from "./zones";
@@ -33,6 +34,7 @@ export function createMockRepositories(options: MockDatabaseOptions = {}): MockR
     support: createMockSupport(database),
     metrics: createMockMetrics(database),
     audit: createMockAudit(database),
+    settings: createMockSettings(database),
     demo: {
       settings: () => ({ ...database.settings }),
       configure: (settings) => database.configure(settings),

@@ -39,6 +39,7 @@ export default function AdminGuard({ children }: { children: (allowed: boolean) 
   const pathname = usePathname();
   const status = useAdminSessionStore((state) => state.status);
   const role = useAdminSessionStore((state) => state.session?.user.role);
+  const matrix = useAdminSessionStore((state) => state.session?.rolePermissions);
   const expired = useAdminSessionStore((state) => state.expired);
   const load = useAdminSessionStore((state) => state.load);
 
@@ -54,7 +55,7 @@ export default function AdminGuard({ children }: { children: (allowed: boolean) 
 
   if (status !== "authenticated" || !role) return <ShellSkeleton />;
   const section = sectionForPath(pathname);
-  return <>{children(!section || canAccessSection(role, section))}</>;
+  return <>{children(!section || canAccessSection(role, section, matrix))}</>;
 }
 
 export function AccessDenied() {

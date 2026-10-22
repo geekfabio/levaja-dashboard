@@ -3,9 +3,8 @@ import { distanceKm, isEligible, zoneFor } from "@/lib/leva-ja/eligibility";
 import { ACTIVE_STATUSES, nextStatus } from "@/lib/leva-ja/status";
 import type { Coordinates, ServiceKind } from "@/types/leva-ja";
 import type { MockDatabase } from "./database";
-import { MINUTE, syncRequestTransactions } from "./domain";
 import { REVIEW_COMMENTS, ZONE_STREETS } from "./fixtures";
-import { STALLED_SEARCHING_MINUTES } from "./metrics";
+import { MINUTE, requiredDocuments, syncRequestTransactions } from "./domain";
 import type { StoredRequest } from "./state";
 
 function jitter(coords: Coordinates, random: () => number, size = 0.0025): Coordinates {
@@ -31,7 +30,9 @@ function createSearchingRequest(db: MockDatabase) {
   const clients = state.clients.filter((client) => !client.blocked);
   if (!clients.length || !state.zones.length) return null;
   const client = pick(clients, random);
-  const kind = pick<ServiceKind>(["tow", "cargo", "cargo", "small_move", "tow", "house_move"], random);
+  const enabled = state.settings.services.filter((service) => service.enabled).map((service) => service.kind);
+  const kind = pick<ServiceKind>((["tow", "cargo", "cargo", "small_move", "tow", "house_move"] as ServiceKind[]).filter((item) => enabled.includes(item)), random);
+  if (!kind) return null;
   const zone = pick(state.zones, random);
   const target = pick(state.zones, random);
   const place = (zoneId: string, center: Coordinates) => {
@@ -85,12 +86,17 @@ function advance(db: MockDatabase, request: StoredRequest) {
   const now = db.now();
   if (request.dispute && !request.dispute.resolvedAt) return false;
   if (request.status === "searching") {
-    if (now.getTime() - Date.parse(request.createdAt) > STALLED_SEARCHING_MINUTES * MINUTE) return false;
+    if (now.getTime() - Date.parse(request.createdAt) > state.settings.dispatch.stalledAfterMinutes * MINUTE) return false;
     const busy = new Set(
       state.requests.filter((item) => item.providerId && ACTIVE_STATUSES.includes(item.status)).map((item) => item.providerId),
     );
     const candidate = state.providers
-      .filter((provider) => !busy.has(provider.id) && isEligible(provider, request, today))
+      .filter(
+        (provider) =>
+          !busy.has(provider.id) &&
+          isEligible(provider, request, today, requiredDocuments(state)) &&
+          distanceKm(provider.coords, request.origin.coords) <= state.settings.dispatch.maxRadiusKm,
+      )
       .sort((a, b) => distanceKm(a.coords, request.origin.coords) - distanceKm(b.coords, request.origin.coords))[0];
     if (!candidate) return false;
     request.providerId = candidate.id;

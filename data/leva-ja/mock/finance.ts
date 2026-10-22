@@ -95,6 +95,12 @@ export function createMockFinance(db: MockDatabase): FinanceRepository {
             { field: "amount", message: "O valor do levantamento tem de ser superior a 0 Kz." },
           ]);
         }
+        const minimum = ctx.state.settings.payouts.minimumWithdrawal;
+        if (amount < minimum) {
+          throw new RepositoryError("validation", `O levantamento mínimo é de ${formatKz(minimum)}.`, [
+            { field: "amount", message: `O levantamento mínimo é de ${formatKz(minimum)}.` },
+          ]);
+        }
         const free = available(ctx.state, providerId);
         if (amount > free) {
           throw new RepositoryError("validation", `O valor excede o saldo disponível (${formatKz(Math.max(0, free))}).`, [

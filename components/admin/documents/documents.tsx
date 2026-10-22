@@ -54,7 +54,7 @@ export default function Documents() {
           <ExpiringAlert today={luandaDay(new Date(now))} onReview={setReviewing} />
           <SettingsPanel
             title="Fila de validação"
-            description="Os prestadores só recebem pedidos com os quatro documentos verificados: carta de condução, BI, documento da viatura e seguro."
+            description="Os prestadores só recebem pedidos com os documentos exigidos verificados. Os documentos exigidos e a validade mínima definem-se em Definições → Documentos exigidos."
             className="bg-card"
           >
             <div className="flex flex-wrap items-center gap-2">

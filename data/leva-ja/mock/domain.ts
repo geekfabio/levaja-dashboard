@@ -135,6 +135,10 @@ export function reviewFromRequest(request: StoredRequest, client: ClientAccount 
   };
 }
 
+export function requiredDocuments(state: MockState) {
+  return state.settings.documents.requirements.filter((item) => item.required).map((item) => item.icon);
+}
+
 export function refreshProvider(state: MockState, provider: ProviderAccount, today: string): ProviderAccount {
   const own = state.requests.filter((request) => request.providerId === provider.id);
   const rated = own.filter((request) => request.rating !== undefined);
@@ -144,7 +148,7 @@ export function refreshProvider(state: MockState, provider: ProviderAccount, tod
     : provider.rating;
   return {
     ...provider,
-    verified: documentsVerified(provider, today),
+    verified: documentsVerified(provider, today, requiredDocuments(state)),
     rating,
     reviewsCount: rated.length,
     completedCount: settled.length,

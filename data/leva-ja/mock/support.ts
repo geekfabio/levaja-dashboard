@@ -43,7 +43,7 @@ export function createMockSupport(db: MockDatabase): SupportRepository {
     assignees: () =>
       db.run({ permission: "support.tickets" }, ({ state }) =>
         state.adminUsers
-          .filter((user) => user.active && hasPermission(user.role, "support.tickets"))
+          .filter((user) => user.active && hasPermission(user.role, "support.tickets", state.rolePermissions))
           .map((user) => ({ id: user.id, name: user.name, initials: user.initials, role: user.role }))
           .sort((a, b) => a.name.localeCompare(b.name, "pt")),
       ),
@@ -71,7 +71,7 @@ export function createMockSupport(db: MockDatabase): SupportRepository {
         const ticket = findTicket(ctx, id);
         if (ticket.status === "resolved") throw new RepositoryError("invalid_transition", "A ocorrência já está resolvida.");
         const admin = findOr404(ctx.state.adminUsers, adminId, "Utilizador");
-        if (!admin.active || !hasPermission(admin.role, "support.tickets")) {
+        if (!admin.active || !hasPermission(admin.role, "support.tickets", ctx.state.rolePermissions)) {
           throw new RepositoryError("validation", "Este utilizador não pode tratar ocorrências.");
         }
         if (ticket.assigneeId === admin.id) throw new RepositoryError("validation", "A ocorrência já está atribuída a este utilizador.");

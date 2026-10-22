@@ -31,15 +31,22 @@ export function isDocumentValid(document: ProviderDocument, today: string) {
   return document.state === "verified" && document.validUntil.slice(0, 10) >= today;
 }
 
-export function documentsVerified(provider: Pick<ProviderAccount, "documents">, today: string) {
-  return provider.documents.length === 4 && provider.documents.every((document) => isDocumentValid(document, today));
+export function documentsVerified(
+  provider: Pick<ProviderAccount, "documents">,
+  today: string,
+  required: readonly ProviderDocument["icon"][] = ["license", "id", "vehicle", "insurance"],
+) {
+  return required.every((icon) => {
+    const document = provider.documents.find((item) => item.icon === icon);
+    return document !== undefined && isDocumentValid(document, today);
+  });
 }
 
 export function providerDisplayStatus(provider: Pick<ProviderAccount, "accountStatus" | "availability">): ProviderDisplayStatus {
   return provider.accountStatus === "suspended" ? "suspended" : provider.availability;
 }
 
-export type EligibilityIssue = "offline" | "not_active" | "documents" | "service" | "zone";
+export type EligibilityIssue = "offline" | "not_active" | "documents" | "service" | "zone" | "far";
 
 export const ELIGIBILITY_ISSUE_LABELS: Record<EligibilityIssue, string> = {
   offline: "Está offline",
@@ -47,22 +54,29 @@ export const ELIGIBILITY_ISSUE_LABELS: Record<EligibilityIssue, string> = {
   documents: "Documentos por verificar",
   service: "Não presta este serviço",
   zone: "Fora das zonas de cobertura",
+  far: "Além do raio máximo",
 };
 
 export function eligibilityIssues(
   provider: ProviderAccount,
   request: { kind: ServiceKind; zoneId: string },
   today: string,
+  required?: readonly ProviderDocument["icon"][],
 ): EligibilityIssue[] {
   const issues: EligibilityIssue[] = [];
   if (provider.availability !== "online") issues.push("offline");
   if (provider.accountStatus !== "active") issues.push("not_active");
-  if (!documentsVerified(provider, today)) issues.push("documents");
+  if (!documentsVerified(provider, today, required)) issues.push("documents");
   if (!provider.services.includes(request.kind)) issues.push("service");
   if (!provider.zoneIds.includes(request.zoneId)) issues.push("zone");
   return issues;
 }
 
-export function isEligible(provider: ProviderAccount, request: { kind: ServiceKind; zoneId: string }, today: string) {
-  return eligibilityIssues(provider, request, today).length === 0;
+export function isEligible(
+  provider: ProviderAccount,
+  request: { kind: ServiceKind; zoneId: string },
+  today: string,
+  required?: readonly ProviderDocument["icon"][],
+) {
+  return eligibilityIssues(provider, request, today, required).length === 0;
 }

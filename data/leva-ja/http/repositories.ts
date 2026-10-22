@@ -95,7 +95,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     documents: {
       queue: (filters = {}) => http.get("/admin/documents", filters),
-      expiring: (withinDays = 30) => http.get("/admin/documents/expiring", { withinDays }),
+      expiring: (withinDays) => http.get("/admin/documents/expiring", { withinDays }),
       approve: (documentId, validUntil) => http.post(`/admin/documents/${id(documentId)}/approve`, { validUntil }),
       reject: (documentId, reason) => http.post(`/admin/documents/${id(documentId)}/reject`, { reason }),
     },
@@ -155,6 +155,13 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     audit: {
       list: (filters = {}) => http.get("/admin/audit", filters),
+    },
+
+    settings: {
+      get: () => http.get("/admin/settings"),
+      update: (section, value, reason) => http.put(`/admin/settings/${id(section)}`, { value, reason }),
+      rolePermissions: () => http.get("/admin/roles"),
+      updateRolePermissions: (matrix, reason) => http.put("/admin/roles", { matrix, reason }),
     },
   };
 }

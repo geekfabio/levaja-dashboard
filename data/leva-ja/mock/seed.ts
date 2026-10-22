@@ -1,6 +1,8 @@
 import { formatKz, luandaDay } from "@/lib/format";
 import { CANCELLABLE_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
 import { defaultPricingConfig, estimatePrice, priceWithProposal } from "@/lib/leva-ja/pricing";
+import { normalizeRolePermissions } from "@/lib/leva-ja/permissions";
+import { defaultPlatformSettings } from "@/lib/leva-ja/settings";
 import { distanceKm, isDocumentValid, zoneFor } from "@/lib/leva-ja/eligibility";
 import { DOCUMENT_ICONS, DOCUMENT_TITLES, VEHICLE_CLASS_LABELS, VEHICLE_SERVICES } from "@/lib/leva-ja/services";
 import type {
@@ -798,6 +800,8 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     savedAt: isoAt(now),
     zones: ZONES.map((zone) => ({ ...zone, coords: { ...zone.coords } })),
     pricing,
+    settings: defaultPlatformSettings(isoAt(now - 30 * DAY), "Armando Silva"),
+    rolePermissions: normalizeRolePermissions(),
     clients,
     providers,
     requests,

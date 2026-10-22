@@ -8,6 +8,7 @@ import type { MetricsRepository } from "./metrics";
 import type { PricingRepository } from "./pricing";
 import type { ProvidersRepository } from "./providers";
 import type { RequestsRepository } from "./requests";
+import type { SettingsRepository } from "./settings";
 import type { SupportRepository } from "./support";
 import type { ZonesRepository } from "./zones";
 
@@ -26,6 +27,7 @@ export type Repositories = {
   support: SupportRepository;
   metrics: MetricsRepository;
   audit: AuditRepository;
+  settings: SettingsRepository;
   demo: DemoControls | null;
 };
 
@@ -40,6 +42,7 @@ export type * from "./metrics";
 export type * from "./pricing";
 export type * from "./providers";
 export type * from "./requests";
+export type * from "./settings";
 export type * from "./support";
 export type * from "./zones";
 export { RepositoryError, isRepositoryError, errorMessage, ERROR_FALLBACK_MESSAGES } from "./errors";

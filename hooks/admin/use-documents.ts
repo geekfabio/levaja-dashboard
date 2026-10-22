@@ -13,9 +13,9 @@ export function useDocumentQueue(filters: DocumentQueueFilters) {
   });
 }
 
-export function useExpiringDocuments(withinDays = 30) {
+export function useExpiringDocuments(withinDays?: number) {
   return useQuery({
-    queryKey: ["admin", "documents", "expiring", withinDays],
+    queryKey: ["admin", "documents", "expiring", withinDays ?? "settings"],
     queryFn: () => repositories().documents.expiring(withinDays),
   });
 }

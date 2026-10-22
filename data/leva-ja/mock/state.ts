@@ -3,6 +3,8 @@ import type {
   AdminUser,
   AuditLogEntry,
   ClientAccount,
+  PlatformSettings,
+  RolePermissions,
   PricingConfig,
   ProviderAccount,
   ServiceRequest,
@@ -13,7 +15,7 @@ import type {
 } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 
-export const MOCK_STATE_VERSION = 1;
+export const MOCK_STATE_VERSION = 2;
 
 export type StoredRequest = Omit<ServiceRequest, "client" | "provider">;
 
@@ -23,6 +25,8 @@ export type MockState = {
   savedAt: string;
   zones: Zone[];
   pricing: PricingConfig;
+  settings: PlatformSettings;
+  rolePermissions: RolePermissions;
   clients: ClientAccount[];
   providers: ProviderAccount[];
   requests: StoredRequest[];

@@ -147,7 +147,52 @@ export type AdminUser = {
   lastLoginAt?: string;
 };
 
-export type AdminSession = { token: string; user: AdminUser; expiresAt: string };
+export type AdminPermission =
+  | "requests.view"
+  | "requests.operate"
+  | "requests.dispute"
+  | "providers.view"
+  | "providers.manage"
+  | "providers.penalize"
+  | "applications.manage"
+  | "fleets.view"
+  | "fleets.manage"
+  | "documents.review"
+  | "clients.view"
+  | "clients.block"
+  | "business.view"
+  | "business.manage"
+  | "finance.view"
+  | "finance.withdrawals"
+  | "refunds.request"
+  | "refunds.decide"
+  | "billing.view"
+  | "billing.manage"
+  | "pricing.view"
+  | "pricing.edit"
+  | "promotions.view"
+  | "promotions.manage"
+  | "zones.edit"
+  | "support.tickets"
+  | "support.sos"
+  | "support.reviews"
+  | "claims.view"
+  | "claims.manage"
+  | "communications.send"
+  | "reports.view"
+  | "users.manage"
+  | "security.manage"
+  | "privacy.manage"
+  | "integrations.manage"
+  | "settings.operations"
+  | "settings.finance"
+  | "settings.manage"
+  | "audit.view"
+  | "metrics.view";
+
+export type RolePermissions = Record<AdminRole, AdminPermission[]>;
+
+export type AdminSession = { token: string; user: AdminUser; expiresAt: string; rolePermissions?: RolePermissions };
 
 export type ProviderAvailability = "online" | "offline";
 export type ProviderAccountStatus = "pending_approval" | "active" | "suspended";
@@ -274,6 +319,8 @@ export type AuditEntityKind =
   | "sos"
   | "review"
   | "admin_user"
+  | "settings"
+  | "roles"
   | "session";
 
 export type AuditAction =
@@ -307,6 +354,8 @@ export type AuditAction =
   | "admin_user.activate"
   | "session.login"
   | "session.logout"
+  | "settings.update"
+  | "roles.update"
   | "demo.reset";
 
 export type AuditChange = { field: string; from: string; to: string };
@@ -322,3 +371,100 @@ export type AuditLogEntry = {
   changes?: AuditChange[];
   at: string;
 };
+
+export type NotificationChannel = "push" | "sms" | "email";
+
+export type NotificationEvent =
+  | "request.assigned"
+  | "request.arrived"
+  | "request.delivered"
+  | "request.cancelled"
+  | "document.rejected"
+  | "withdrawal.paid"
+  | "sos.raised";
+
+export type NotificationTemplate = { event: NotificationEvent; channels: NotificationChannel[]; body: string };
+
+export type GeneralSettings = {
+  tradeName: string;
+  legalName: string;
+  nif: string;
+  supportPhone: string;
+  supportEmail: string;
+  openingHours: string;
+  termsUrl: string;
+  privacyUrl: string;
+};
+
+export type ServiceSetting = { kind: ServiceKind; enabled: boolean; vehicleClasses: VehicleClass[] };
+
+export type DispatchSettings = {
+  initialRadiusKm: number;
+  maxRadiusKm: number;
+  offerTimeoutSeconds: number;
+  maxAttempts: number;
+  stalledAfterMinutes: number;
+  assignTargetMinutes: number;
+  arrivalTargetMinutes: number;
+  distanceWeight: number;
+  fallback: "manual" | "cancel";
+};
+
+export type CancellationSettings = {
+  clientFreeMinutes: number;
+  clientFee: number;
+  waitToleranceMinutes: number;
+  waitFeePerMinute: number;
+  providerCancelLimit: number;
+  providerAutoSuspend: boolean;
+};
+
+export type PayoutSettings = {
+  methods: PaymentMethodKind[];
+  minimumWithdrawal: number;
+  payoutFrequency: "daily" | "weekly" | "biweekly";
+  multicaixaEntity: string;
+  cashSettlementDays: number;
+};
+
+export type TaxSettings = { vatRate: number; invoiceSeries: string; creditNoteSeries: string; vatOnReceipts: boolean };
+
+export type DocumentRequirement = { icon: ProviderDocument["icon"]; required: boolean; minValidityDays: number };
+
+export type DocumentSettings = { requirements: DocumentRequirement[]; expiryWarningDays: number };
+
+export type NotificationSettings = { templates: NotificationTemplate[]; sosEscalation: string[] };
+
+export type SupportSettings = {
+  firstResponseHours: Record<TicketPriority, number>;
+  cannedReplies: { id: string; title: string; body: string }[];
+  satisfactionSurvey: boolean;
+};
+
+export type SecuritySettings = { require2fa: boolean; sessionHours: number; ipAllowlist: string[] };
+
+export type AppSettings = {
+  minVersionAndroid: string;
+  minVersionIos: string;
+  maintenance: boolean;
+  maintenanceMessage: string;
+  banner: string;
+};
+
+export type PlatformSettings = {
+  general: GeneralSettings;
+  services: ServiceSetting[];
+  dispatch: DispatchSettings;
+  cancellation: CancellationSettings;
+  payouts: PayoutSettings;
+  tax: TaxSettings;
+  documents: DocumentSettings;
+  notifications: NotificationSettings;
+  support: SupportSettings;
+  security: SecuritySettings;
+  app: AppSettings;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+export type SettingsSection = Exclude<keyof PlatformSettings, "updatedAt" | "updatedBy">;

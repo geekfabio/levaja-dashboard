@@ -10,9 +10,18 @@ import Button from "@/components/_ui/button";
 import { ScrollArea } from "@/components/_ui/scroll-area";
 import Tag from "@/components/_ui/tag";
 import { errorMessage, repositories } from "@/data/leva-ja";
-import { SECTION_LABELS } from "@/lib/leva-ja/navigation";
-import { ROLE_DESCRIPTIONS, ROLE_LABELS, canAccessSection } from "@/lib/leva-ja/permissions";
-import type { AdminSection } from "@/lib/leva-ja/permissions";
+import { NAV_SECTIONS, SECTION_LABELS } from "@/lib/leva-ja/navigation";
+import { ROLE_DESCRIPTIONS, ROLE_LABELS, canAccessSection, hasPermission } from "@/lib/leva-ja/permissions";
+import type { AdminPermission, AdminRole, PlatformSettings } from "@/types/leva-ja";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/_ui/tabs";
+import Skeleton from "@/components/_ui/skeleton";
+import AsyncState from "@/components/_common/async-state";
+import { usePlatformSettings } from "@/hooks/admin/use-settings";
+import { SETTINGS_SECTION_LABELS, SETTINGS_SECTION_PERMISSION } from "@/lib/leva-ja/settings";
+import { CancellationSection, DispatchSection, DocumentsSection, ServicesSection } from "./sections/operations-sections";
+import { PayoutsSection, TaxSection } from "./sections/finance-sections";
+import { AppSection, GeneralSection, NotificationsSection, SecuritySection, SupportSection } from "./sections/system-sections";
+import RolesMatrix from "./roles-matrix";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import { toast } from "@/stores/toast-store";
 
@@ -28,7 +37,7 @@ const FAILURE_OPTIONS = [
   { value: "0.3", label: "30 % dos pedidos" },
 ];
 
-export default function AdminSettings() {
+function AccountAndDemo() {
   const client = useQueryClient();
   const session = useAdminSessionStore((state) => state.session);
   const demo = repositories().demo;
@@ -39,7 +48,7 @@ export default function AdminSettings() {
 
   if (!session) return null;
   const { user } = session;
-  const sections = (Object.keys(SECTION_LABELS) as AdminSection[]).filter((section) => canAccessSection(user.role, section));
+  const sections = NAV_SECTIONS.filter((section) => canAccessSection(user.role, section));
 
   function configure(patch: Partial<typeof settings>) {
     if (!demo) return;
@@ -65,11 +74,9 @@ export default function AdminSettings() {
   }
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <AdminHeader title="Definições" />
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6 p-5">
-          <SettingsPanel title="A sua conta" description={ROLE_DESCRIPTIONS[user.role]}>
+    <>
+        <div className="flex w-full flex-col gap-6">
+          <SettingsPanel title="A sua conta" className="bg-card" description={ROLE_DESCRIPTIONS[user.role]}>
             <dl className="grid gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1">
                 <dt className="caption-style text-subtle">Nome</dt>
@@ -105,6 +112,7 @@ export default function AdminSettings() {
           {demo && (
             <SettingsPanel
               title="Dados de demonstração"
+              className="bg-card"
               description="O painel está em modo de demonstração: os dados são gerados no navegador e guardados localmente. Pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro."
               actions={
                 <Tag tone="amber" size="sm">
@@ -137,7 +145,6 @@ export default function AdminSettings() {
             </SettingsPanel>
           )}
         </div>
-      </ScrollArea>
 
       <ConfirmDialog
         open={resetOpen}
@@ -153,6 +160,83 @@ export default function AdminSettings() {
         error={resetError}
         onConfirm={reset}
       />
+    </>
+  );
+}
+
+type SectionComponent = (props: { settings: PlatformSettings; canEdit: boolean }) => React.ReactNode;
+
+const PLATFORM_TABS: { value: keyof typeof SETTINGS_SECTION_LABELS; component: SectionComponent }[] = [
+  { value: "general", component: GeneralSection },
+  { value: "services", component: ServicesSection },
+  { value: "dispatch", component: DispatchSection },
+  { value: "cancellation", component: CancellationSection },
+  { value: "payouts", component: PayoutsSection },
+  { value: "tax", component: TaxSection },
+  { value: "documents", component: DocumentsSection },
+  { value: "notifications", component: NotificationsSection },
+  { value: "support", component: SupportSection },
+  { value: "security", component: SecuritySection },
+  { value: "app", component: AppSection },
+];
+
+function canEdit(role: AdminRole, permission: AdminPermission) {
+  return hasPermission(role, permission);
+}
+
+export default function AdminSettings() {
+  const role = useAdminSessionStore((state) => state.session?.user.role);
+  useAdminSessionStore((state) => state.session?.rolePermissions);
+  const settings = usePlatformSettings();
+  const [tab, setTab] = useState("account");
+  if (!role) return null;
+  const canRoles = hasPermission(role, "security.manage");
+
+  return (
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <AdminHeader title="Definições" />
+      <ScrollArea className="min-h-0 flex-1">
+        <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="mx-auto w-full max-w-[1280px] gap-6 p-5 lg:flex-row lg:items-start">
+          <TabsList
+            aria-label="Secções das definições"
+            className="border-border shrink-0 gap-0 overflow-x-auto border-b lg:sticky lg:top-0 lg:w-[220px] lg:flex-col lg:items-stretch lg:overflow-visible lg:border-r lg:border-b-0 lg:pr-3 *:whitespace-nowrap"
+          >
+            <TabsTrigger value="account" className="focus-visible:ring-ring/60 px-3 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-inset lg:border-b-0">
+              Conta e demonstração
+            </TabsTrigger>
+            {PLATFORM_TABS.map((item) => (
+              <TabsTrigger key={item.value} value={item.value} className="focus-visible:ring-ring/60 px-3 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-inset lg:border-b-0">
+                {SETTINGS_SECTION_LABELS[item.value]}
+              </TabsTrigger>
+            ))}
+            {canRoles && (
+              <TabsTrigger value="roles" className="focus-visible:ring-ring/60 px-3 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-inset lg:border-b-0">
+                Papéis e permissões
+              </TabsTrigger>
+            )}
+          </TabsList>
+          <div className="min-w-0 flex-1">
+            <TabsContent value="account">
+              <AccountAndDemo />
+            </TabsContent>
+            {PLATFORM_TABS.map((item) => {
+              const Section = item.component;
+              return (
+                <TabsContent key={item.value} value={item.value}>
+                  <AsyncState query={settings} skeleton={<Skeleton className="h-[420px] rounded-xl" />} errorDescription={errorMessage}>
+                    {(data) => <Section key={data.updatedAt} settings={data} canEdit={canEdit(role, SETTINGS_SECTION_PERMISSION[item.value])} />}
+                  </AsyncState>
+                </TabsContent>
+              );
+            })}
+            {canRoles && (
+              <TabsContent value="roles">
+                <RolesMatrix />
+              </TabsContent>
+            )}
+          </div>
+        </Tabs>
+      </ScrollArea>
     </section>
   );
 }

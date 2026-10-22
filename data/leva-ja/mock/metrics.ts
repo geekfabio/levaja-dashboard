@@ -10,8 +10,6 @@ import { daysBetween } from "./finance";
 import { byNewest, inRange } from "./helpers";
 import type { MockState, StoredRequest } from "./state";
 
-export const STALLED_SEARCHING_MINUTES = 10;
-
 function kpis(state: MockState, requests: StoredRequest[]): OverviewKpis {
   const settled = requests.filter(isSettled);
   const fees = settled.reduce((sum, request) => sum + request.price.platformFee, 0);
@@ -78,7 +76,7 @@ export function createMockMetrics(db: MockDatabase): MetricsRepository {
 
     attention: () =>
       db.run({ permission: "metrics.view" }, ({ state, now, today }) => {
-        const threshold = now.getTime() - STALLED_SEARCHING_MINUTES * MINUTE;
+        const threshold = now.getTime() - state.settings.dispatch.stalledAfterMinutes * MINUTE;
         const documents = reviewQueue(state);
         const withdrawals = state.withdrawals
           .filter((withdrawal) => withdrawal.status === "pending")

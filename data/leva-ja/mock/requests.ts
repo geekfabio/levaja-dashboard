@@ -12,7 +12,7 @@ import type { ServiceRequest } from "@/types/leva-ja";
 import type { ReassignCandidate, RequestFilters, RequestsRepository } from "../repositories/requests";
 import { RepositoryError } from "../repositories/errors";
 import type { MockContext, MockDatabase } from "./database";
-import { hydrateRequest, refreshProvider, syncRequestTransactions } from "./domain";
+import { hydrateRequest, refreshProvider, requiredDocuments, syncRequestTransactions } from "./domain";
 import { byNewest, findOr404, inRange, matchesQuery, paginate, requireReason } from "./helpers";
 import type { StoredRequest } from "./state";
 
@@ -64,11 +64,10 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
           .filter((provider) => provider.id !== request.providerId && provider.services.includes(request.kind))
           .map((provider): ReassignCandidate => {
             const account = refreshProvider(ctx.state, provider, ctx.today);
-            return {
-              provider: account,
-              distanceKm: Math.round(distanceKm(account.coords, request.origin.coords) * 10) / 10,
-              issues: eligibilityIssues(account, request, ctx.today),
-            };
+            const distance = Math.round(distanceKm(account.coords, request.origin.coords) * 10) / 10;
+            const issues = eligibilityIssues(account, request, ctx.today, requiredDocuments(ctx.state));
+            if (distance > ctx.state.settings.dispatch.maxRadiusKm) issues.push("far");
+            return { provider: account, distanceKm: distance, issues };
           })
           .filter((candidate) => !busy.has(candidate.provider.id))
           .sort((a, b) => a.issues.length - b.issues.length || a.distanceKm - b.distanceKm);
@@ -85,7 +84,8 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
           throw new RepositoryError("validation", "Escolha um prestador diferente do actual.");
         }
         const provider = findOr404(ctx.state.providers, providerId, "Prestador");
-        const issues = eligibilityIssues(provider, request, ctx.today);
+        const issues = eligibilityIssues(provider, request, ctx.today, requiredDocuments(ctx.state));
+        if (distanceKm(provider.coords, request.origin.coords) > ctx.state.settings.dispatch.maxRadiusKm) issues.push("far");
         if (issues.length) {
           throw new RepositoryError("validation", "O prestador escolhido não é elegível para este pedido.", [
             { field: "providerId", message: issues.join(",") },
