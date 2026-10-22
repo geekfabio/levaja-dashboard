@@ -26,11 +26,11 @@ function Checkbox({
       />
       <CheckSquareIcon
         aria-hidden
-        className="hidden size-4 group-data-[state=checked]:block"
+        className="text-primary hidden size-4 group-data-[state=checked]:block [&_path]:fill-current"
       />
       <MinusSquareIcon
         aria-hidden
-        className="hidden size-4 group-data-[state=indeterminate]:block"
+        className="text-primary hidden size-4 group-data-[state=indeterminate]:block [&_path]:fill-current"
       />
     </CheckboxPrimitive.Root>
   );

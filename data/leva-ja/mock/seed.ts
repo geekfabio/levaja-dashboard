@@ -407,7 +407,7 @@ function buildRequest(
     created = midnight + hour * HOUR + rng.int(0, 59) * MINUTE;
   }
   const latest = ctx.now - totalMinutes * MINUTE - rng.int(1, 6) * MINUTE;
-  if (created > latest) created = latest;
+  if (created > latest || (provider && plan.dayOffset === 0)) created = latest;
 
   let cursor = created;
   const timeline = steps.map((step) => {

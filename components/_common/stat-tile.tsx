@@ -16,6 +16,7 @@ export type StatTileDelta = {
 type StatTileProps = {
   label: string;
   value: number;
+  display?: string;
   decimals?: number;
   decimalSeparator?: string;
   suffix?: string;
@@ -32,6 +33,7 @@ const ITEM_VARIANTS = {
 export default function StatTile({
   label,
   value,
+  display,
   decimals = 0,
   decimalSeparator = ",",
   suffix,
@@ -61,8 +63,8 @@ export default function StatTile({
 
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-baseline gap-1">
-          <span className="flex items-baseline text-[26px] leading-none font-semibold">
-            <SlidingNumber value={displayValue} decimalSeparator={decimalSeparator} />
+          <span className="flex items-baseline text-[26px] leading-none font-semibold tabular-nums">
+            {display ?? <SlidingNumber value={displayValue} decimalSeparator={decimalSeparator} />}
           </span>
           {suffix && (
             <span className="caption-style text-subtle font-normal">

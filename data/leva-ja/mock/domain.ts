@@ -1,6 +1,6 @@
 import { documentsVerified } from "@/lib/leva-ja/eligibility";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
-import { luandaDay } from "@/lib/format";
+import { luandaDay, shiftDay } from "@/lib/format";
 import type { Client, ClientAccount, Provider, ProviderAccount, Review, ServiceRequest } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 import type { MockState, StoredRequest } from "./state";
@@ -18,9 +18,7 @@ export function luandaMidnight(now: Date) {
 }
 
 export function addDays(day: string, days: number) {
-  const date = new Date(`${day}T12:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  return shiftDay(day, days);
 }
 
 export function toClient(account: ClientAccount): Client {
