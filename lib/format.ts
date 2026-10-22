@@ -158,3 +158,46 @@ export function formatMoneyCompact(value: number) {
 export function plural(count: number, singular: string, pluralForm: string) {
   return `${formatNumber(count)} ${count === 1 ? singular : pluralForm}`;
 }
+
+const NBSP = " ";
+
+export function groupThousands(value: number) {
+  const rounded = Math.round(value);
+  const digits = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+  return rounded < 0 ? `−${digits}` : digits;
+}
+
+export function formatKz(value: number) {
+  return `${groupThousands(value)}${NBSP}Kz`;
+}
+
+const NUMERIC_PARTS_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Luanda",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function luandaParts(iso: string) {
+  const parts = NUMERIC_PARTS_FORMATTER.formatToParts(new Date(iso));
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return { day: get("day"), month: get("month"), year: get("year"), hour: get("hour"), minute: get("minute") };
+}
+
+export function formatDateTimeNumeric(iso: string) {
+  const { day, month, year, hour, minute } = luandaParts(iso);
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+export function formatDateNumeric(iso: string) {
+  const { day, month, year } = luandaParts(iso.length === 10 ? `${iso}T12:00:00Z` : iso);
+  return `${day}/${month}/${year}`;
+}
+
+export function luandaDay(iso: string | Date) {
+  const { day, month, year } = luandaParts(typeof iso === "string" ? iso : iso.toISOString());
+  return `${year}-${month}-${day}`;
+}

@@ -1,0 +1,47 @@
+import type { AdminAuthRepository } from "./admin-auth";
+import type { AuditRepository } from "./audit";
+import type { ClientsRepository } from "./clients";
+import type { DemoControls } from "./demo";
+import type { DocumentsRepository } from "./documents";
+import type { FinanceRepository } from "./finance";
+import type { MetricsRepository } from "./metrics";
+import type { PricingRepository } from "./pricing";
+import type { ProvidersRepository } from "./providers";
+import type { RequestsRepository } from "./requests";
+import type { SupportRepository } from "./support";
+import type { ZonesRepository } from "./zones";
+
+export type DataSource = "mock" | "http";
+
+export type Repositories = {
+  source: DataSource;
+  auth: AdminAuthRepository;
+  requests: RequestsRepository;
+  providers: ProvidersRepository;
+  documents: DocumentsRepository;
+  clients: ClientsRepository;
+  finance: FinanceRepository;
+  pricing: PricingRepository;
+  zones: ZonesRepository;
+  support: SupportRepository;
+  metrics: MetricsRepository;
+  audit: AuditRepository;
+  demo: DemoControls | null;
+};
+
+export type * from "./admin-auth";
+export type * from "./audit";
+export type * from "./clients";
+export type * from "./common";
+export type * from "./demo";
+export type * from "./documents";
+export type * from "./finance";
+export type * from "./metrics";
+export type * from "./pricing";
+export type * from "./providers";
+export type * from "./requests";
+export type * from "./support";
+export type * from "./zones";
+export { RepositoryError, isRepositoryError, errorMessage, ERROR_FALLBACK_MESSAGES } from "./errors";
+export type { RepositoryErrorCode, FieldIssue } from "./errors";
+export { DEFAULT_PAGE_SIZE } from "./common";
