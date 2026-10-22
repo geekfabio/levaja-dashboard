@@ -28,7 +28,7 @@ import ProviderStatusDialog, { type ProviderStatusAction } from "../dialogs/prov
 import ProviderCoverage from "./provider-coverage";
 import ProviderDocuments from "./provider-documents";
 import ProviderWallet from "./provider-wallet";
-import ReviewList from "./review-list";
+import ReviewList from "@/components/admin/shared/review-list";
 
 const TABS = [
   { value: "resumo", label: "Resumo" },

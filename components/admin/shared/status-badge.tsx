@@ -11,6 +11,8 @@ export const TONE_TAGS: Record<StatusTone, "amber" | "blue" | "green" | "red" | 
   neutral: "neutral",
 };
 
+export const TRANSACTION_STATUS_TONES = { completed: "green", pending: "amber", failed: "red" } as const;
+
 type ToneBadgeProps = { tone: StatusTone; label: string; size?: "sm" | "md" };
 
 export function ToneBadge({ tone, label, size = "sm" }: ToneBadgeProps) {

@@ -2,8 +2,8 @@ export type CsvCell = string | number;
 
 function escapeCell(cell: CsvCell) {
   let value = String(cell);
-  if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`;
-  if (/[",\r\n]/.test(value)) value = `"${value.replace(/"/g, '""')}"`;
+  if (typeof cell === "string" && /^[=+\-@\t\r]/.test(value)) value = `'${value}`;
+  if (/[";,\r\n]/.test(value)) value = `"${value.replace(/"/g, '""')}"`;
   return value;
 }
 

@@ -10,11 +10,10 @@ import { errorMessage } from "@/data/leva-ja";
 import { useProviderTransactions } from "@/hooks/admin/use-providers";
 import { formatDateTimeNumeric, formatKz } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { ProviderAccount, Transaction } from "@/types/leva-ja";
+import type { ProviderAccount } from "@/types/leva-ja";
+import { TRANSACTION_KIND_LABELS, TRANSACTION_STATUS_LABELS } from "@/lib/leva-ja/services";
+import { TRANSACTION_STATUS_TONES } from "@/components/admin/shared/status-badge";
 
-export const TRANSACTION_KIND_LABELS: Record<Transaction["kind"], string> = { earning: "Ganho", fee: "Comissão", withdrawal: "Levantamento" };
-export const TRANSACTION_STATUS_LABELS: Record<Transaction["status"], string> = { completed: "Concluída", pending: "Pendente", failed: "Falhada" };
-export const TRANSACTION_STATUS_TONES = { completed: "green", pending: "amber", failed: "red" } as const;
 
 export default function ProviderWallet({ provider }: { provider: ProviderAccount }) {
   const [page, setPage] = useState(1);

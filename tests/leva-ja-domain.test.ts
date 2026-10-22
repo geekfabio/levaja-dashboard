@@ -90,3 +90,8 @@ test("reposição: repor os dados volta ao estado da semente", async () => {
   const audit = await repos.audit.list({ pageSize: 1 });
   assert.equal(audit.items[0].action, "demo.reset");
 });
+
+test("CSV: números negativos ficam numéricos e texto perigoso é neutralizado", async () => {
+  const { toCsv } = await import("@/lib/csv");
+  assert.equal(toCsv([[-19000, "=SOMA(A1)", "Ana; Neto"]]), `-19000;'=SOMA(A1);"Ana; Neto"`);
+});

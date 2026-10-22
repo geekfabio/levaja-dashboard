@@ -1,8 +1,9 @@
 import { formatDateTimeNumeric } from "@/lib/format";
 import type { Review } from "@/types/leva-ja";
-import Stars from "@/components/admin/shared/stars";
+import type { ReactNode } from "react";
+import Stars from "./stars";
 
-export default function ReviewList({ reviews, title }: { reviews: Review[]; title?: (review: Review) => string }) {
+export default function ReviewList({ reviews, title }: { reviews: Review[]; title?: (review: Review) => ReactNode }) {
   return (
     <ul className="divide-border flex flex-col divide-y">
       {reviews.map((review) => (

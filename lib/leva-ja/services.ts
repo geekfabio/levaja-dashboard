@@ -11,6 +11,7 @@ import type {
   SosStatus,
   ProviderDisplayStatus,
   ProviderDocument,
+  Transaction,
 } from "@/types/leva-ja";
 
 export const SERVICE_KINDS: readonly ServiceKind[] = ["tow", "cargo", "small_move", "house_move"];
@@ -120,4 +121,16 @@ export const WITHDRAWAL_STATUS_LABELS: Record<WithdrawalStatus, string> = {
   approved: "Aprovado",
   rejected: "Rejeitado",
   paid: "Pago",
+};
+
+export const TRANSACTION_KIND_LABELS: Record<Transaction["kind"], string> = {
+  earning: "Ganho",
+  fee: "Comissão",
+  withdrawal: "Levantamento",
+};
+
+export const TRANSACTION_STATUS_LABELS: Record<Transaction["status"], string> = {
+  completed: "Concluída",
+  pending: "Pendente",
+  failed: "Falhada",
 };
