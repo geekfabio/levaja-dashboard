@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="180" viewBox="0 0 720 180" role="img" aria-labelledby="title">
+  <title>Leva Já</title>
+  <rect width="180" height="180" rx="44" fill="#16A34A"/>
+  <path d="M37 128V56c0-12 9-21 21-21h37c12 0 21 9 21 21v17h25c12 0 22 10 22 22v33H98V95H78v33H37Zm41-61h20V56H78v11Z" fill="#fff"/>
+  <text x="214" y="116" fill="#102018" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="800" letter-spacing="-4">LEVA JÁ</text>
+</svg>
