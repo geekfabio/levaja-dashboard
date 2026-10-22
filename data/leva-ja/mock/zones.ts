@@ -1,3 +1,4 @@
+import { formatDecimal } from "@/lib/format";
 import { ACTIVE_STATUSES } from "@/lib/leva-ja/status";
 import type { Zone } from "@/types/leva-ja";
 import type { ZoneInput, ZonesRepository } from "../repositories/zones";
@@ -29,7 +30,7 @@ function validateZone(state: MockState, input: ZoneInput, id?: string): Zone {
 }
 
 function describe(zone: Zone) {
-  return `${zone.coords.latitude.toFixed(4)}, ${zone.coords.longitude.toFixed(4)} · ${zone.radiusKm} km`;
+  return `${formatDecimal(zone.coords.latitude, 4)}; ${formatDecimal(zone.coords.longitude, 4)} · ${formatDecimal(zone.radiusKm, 1)} km`;
 }
 
 export function createMockZones(db: MockDatabase): ZonesRepository {

@@ -185,3 +185,57 @@ test("contrato: falhas de rede simuladas chegam como network", async () => {
   repos.demo?.configure({ failureRate: 0 });
   assert.ok((await repos.requests.list()).total > 0);
 });
+
+test("contrato: ocorrências atribuídas, respondidas e resolvidas ficam na auditoria", async () => {
+  const repos = await setup("suporte@levaja.ao");
+  const ticket = (await repos.support.tickets({ status: ["open"], pageSize: 1 })).items[0];
+  const [assignee] = await repos.support.assignees();
+  const assigned = await repos.support.assignTicket(ticket.id, assignee.id);
+  assert.equal(assigned.status, "in_progress");
+  await rejectsWith(repos.support.replyTicket(ticket.id, ""), "validation");
+  const replied = await repos.support.replyTicket(ticket.id, "Estamos a tratar do assunto.");
+  assert.equal(replied.messages.at(-1)?.author, "admin");
+  await rejectsWith(repos.support.resolveTicket(ticket.id, " "), "validation");
+  const resolved = await repos.support.resolveTicket(ticket.id, "Valor reembolsado.");
+  assert.equal(resolved.status, "resolved");
+  await rejectsWith(repos.support.replyTicket(ticket.id, "Mais uma"), "invalid_transition");
+  await repos.auth.logout();
+  await repos.auth.login("admin@levaja.ao", "123456");
+  const audit = await repos.audit.list({ entityId: ticket.id });
+  assert.deepEqual(
+    audit.items.map((entry) => entry.action),
+    ["ticket.resolve", "ticket.reply", "ticket.assign"],
+  );
+});
+
+test("contrato: SOS acompanhado e resolvido com resolução obrigatória", async () => {
+  const repos = await setup("operacoes@levaja.ao");
+  const [alert] = await repos.support.sosAlerts(["open"]);
+  const acknowledged = await repos.support.acknowledgeSos(alert.id);
+  assert.equal(acknowledged.status, "acknowledged");
+  await rejectsWith(repos.support.acknowledgeSos(alert.id), "invalid_transition");
+  await rejectsWith(repos.support.resolveSos(alert.id, ""), "validation");
+  const resolved = await repos.support.resolveSos(alert.id, "Cliente em segurança.");
+  assert.equal(resolved.status, "resolved");
+  await rejectsWith(repos.support.lowRatings(), "forbidden");
+});
+
+test("contrato: avaliação baixa revista com nota e utilizadores do painel", async () => {
+  const support = await setup("suporte@levaja.ao");
+  const pending = (await support.support.lowRatings({ handled: false, pageSize: 1 })).items[0];
+  assert.ok(pending.rating <= 2);
+  const handled = await support.support.markReviewHandled(pending.id, "Prestador advertido.");
+  assert.equal(handled.handled, true);
+  await rejectsWith(support.support.markReviewHandled(pending.id, "De novo"), "invalid_transition");
+  await rejectsWith(support.auth.listUsers(), "forbidden");
+  const admin = await setup();
+  await rejectsWith(admin.auth.createUser({ name: "Ana", email: "admin@levaja.ao", role: "support" }, "Teste"), "validation");
+  const created = await admin.auth.createUser({ name: "Délcio Mateus", email: "delcio.mateus@levaja.ao", role: "finance" }, "Reforço da equipa");
+  const self = (await admin.auth.listUsers()).find((user) => user.email === "admin@levaja.ao");
+  assert.ok(self);
+  await rejectsWith(admin.auth.changeRole(self.id, "support", "Teste"), "validation");
+  const changed = await admin.auth.changeRole(created.id, "operations", "Mudou de equipa");
+  assert.equal(changed.role, "operations");
+  await admin.auth.setActive(created.id, false, "Saiu da empresa");
+  await rejectsWith(admin.auth.login("delcio.mateus@levaja.ao", "123456"), "unauthorized");
+});

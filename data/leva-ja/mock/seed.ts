@@ -1,4 +1,4 @@
-import { luandaDay } from "@/lib/format";
+import { formatKz, luandaDay } from "@/lib/format";
 import { CANCELLABLE_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
 import { defaultPricingConfig, estimatePrice, priceWithProposal } from "@/lib/leva-ja/pricing";
 import { distanceKm, isDocumentValid, zoneFor } from "@/lib/leva-ja/eligibility";
@@ -704,7 +704,7 @@ function buildAudit(ctx: Context, state: MockState): AuditLogEntry[] {
     entries.push({
       ...actor(byRole("finance")),
       action,
-      entity: { kind: "withdrawal", id: withdrawal.id, label: `${withdrawal.providerName} — ${withdrawal.amount} Kz` },
+      entity: { kind: "withdrawal", id: withdrawal.id, label: `${withdrawal.providerName} — ${formatKz(withdrawal.amount)}` },
       reason: withdrawal.reason ?? (withdrawal.paymentReference ? `Referência ${withdrawal.paymentReference}` : "Saldo confirmado."),
       at: withdrawal.paidAt ?? withdrawal.decidedAt ?? withdrawal.requestedAt,
     });

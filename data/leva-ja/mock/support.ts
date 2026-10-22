@@ -40,6 +40,14 @@ export function createMockSupport(db: MockDatabase): SupportRepository {
   const sosEntity = (alert: SosAlert) => ({ kind: "sos" as const, id: alert.id, label: `SOS ${alert.requestCode} — ${alert.raisedByName}` });
 
   return {
+    assignees: () =>
+      db.run({ permission: "support.tickets" }, ({ state }) =>
+        state.adminUsers
+          .filter((user) => user.active && hasPermission(user.role, "support.tickets"))
+          .map((user) => ({ id: user.id, name: user.name, initials: user.initials, role: user.role }))
+          .sort((a, b) => a.name.localeCompare(b.name, "pt")),
+      ),
+
     tickets: (filters = {}) =>
       db.run({ permission: "support.tickets" }, ({ state }) => {
         const items = state.tickets

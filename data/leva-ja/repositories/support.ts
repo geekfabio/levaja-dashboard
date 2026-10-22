@@ -1,4 +1,4 @@
-import type { Review, SosAlert, SosStatus, Ticket, TicketPriority, TicketStatus } from "@/types/leva-ja";
+import type { AdminUser, Review, SosAlert, SosStatus, Ticket, TicketPriority, TicketStatus } from "@/types/leva-ja";
 import type { Page, PageQuery, RealtimeListener, Unsubscribe } from "./common";
 
 export type TicketFilters = PageQuery & {
@@ -16,7 +16,10 @@ export type LowRatingItem = Review & {
   handledNote?: string;
 };
 
+export type TicketAssignee = Pick<AdminUser, "id" | "name" | "initials" | "role">;
+
 export interface SupportRepository {
+  assignees(): Promise<TicketAssignee[]>;
   tickets(filters?: TicketFilters): Promise<Page<Ticket>>;
   ticket(id: string): Promise<Ticket>;
   assignTicket(id: string, adminId: string): Promise<Ticket>;
