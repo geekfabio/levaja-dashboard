@@ -56,7 +56,7 @@ export default function CalendarConsentDialog() {
                 />
               </Field>
               <div className="flex flex-col gap-2">
-                <span className="lead-style">O Alimenta Angola CRM vai poder:</span>
+                <span className="lead-style">O Leva Já CRM vai poder:</span>
                 <ul className="caption-style text-soft flex list-disc flex-col gap-1 pl-5">
                   {provider.scopes.map((scope) => (
                     <li key={scope}>{scope}</li>

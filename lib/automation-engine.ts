@@ -1,13 +1,12 @@
 import type { Automation, AutomationStep } from "@/data/automations";
 import type { Company } from "@/data/companies";
 import { OPEN_OFFER_STATUSES, type DiscountOffer, type OfferStatus } from "@/data/discount-offers";
-import type { ProductCategory, Sale } from "@/data/sales";
 import { matchesConditions, stepDays } from "./automations";
 import { addDays } from "./follow-up";
 import { formatDateShort } from "./format";
 import type { CampaignEvent } from "@/data/campaign-events";
 import type { Contact } from "@/data/contacts";
-import { abcBySales, purchaseStats } from "./sales";
+import { abcByPipeline } from "./companies";
 
 export type AutomationEventType =
   | "cliente-criado"
@@ -33,8 +32,6 @@ export type DueStep = {
   step: AutomationStep;
   stepIndex: number;
   dueDate: string;
-  daysWithoutPurchase: number;
-  topCategories: ProductCategory[];
   firstStep: boolean;
   lastStep: boolean;
 };
@@ -42,7 +39,6 @@ export type DueStep = {
 type EngineInput = {
   automations: Automation[];
   companies: Company[];
-  sales: Sale[];
   events?: AutomationEvent[];
   today: string;
   done: Set<string>;
@@ -68,29 +64,12 @@ function anniversary(customerSince: string, today: string) {
 function enrollments(
   automation: Automation,
   company: Company,
-  context: { purchase: ReturnType<typeof purchaseStats>; sales: Sale[]; events: AutomationEvent[]; today: string },
+  context: { events: AutomationEvent[]; today: string },
 ): Enrollment[] {
   const { trigger } = automation;
   const activated = automation.activatedAt ?? "0000-00-00";
-  const fromActivation = (date: string) => (date < activated ? activated : date);
 
   switch (trigger.type) {
-    case "dias-sem-comprar": {
-      const { purchase } = context;
-      if (!purchase.lastPurchaseAt || purchase.daysSincePurchase === undefined) return [];
-      if (purchase.daysSincePurchase < trigger.days) return [];
-      const lastDate = purchase.lastPurchaseAt.slice(0, 10);
-      return [{ key: lastDate, start: fromActivation(addDays(lastDate, trigger.days)) }];
-    }
-    case "divida-vencida": {
-      const oldest = context.sales
-        .filter((sale) => sale.companyId === company.id && sale.payment === "Crédito" && !sale.paid)
-        .sort((a, b) => a.at.localeCompare(b.at))[0];
-      if (!oldest) return [];
-      const overdueFrom = addDays(oldest.at.slice(0, 10), trigger.days);
-      if (overdueFrom > context.today) return [];
-      return [{ key: oldest.id, start: fromActivation(overdueFrom) }];
-    }
     case "aniversario": {
       const date = anniversary(company.profile?.customerSince ?? "", context.today);
       if (!date || date < activated) return [];
@@ -103,20 +82,18 @@ function enrollments(
   }
 }
 
-export function dueSteps({ automations, companies, sales, events = [], today, done }: EngineInput): DueStep[] {
+export function dueSteps({ automations, companies, events = [], today, done }: EngineInput): DueStep[] {
   const running = automations.filter((automation) => automation.status === "Ativa" && automation.steps.length > 0);
   if (running.length === 0) return [];
   const active = companies.filter((company) => !company.archived);
-  const abc = abcBySales(active, sales, today);
-  const stats = new Map(active.map((company) => [company.id, purchaseStats(sales, company.id, today)]));
+  const abc = abcByPipeline(active);
   const due: DueStep[] = [];
 
   for (const automation of running) {
     const days = stepDays(automation.steps);
     for (const company of active) {
       if (!matchesConditions(company, automation.conditions, abc)) continue;
-      const purchase = stats.get(company.id)!;
-      for (const enrollment of enrollments(automation, company, { purchase, sales, events, today })) {
+      for (const enrollment of enrollments(automation, company, { events, today })) {
         automation.steps.forEach((step, index) => {
           const dueDate = addDays(enrollment.start, days[index]);
           if (dueDate > today) return;
@@ -129,8 +106,6 @@ export function dueSteps({ automations, companies, sales, events = [], today, do
             step,
             stepIndex: index,
             dueDate,
-            daysWithoutPurchase: purchase.daysSincePurchase ?? 0,
-            topCategories: purchase.topCategories,
             firstStep: index === 0,
             lastStep: index === automation.steps.length - 1,
           });
@@ -149,16 +124,6 @@ export function offerStatus(offer: DiscountOffer, today: string): OfferStatus {
 
 export function isOfferOpen(offer: DiscountOffer, today: string) {
   return OPEN_OFFER_STATUSES.includes(offerStatus(offer, today));
-}
-
-export function offerDiscountValue(offer: DiscountOffer, sale: Sale) {
-  const base =
-    offer.scope === "Toda a encomenda" || offer.categories.length === 0
-      ? sale.total
-      : sale.lines
-          .filter((line) => offer.categories.includes(line.category))
-          .reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
-  return Math.round((base * offer.percent) / 100);
 }
 
 export function offerScopeLabel(offer: Pick<DiscountOffer, "scope" | "categories">) {
@@ -219,41 +184,15 @@ function daysApart(from: string, to: string) {
 export function simulateTrigger(
   automation: Automation,
   companies: Company[],
-  sales: Sale[],
   events: AutomationEvent[],
   today: string,
 ): Simulation {
   const active = companies.filter((company) => !company.archived);
-  const abc = abcBySales(active, sales, today);
+  const abc = abcByPipeline(active);
   const eligible = active.filter((company) => matchesConditions(company, automation.conditions, abc));
   const { trigger } = automation;
   const entries: SimulatedEntry[] = [];
   let withoutHistory = 0;
-
-  if (trigger.type === "dias-sem-comprar") {
-    for (const company of eligible) {
-      const { daysSincePurchase } = purchaseStats(sales, company.id, today);
-      if (daysSincePurchase === undefined) withoutHistory += 1;
-      else if (daysSincePurchase >= trigger.days) {
-        entries.push({ company, label: `${daysSincePurchase} dias sem comprar`, sortKey: -daysSincePurchase });
-      }
-    }
-    return { mode: "estado", entries: entries.sort((a, b) => a.sortKey - b.sortKey), withoutHistory };
-  }
-
-  if (trigger.type === "divida-vencida") {
-    for (const company of eligible) {
-      const oldest = sales
-        .filter((sale) => sale.companyId === company.id && sale.payment === "Crédito" && !sale.paid)
-        .sort((a, b) => a.at.localeCompare(b.at))[0];
-      if (!oldest) continue;
-      const age = daysApart(oldest.at.slice(0, 10), today);
-      if (age >= trigger.days) {
-        entries.push({ company, label: `${oldest.document} por pagar há ${age} dias`, sortKey: -age });
-      }
-    }
-    return { mode: "estado", entries: entries.sort((a, b) => a.sortKey - b.sortKey), withoutHistory };
-  }
 
   if (trigger.type === "aniversario") {
     for (const company of eligible) {

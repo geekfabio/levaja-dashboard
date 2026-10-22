@@ -20,7 +20,6 @@ import PipelineHealth from "./pipeline-health";
 import ActivityTrend from "./activity-trend";
 import ScoreCard from "./score-card";
 import ClientTimeline from "./client-timeline";
-import Purchases from "./purchases";
 import NextFollowUp from "./next-follow-up";
 import FiscalProfile from "./fiscal-profile";
 import Documents from "./documents";
@@ -164,10 +163,6 @@ export default function CompanyDetail() {
 
             <DetailSection title="Próximo contacto">
               <NextFollowUp company={company} />
-            </DetailSection>
-
-            <DetailSection title="Compras">
-              <Purchases companyId={company.id} companyName={company.name} />
             </DetailSection>
 
             <DetailSection title="Dados fiscais e crédito">

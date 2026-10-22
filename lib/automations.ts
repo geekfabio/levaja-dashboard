@@ -36,10 +36,6 @@ export function filterAutomations(
 
 export function triggerSummary(trigger: Trigger) {
   switch (trigger.type) {
-    case "dias-sem-comprar":
-      return `Quando um cliente fica ${trigger.days} dias sem comprar`;
-    case "divida-vencida":
-      return `Quando uma dívida está vencida há ${trigger.days} dias`;
     case "fase-alterada":
       return `Quando uma oportunidade passa a “${trigger.stage}”`;
     case "campanha-aberta":
@@ -57,10 +53,6 @@ export function triggerSummary(trigger: Trigger) {
     case "aniversario":
       return "No aniversário do cliente";
   }
-}
-
-export function triggerUsesDays(trigger: Trigger) {
-  return trigger.type === "dias-sem-comprar" || trigger.type === "divida-vencida";
 }
 
 export function conditionsSummary(conditions: AutomationConditions) {
@@ -125,9 +117,6 @@ export function maxMessagesInWeek(steps: AutomationStep[]) {
 export function automationIssues(automation: Automation) {
   const issues: string[] = [];
   if (!automation.name.trim()) issues.push("Dê um nome à automação.");
-  if (triggerUsesDays(automation.trigger) && automation.trigger.days < 1) {
-    issues.push("O número de dias do gatilho tem de ser pelo menos 1.");
-  }
   if (automation.steps.length === 0) issues.push("Adicione pelo menos um passo.");
   automation.steps.forEach((step, index) => {
     const label = `Passo ${index + 1}`;

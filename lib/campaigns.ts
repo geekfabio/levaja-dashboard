@@ -18,8 +18,7 @@ import {
   type CampaignEvent,
   type CampaignEventType,
 } from "@/data/campaign-events";
-import { SALES, SALES_ANCHOR, type Sale } from "@/data/sales";
-import { abcBySales } from "./sales";
+import { abcByPipeline } from "./companies";
 import type { Company } from "@/data/companies";
 import type { Contact, ContactabilityStatus } from "@/data/contacts";
 import { normalizeAngolanPhone, operatorFor, type Operator } from "./phone";
@@ -75,10 +74,10 @@ export function createBlock(type: BlockType, id: string): CampaignBlock {
         id,
         type,
         src: BRAND_LOGO,
-        alt: "Alimenta Angola",
+        alt: "Leva Já",
       };
     case "button":
-      return { id, type, label: "Saber mais", href: "https://alimentaangola.co.ao" };
+      return { id, type, label: "Saber mais", href: "https://levaja.ao" };
     case "divider":
       return { id, type };
   }
@@ -117,12 +116,8 @@ export function missingFallbacks(fallbacks: Fallbacks) {
   return VARIABLES.filter((variable) => !fallbacks[variable.key].trim());
 }
 
-export function abcClasses(
-  companies: Company[],
-  sales: Sale[] = SALES,
-  today: string = SALES_ANCHOR.slice(0, 10),
-): Map<string, AbcClass> {
-  return abcBySales(companies, sales, today);
+export function abcClasses(companies: Company[]): Map<string, AbcClass> {
+  return abcByPipeline(companies);
 }
 
 export type ExclusionReason =

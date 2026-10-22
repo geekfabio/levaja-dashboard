@@ -34,8 +34,6 @@ import {
 } from "@/data/opportunities";
 import { formatDateLong, formatMoney } from "@/lib/format";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
-import { useQuotesStore } from "@/stores/quotes-store";
-import { useRouter } from "next/navigation";
 import ClipboardIcon from "@/public/assets/images/companies/sidebar/clipboard.svg";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
 
@@ -44,8 +42,6 @@ export default function OpportunityDetail() {
   const detailOpen = useOpportunitiesStore((state) => state.detailOpen);
   const opportunities = useOpportunitiesStore((state) => state.opportunities);
   const closeDetail = useOpportunitiesStore((state) => state.closeDetail);
-  const createQuote = useQuotesStore((state) => state.createQuote);
-  const router = useRouter();
   const requestStageMove = useOpportunitiesStore(
     (state) => state.requestStageMove,
   );
@@ -217,21 +213,6 @@ export default function OpportunityDetail() {
               closeDetail();
             }}
             onClose={requestClose}
-            extra={
-              opportunity && !opportunity.stage.startsWith("Fechada") ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    createQuote(opportunity.companyId, opportunity.id);
-                    closeDetail();
-                    router.push("/cotacoes");
-                  }}
-                >
-                  Criar cotação
-                </Button>
-              ) : undefined
-            }
           />
         </SheetFooter>
       </SheetContent>

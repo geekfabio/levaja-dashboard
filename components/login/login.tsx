@@ -8,15 +8,15 @@ export default function Login() {
         <div className="flex flex-col items-center gap-4 text-center">
           <Asset
             type="image"
-            src="/assets/images/_common/brand/alimenta-angola-logo.png"
-            alt="Alimenta Angola"
-            width={96}
-            height={64}
+            src="/assets/images/_common/brand/leva-ja-mark.svg"
+            alt="Leva Já"
+            width={40}
+            height={40}
             fit="contain"
             className="size-12"
           />
           <div className="flex flex-col gap-1">
-            <h1 className="h2-style">Alimenta Angola CRM</h1>
+            <h1 className="h2-style">Leva Já CRM</h1>
             <p className="caption-style text-subtle">
               Entre com a sua conta para aceder à carteira de clientes.
             </p>
@@ -28,7 +28,7 @@ export default function Login() {
         </div>
 
         <p className="caption-style text-subtle text-center">
-          Acesso restrito à equipa da Alimenta Angola.
+          Acesso restrito à equipa do Leva Já.
         </p>
       </div>
     </main>

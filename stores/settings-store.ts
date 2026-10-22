@@ -36,7 +36,6 @@ export const SETTINGS_TABS = [
   "zonas",
   "acessos",
   "integracoes",
-  "catalogo",
   "mensagens",
   "dados",
 ] as const;

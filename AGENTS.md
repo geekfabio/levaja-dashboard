@@ -1,48 +1,48 @@
-# Agentes — Alimenta Angola CRM
+# Agentes — Leva Já
 
-Regras de execução para qualquer agente (Claude Code, Codex, Cursor) que trabalhe neste repositório. O contexto do produto está em `CLAUDE.md`, a especificação em `FEATURES.md` e a ordem de trabalho em `ROADMAP.md`.
+Regras de execução para qualquer agente (Claude Code, Codex, Cursor) que trabalhe neste repositório. O contexto do produto está em `CLAUDE.md`, a especificação do painel em `LEVA_JA_ADMIN.md`, os módulos em `FEATURES.md` e a ordem de trabalho em `ROADMAP.md`.
 
 ## Antes de escrever código
 
-1. Lê `CLAUDE.md` e a secção de `FEATURES.md` do módulo em que vais mexer.
-2. Confirma em `ROADMAP.md` que a tarefa pertence à fase actual. Não saltes fases: a Fase 0 (tradução pt-AO) precede tudo o resto porque qualquer ecrã novo em inglês duplica trabalho.
-3. Procura o padrão equivalente em `components/companies/` antes de inventar estrutura nova. Este repositório tem um módulo de referência completo — copia-o.
-4. Para schema, migrações, RLS ou Edge Functions, carrega as skills `supabase` e `supabase-postgres-best-practices` de `.claude/skills/`.
+1. Lê `CLAUDE.md` e, para o painel, `LEVA_JA_ADMIN.md` inteiro. Quando houver contradição, vale o `LEVA_JA_ADMIN.md`.
+2. Confirma em `ROADMAP.md` em que fase está a tarefa. Um commit pequeno por fase.
+3. Procura o padrão equivalente em `components/companies/` e nas peças de `components/_ui/` e `components/_common/` antes de criar estrutura nova. Não dupliques componentes: quando faltar um, cria-o no mesmo estilo e na mesma pasta dos existentes.
+4. Antes de usar APIs do Next, lê `node_modules/next/dist/docs/`.
 
 ## Durante
 
-- **Nunca deixes inglês visível.** Ao tocar num ficheiro, traduz as strings de UI que lá estiverem, mesmo que não sejam o alvo da tarefa. Identificadores ficam em inglês (regra 2 de `CLAUDE.md`).
+- **Nunca deixes inglês visível.** No painel, o texto é pt-PT. Identificadores ficam em inglês.
 - **Sem comentários no código.** Regra 7 de `.builderrules`.
-- **Sem bibliotecas novas sem pedir.** Em particular: nada de bibliotecas de ícones, de datas pesadas (`Intl` chega) ou de componentes que dupliquem `components/_ui/`.
-- **Formatação de valores** passa sempre por `lib/format.ts` (Kz, datas, percentagens, números). Se o helper ainda não existir na fase em que estás, cria-o aí em vez de formatar inline.
+- **Sem bibliotecas novas sem pedir.** `@tanstack/react-query` já está autorizada. Nada de bibliotecas de ícones, de datas ou de componentes que dupliquem `components/_ui/`.
+- **Formatação** passa sempre por `lib/format.ts` (`formatKz`, `formatDateTimeNumeric`, …).
+- **Páginas e componentes nunca importam mocks.** Usam `hooks/admin/` sobre `repositories()`.
+- **Regras de negócio** (máquina de estados, motivo obrigatório, preços, saldo, permissões) são aplicadas na implementação dos repositórios, como o servidor fará, e reutilizam `lib/leva-ja/`.
 - Mantém a estrutura de `public/assets/images/` a espelhar a de `components/`.
+- **Não apagues ficheiros** fora do que foi aprovado em `LEVA_JA_ADMIN.md` (secção 2). Se surgir outra remoção, pergunta antes.
 
-## Email e SMS — travões
+## Ambiente de testes
 
-Estes módulos enviam para pessoas reais e custam dinheiro por mensagem.
+- Os testes correm em Node por type stripping: usa sempre `import type` para tipos e não uses `enum`, `namespace` nem parameter properties nas classes.
+- Os testes do painel ficam em `tests/leva-ja-*.test.ts`, com `node:test`, e resolvem o alias `@/` por `tests/resolve-alias.mjs`.
+
+## Email e SMS do CRM — travões
 
 - O envio real exige `MESSAGING_LIVE=true`. Sem essa variável, o adaptador escreve no log e devolve sucesso simulado.
-- **Um agente nunca dispara uma campanha, um envio em massa ou um teste para um número/endereço real** sem pedido explícito do utilizador nessa conversa. Gerar a campanha e deixá-la em rascunho é o comportamento correcto.
-- Em desenvolvimento, todos os destinatários são reescritos para o endereço/número de sandbox configurado.
-- Credenciais de fornecedores vivem em `.env.local` e em Supabase secrets — nunca no repositório, nunca num ficheiro de exemplo com valores reais.
-
-## Base de dados
-
-- Toda a tabela nova nasce com RLS activo e com políticas explícitas. Uma migração que crie tabela sem política é incompleta.
-- Migrações são ficheiros versionados, nunca alterações manuais no painel.
-- Dados de clientes não saem do Supabase para ficheiros do repositório. `data/` só tem dados fictícios.
+- **Um agente nunca dispara uma campanha, um envio em massa ou um teste para um número/endereço real** sem pedido explícito do utilizador nessa conversa.
+- Credenciais de fornecedores vivem em `.env.local` — nunca no repositório.
 
 ## Verificação antes de dar por feito
 
 ```bash
+npx tsc --noEmit
 npm run lint
 npm test
 npm run build
 ```
 
-Os três têm de passar. Se não passarem, diz-se que não passaram e mostra-se o output — não se entrega como concluído.
+Os quatro têm de passar. Se não passarem, diz-se que não passaram e mostra-se o output — não se entrega como concluído.
 
-Para mudanças de UI, confirma em ecrã estreito (360px) e largo: a sidebar é redimensionável e colapsa em mobile (`hooks/use-mobile-breakpoints.ts`, `lib/sidebar.ts`).
+Para mudanças de UI, confirma em ecrã de tablet e de desktop: a sidebar é redimensionável e colapsa abaixo de `lg` (`hooks/use-mobile-breakpoints.ts`, `lib/sidebar.ts`).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -6,7 +6,6 @@ import { diffRecord } from "@/lib/audit";
 import { DEFAULT_FILTERS, type CompanyFilters } from "@/lib/companies";
 import { formatDateShort, formatMoney, formatPercent, nowLuandaLocal } from "@/lib/format";
 import { recordEvent } from "./audit-store";
-import { useSalesStore } from "./sales-store";
 import { useAutomationRunsStore } from "./automation-runs-store";
 
 export type CompanyPatch = Partial<
@@ -43,16 +42,6 @@ const PROFILE_LABELS: Record<Exclude<keyof CompanyProfile, "geo">, string> = {
 
 export function companyProfile(company: Company): CompanyProfile {
   return company.profile ?? EMPTY_PROFILE;
-}
-
-function syncIdentifiers(entries: [string, CompanyProfile][]) {
-  useSalesStore.setState((state) => {
-    const identifiers = { ...state.identifiers };
-    for (const [id, profile] of entries) {
-      identifiers[id] = { card: profile.card, nif: profile.nif, phone: profile.phone };
-    }
-    return { identifiers };
-  });
 }
 
 export type CompaniesView = "lista" | "grelha";
@@ -303,7 +292,6 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => {
         set((state) => ({
           companies: state.companies.map((item) => (item.id === id ? { ...item, profile: next } : item)),
         }));
-        syncIdentifiers([[id, next]]);
       };
       apply(profile);
       recordEvent({
@@ -335,14 +323,7 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => {
           }),
         ],
       }));
-      syncIdentifiers([
-        ...created.filter((company) => company.profile).map((company) => [company.id, company.profile!] as [string, CompanyProfile]),
-        ...updated,
-      ]);
-      return () => {
-        set({ companies: before });
-        syncIdentifiers(before.filter((company) => company.profile).map((company) => [company.id, company.profile!]));
-      };
+      return () => set({ companies: before });
     },
 
     registerContact: (id, date, label) =>

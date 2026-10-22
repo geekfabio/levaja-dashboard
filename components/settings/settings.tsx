@@ -10,7 +10,6 @@ import TemplatesTab from "./templates/templates-tab";
 import TeamsTab from "./teams/teams-tab";
 import ZonesTab from "./zones/zones-tab";
 import IntegrationsTab from "./integrations/integrations-tab";
-import CatalogTab from "./catalog/catalog-tab";
 import MessagingTab from "./messaging/messaging-tab";
 import PrivacyTab from "./privacy/privacy-tab";
 import AccessTab from "./access/access-tab";
@@ -24,7 +23,6 @@ const TABS: { key: SettingsTab; label: string }[] = [
   { key: "zonas", label: "Zonas" },
   { key: "acessos", label: "Acessos" },
   { key: "integracoes", label: "Integrações" },
-  { key: "catalogo", label: "Catálogo e preços" },
   { key: "mensagens", label: "Mensagens e saldo" },
   { key: "dados", label: "Proteção de dados" },
 ];
@@ -37,7 +35,6 @@ const PANELS: Record<SettingsTab, ComponentType> = {
   zonas: ZonesTab,
   acessos: AccessTab,
   integracoes: IntegrationsTab,
-  catalogo: CatalogTab,
   mensagens: MessagingTab,
   dados: PrivacyTab,
 };

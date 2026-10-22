@@ -16,6 +16,8 @@ export const buttonVariants = cva(
           "bg-muted text-foreground shadow-[0px_0px_0px_1px_var(--edge-shadow),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)] hover:bg-(--edge-strong) motion-safe:active:scale-[0.96]",
         subtle:
           "bg-border text-foreground shadow-[0px_0px_0px_1px_var(--edge-strong)] hover:bg-muted motion-safe:active:scale-[0.96]",
+        danger:
+          "bg-destructive text-primary-foreground shadow-[0px_0px_0px_1px_var(--edge-shadow),inset_0px_1px_0px_0px_rgba(255,255,255,0.15)] hover:bg-destructive/90 motion-safe:active:scale-[0.96]",
         ghost: "text-subtle hover:bg-white/6 hover:text-foreground motion-safe:active:scale-[0.96]",
         nav: "w-full justify-start rounded-lg text-sidebar-foreground hover:text-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:text-foreground data-[active=true]:shadow-[0px_0px_0px_1px_var(--edge-shadow),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)]",
         item: "w-full items-start justify-start gap-3 rounded-lg text-left font-normal whitespace-normal text-foreground hover:bg-white/4",

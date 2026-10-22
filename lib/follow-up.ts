@@ -2,18 +2,15 @@ import type { Company } from "@/data/companies";
 import { OPEN_OFFER_STATUSES, type DiscountOffer } from "@/data/discount-offers";
 import type { FollowUpType } from "@/data/follow-ups";
 import type { Opportunity } from "@/data/opportunities";
-import type { Sale } from "@/data/sales";
 import type { Task } from "@/data/tasks";
-import { purchaseStats } from "./sales";
 
-export type FollowUpKind = "agendado" | "tarefa" | "lembrete" | "sem-compras" | "proposta" | "desconto";
+export type FollowUpKind = "agendado" | "tarefa" | "lembrete" | "proposta" | "desconto";
 export type FollowUpBucket = "atrasado" | "hoje" | "semana" | "sugestao";
 
 export const FOLLOW_UP_KIND_LABELS: Record<FollowUpKind, string> = {
   agendado: "Contacto agendado",
   tarefa: "Tarefa",
   lembrete: "Lembrete",
-  "sem-compras": "Sem compras",
   proposta: "Proposta parada",
   desconto: "Proposta de desconto",
 };
@@ -22,7 +19,6 @@ export const FOLLOW_UP_KIND_TONES: Record<FollowUpKind, "blue" | "purple" | "tea
   agendado: "blue",
   tarefa: "purple",
   lembrete: "teal",
-  "sem-compras": "amber",
   proposta: "orange",
   desconto: "green",
 };
@@ -72,7 +68,6 @@ type Sources = {
   companies: Company[];
   tasks: Task[];
   opportunities: Opportunity[];
-  sales: Sale[];
   offers: DiscountOffer[];
   today: string;
 };
@@ -81,14 +76,13 @@ function percentLabel(value: number) {
   return `${value}%`;
 }
 
-export function buildFollowUps({ companies, tasks, opportunities, sales, offers, today }: Sources): FollowUpItem[] {
+export function buildFollowUps({ companies, tasks, opportunities, offers, today }: Sources): FollowUpItem[] {
   const active = companies.filter((company) => !company.archived);
   const names = new Map(active.map((company) => [company.id, company.name]));
   const items: FollowUpItem[] = [];
   const openOffers = offers.filter(
     (offer) => OPEN_OFFER_STATUSES.includes(offer.status) && offer.validUntil >= today && names.has(offer.companyId),
   );
-  const withOffer = new Set(openOffers.map((offer) => offer.companyId));
 
   for (const offer of openOffers) {
     const created = offer.createdAt.slice(0, 10);
@@ -132,21 +126,6 @@ export function buildFollowUps({ companies, tasks, opportunities, sales, offers,
           contactType: followUp.type,
         });
       }
-      continue;
-    }
-    if (withOffer.has(company.id)) continue;
-    const stats = purchaseStats(sales, company.id, today);
-    if (stats.atRisk) {
-      items.push({
-        id: `sem-compras-${company.id}`,
-        kind: "sem-compras",
-        bucket: "sugestao",
-        owner: company.owner,
-        title: company.name,
-        detail: `Sem compras há ${stats.daysSincePurchase} dias${stats.usualInterval ? ` (costuma comprar a cada ${stats.usualInterval})` : ""}.`,
-        companyId: company.id,
-        contactType: "Chamada",
-      });
     }
   }
 

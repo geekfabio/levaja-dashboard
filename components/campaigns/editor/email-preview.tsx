@@ -117,11 +117,11 @@ export default function EmailPreview({
           <Asset
             type="image"
             src={BRAND_LOGO}
-            alt="Alimenta Angola"
-            width={96}
-            height={64}
+            alt="Leva Já"
+            width={168}
+            height={40}
             fit="contain"
-            className="h-10 w-[60px]"
+            className="h-10 w-[168px]"
           />
         </div>
         <div aria-hidden className="bg-brand h-1.5" />
@@ -145,7 +145,7 @@ export default function EmailPreview({
         <div className="bg-brand-ink/5 text-brand-ink/60 flex flex-col gap-1 px-6 py-5 text-center text-[12px] leading-[1.5]">
           <span>{footer}</span>
           <span>
-            Recebe este e-mail por ser cliente da Alimenta Angola.{" "}
+            Recebe este e-mail por ser cliente do Leva Já.{" "}
             <span className="underline">Remover subscrição</span>
           </span>
         </div>

@@ -4,7 +4,7 @@ export const CALENDAR_PROVIDERS = [
     name: "Google Calendar",
     vendor: "Google Workspace ou Gmail",
     logo: "/assets/images/settings/integrations/google-calendar.svg",
-    scopes: ["Ver e editar eventos no calendário escolhido", "Criar o calendário «CRM — Alimenta Angola»"],
+    scopes: ["Ver e editar eventos no calendário escolhido", "Criar o calendário «CRM — Leva Já»"],
   },
   {
     id: "outlook",
@@ -37,4 +37,4 @@ export const SYNC_DIRECTIONS = ["Do CRM para o calendário", "Nos dois sentidos"
 
 export type SyncDirection = (typeof SYNC_DIRECTIONS)[number];
 
-export const CRM_CALENDAR_NAME = "CRM — Alimenta Angola";
+export const CRM_CALENDAR_NAME = "CRM — Leva Já";
