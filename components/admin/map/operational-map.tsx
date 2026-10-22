@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import AdminHeader from "@/components/admin/shell/admin-header";
-import LuandaMap from "@/components/admin/shared/luanda-map";
-import type { MapMarker } from "@/components/admin/shared/luanda-map";
 import RequestStatusBadge from "@/components/admin/shared/status-badge";
 import { ErrorState } from "@/components/_common/async-state";
 import Button from "@/components/_ui/button";
@@ -20,12 +18,31 @@ import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { STATUS_LABELS, STATUS_TONES } from "@/lib/leva-ja/status";
 import { cn } from "@/lib/utils";
+import type { VehicleClass } from "@/types/leva-ja";
+import OsmMap from "./osm-map/osm-map";
+import { VEHICLE_ICONS } from "./osm-map/map-marker";
+import type { MapMarker } from "./osm-map/map-marker";
+import RouteSummary from "./route-summary";
+import { useRequestRoute } from "./use-request-route";
 
 const LEGEND = [
-  { label: "Prestador online", className: "bg-brand-vivid" },
+  { label: "Viatura livre", className: "ring-brand-vivid bg-card ring-2" },
+  { label: "Viatura em serviço", className: "ring-info bg-card ring-2" },
   { label: "À procura de prestador", className: "bg-warning" },
-  { label: "Em curso", className: "bg-info" },
+  { label: "Pedido em curso", className: "bg-info" },
 ];
+
+const VEHICLE_CLASS_LABELS: Record<VehicleClass, string> = {
+  tow_truck: "Reboque",
+  pickup: "Pickup",
+  van: "Carrinha",
+  truck: "Camião",
+};
+
+function VehicleIcon({ vehicleClass }: { vehicleClass: VehicleClass }) {
+  const Icon = VEHICLE_ICONS[vehicleClass];
+  return <Icon aria-hidden className="size-3.5 shrink-0" />;
+}
 
 export default function OperationalMap() {
   const requests = useActiveRequests();
@@ -35,30 +52,46 @@ export default function OperationalMap() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showProviders, setShowProviders] = useState(true);
   const [showRequests, setShowRequests] = useState(true);
+  const [onlyFree, setOnlyFree] = useState(false);
+  const [focus, setFocus] = useState<string>("initial");
 
   const active = requests.data ?? [];
   const providers = positions.data ?? [];
+  const selectedRequest = active.find((request) => request.id === selectedId);
+  const selectedProvider = providers.find((provider) => provider.id === selectedId);
+  const route = useRequestRoute(selectedRequest);
+  const freeCount = providers.filter((provider) => !provider.activeRequestId).length;
+  const visibleProviders = providers.filter((provider) => !onlyFree || !provider.activeRequestId);
   const markers: MapMarker[] = [
     ...(showRequests
-      ? active.map((request) => ({
-          id: request.id,
-          kind: "request" as const,
-          coords: request.status === "in_transit" && request.provider ? request.provider.coords : request.origin.coords,
-          tone: STATUS_TONES[request.status],
-          label: `${request.code}, ${SERVICE_SHORT_LABELS[request.kind]}, ${STATUS_LABELS[request.status]}, ${request.origin.area}`,
-        }))
+      ? active
+          .filter((request) => request.id !== selectedId || !selectedRequest)
+          .map((request) => ({
+            id: request.id,
+            kind: "request" as const,
+            coords: request.status === "in_transit" && request.provider ? request.provider.coords : request.origin.coords,
+            tone: STATUS_TONES[request.status],
+            label: `${request.code}, ${SERVICE_SHORT_LABELS[request.kind]}, ${STATUS_LABELS[request.status]}, ${request.origin.area}`,
+          }))
       : []),
+    ...route.markers,
     ...(showProviders
-      ? providers.map((provider) => ({
+      ? visibleProviders.map((provider) => ({
           id: provider.id,
-          kind: "provider" as const,
+          kind: "vehicle" as const,
           coords: provider.coords,
-          label: `${provider.name}, ${provider.vehicleLabel}${provider.activeRequestId ? ", em serviço" : ", livre"}`,
+          vehicleClass: provider.vehicleClass,
+          busy: Boolean(provider.activeRequestId),
+          label: `${provider.name}, ${VEHICLE_CLASS_LABELS[provider.vehicleClass]} ${provider.vehicleLabel}${provider.activeRequestId ? ", em serviço" : ", livre"}`,
         }))
       : []),
   ];
-  const selectedRequest = active.find((request) => request.id === selectedId);
-  const selectedProvider = providers.find((provider) => provider.id === selectedId);
+
+  function select(id: string) {
+    setSelectedId((current) => (current === id ? null : id));
+    if (active.some((request) => request.id === id)) setFocus(id);
+  }
+
   const loading = requests.isPending || positions.isPending;
   const failed = requests.isError || positions.isError;
   const updatedAt = Math.max(requests.dataUpdatedAt, positions.dataUpdatedAt);
@@ -85,10 +118,14 @@ export default function OperationalMap() {
                 </li>
               ))}
             </ul>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <label className="caption-style text-soft flex cursor-pointer items-center gap-2">
                 <Checkbox checked={showProviders} onCheckedChange={(value) => setShowProviders(value === true)} />
-                Prestadores ({formatNumber(providers.length)})
+                Viaturas ({formatNumber(providers.length)})
+              </label>
+              <label className="caption-style text-soft flex cursor-pointer items-center gap-2">
+                <Checkbox checked={onlyFree} onCheckedChange={(value) => setOnlyFree(value === true)} disabled={!showProviders} />
+                Só livres ({formatNumber(freeCount)})
               </label>
               <label className="caption-style text-soft flex cursor-pointer items-center gap-2">
                 <Checkbox checked={showRequests} onCheckedChange={(value) => setShowRequests(value === true)} />
@@ -108,13 +145,16 @@ export default function OperationalMap() {
                 }}
               />
             ) : (
-              <LuandaMap
+              <OsmMap
                 markers={markers}
+                routes={route.routes}
                 zones={zones.data ?? []}
-                ariaLabel="Mapa de Luanda com prestadores online e pedidos activos. Use Tab para percorrer os marcadores."
+                fit={focus === "initial" ? undefined : route.points}
+                fitKey={focus}
+                ariaLabel="Mapa de Angola com as viaturas disponíveis e os pedidos activos. Use Tab para percorrer os marcadores."
                 selectedId={selectedId}
-                onSelect={setSelectedId}
-                className="absolute inset-0 rounded-none"
+                onSelect={select}
+                className="absolute inset-0"
               />
             )}
           </div>
@@ -135,6 +175,7 @@ export default function OperationalMap() {
                   <span className="caption-style text-subtle">
                     {selectedRequest.client?.name} · {selectedRequest.provider?.name ?? "sem prestador"}
                   </span>
+                  <RouteSummary legs={route.legs} className="pt-1" />
                   <Button variant="secondary" size="sm" href={`${SECTION_ROUTES.requests}/${selectedRequest.id}`} className="self-start">
                     Abrir pedido
                   </Button>
@@ -142,7 +183,10 @@ export default function OperationalMap() {
               ) : selectedProvider ? (
                 <>
                   <span className="lead-style font-medium">{selectedProvider.name}</span>
-                  <span className="caption-style text-soft">{selectedProvider.vehicleLabel}</span>
+                  <span className="caption-style text-soft flex items-center gap-1.5">
+                    <VehicleIcon vehicleClass={selectedProvider.vehicleClass} />
+                    {VEHICLE_CLASS_LABELS[selectedProvider.vehicleClass]} · {selectedProvider.vehicleLabel}
+                  </span>
                   <span className="caption-style text-subtle">
                     {selectedProvider.activeRequestId ? "Em serviço" : "Livre"} · {selectedProvider.services.map((service) => SERVICE_SHORT_LABELS[service]).join(", ")}
                   </span>
@@ -173,7 +217,7 @@ export default function OperationalMap() {
                       variant="item"
                       size="none"
                       aria-pressed={selectedId === request.id}
-                      onClick={() => setSelectedId(request.id)}
+                      onClick={() => select(request.id)}
                       className="aria-pressed:bg-muted items-center justify-between gap-3 px-2 py-2.5"
                     >
                       <span className="flex min-w-0 flex-col gap-1">

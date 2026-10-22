@@ -1,23 +1,32 @@
 "use client";
 
-import LuandaMap from "@/components/admin/shared/luanda-map";
+import OsmMap from "@/components/admin/map/osm-map/osm-map";
 import Tag from "@/components/_ui/tag";
 import { SERVICE_LABELS } from "@/lib/leva-ja/services";
+import { circlePoints } from "@/lib/map-projection";
 import type { ProviderAccount, Zone } from "@/types/leva-ja";
 
 export default function ProviderCoverage({ provider, zones }: { provider: ProviderAccount; zones: Zone[] }) {
   const covered = zones.filter((zone) => provider.zoneIds.includes(zone.id));
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="border-border relative aspect-[4/3] overflow-hidden rounded-xl border">
-        <LuandaMap
-          zones={covered}
-          markers={[{ id: provider.id, kind: "provider", coords: provider.coords, label: `Última posição de ${provider.name}` }]}
-          fit={[provider.coords, ...covered.map((zone) => zone.coords)]}
-          ariaLabel={`Zonas de cobertura de ${provider.name}: ${covered.map((zone) => zone.name).join(", ")}`}
-          className="absolute inset-0 rounded-none"
-        />
-      </div>
+      <OsmMap
+        zones={covered}
+        markers={[
+          {
+            id: provider.id,
+            kind: "vehicle",
+            coords: provider.coords,
+            vehicleClass: provider.vehicle.vehicleClass,
+            label: `Última posição de ${provider.name}`,
+          },
+        ]}
+        fit={[provider.coords, ...covered.flatMap((zone) => circlePoints(zone.coords, zone.radiusKm))]}
+        fitKey={provider.id}
+        compact
+        ariaLabel={`Zonas de cobertura de ${provider.name}: ${covered.map((zone) => zone.name).join(", ")}`}
+        className="border-border aspect-[4/3] rounded-xl border"
+      />
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <h3 className="eyebrow-style text-faint font-normal">Zonas</h3>

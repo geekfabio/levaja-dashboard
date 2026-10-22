@@ -2,10 +2,12 @@ import type { AdminSession } from "@/types/leva-ja";
 import type { Repositories } from "../repositories";
 import type { HttpClient, HttpClientOptions } from "./client";
 import { createHttpClient, polling } from "./client";
+import { createOsrmRouting } from "./routing";
 
 export type HttpRepositoriesOptions = Omit<HttpClientOptions, "getToken" | "onUnauthorized"> & {
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
   pollMs?: number;
+  routingUrl?: string;
 };
 
 export const HTTP_SESSION_KEY = "levaja.admin.session.v1";
@@ -31,7 +33,7 @@ function sessionStore(storage: HttpRepositoriesOptions["storage"]) {
   };
 }
 
-function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollMs: number): Repositories {
+function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollMs: number): Omit<Repositories, "routing"> {
   const subscribe = polling(pollMs);
   return {
     source: "http",
@@ -174,5 +176,5 @@ export function createHttpRepositories(options: HttpRepositoriesOptions): Reposi
     getToken: () => session.read()?.token ?? null,
     onUnauthorized: () => session.write(null),
   });
-  return build(http, session, options.pollMs ?? 15_000);
+  return { ...build(http, session, options.pollMs ?? 15_000), routing: createOsrmRouting({ baseUrl: options.routingUrl, fetch: options.fetch }) };
 }

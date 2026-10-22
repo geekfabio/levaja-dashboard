@@ -15,7 +15,7 @@ Todos os dados vêm de `repositories()` (`data/leva-ja/`). Em modo mock, a `Mock
 | 1 | Login (mock) | `/admin/login` | E-mail e código de 6 dígitos. Cada papel (`admin`, `operations`, `support`, `finance`) só vê as suas secções. |
 | 2 | Visão geral | `/admin` | KPIs do dia e da semana, gráficos de pedidos, serviços, funil e receita, e a lista «precisa de atenção». |
 | 3 | Pedidos | `/admin/pedidos[/id]` | Tabela com filtros e paginação; detalhe com trajecto, linha temporal, preço, proposta, comprovativo, pagamento e avaliação; reatribuir, cancelar, abrir disputa e forçar conclusão, sempre com motivo. |
-| 4 | Mapa operacional | `/admin/mapa` | Prestadores online e pedidos activos sobre Luanda, com posições simuladas que se actualizam. |
+| 4 | Mapa operacional | `/admin/mapa` | Mapa OpenStreetMap de Angola com zoom e arrastar; viaturas disponíveis por classe (livres e em serviço) e pedidos activos, com posições simuladas que se actualizam. Ao escolher um pedido, desenha a rota pelas estradas (prestador → recolha → paragens → entrega) com km e duração por troço e no total. |
 | 5 | Prestadores | `/admin/prestadores[/id]` | Estado, verificação, avaliação, viatura, zonas e ganhos; documentos, cobertura, carteira, avaliações e histórico; aprovar, suspender e reactivar. |
 | 6 | Validação de documentos | `/admin/documentos` | Fila de documentos por validar com pré-visualização, aprovar ou recusar com motivo, e alerta dos que expiram em 30 dias. |
 | 7 | Clientes | `/admin/clientes[/id]` | Lista e detalhe (pedidos, métodos de pagamento, avaliações dadas, ocorrências), com bloqueio e desbloqueio. |
@@ -70,4 +70,4 @@ A classe ABC (campanhas e condições das automações) passou a ser calculada p
 
 - Backend real e autenticação real do painel (o esqueleto HTTP existe; a API é da app móvel).
 - Pagamentos reais (Multicaixa, cartão) e transferências de levantamentos.
-- Mapas com tiles reais — o mapa operacional é um SVG de Luanda simulado.
+- Servidor próprio de tiles e de rotas — por agora usam-se os servidores públicos do OpenStreetMap e do OSRM, só para demonstração.

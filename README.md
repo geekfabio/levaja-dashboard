@@ -84,6 +84,17 @@ Endpoints usados (os da app móvel mantêm os nomes):
 
 As acções críticas enviam `reason` no corpo, que o servidor deve guardar na auditoria.
 
+### Mapa e rotas
+
+Os mapas usam tiles do OpenStreetMap e as rotas pelas estradas vêm de um servidor OSRM (`GET /route/v1/driving/{lng},{lat};…?overview=full&geometries=geojson`). Se o servidor de rotas falhar, o painel mostra uma estimativa em linha recta e avisa. Os dois endereços são configuráveis:
+
+```bash
+NEXT_PUBLIC_MAP_TILES_URL=https://tile.openstreetmap.org/{z}/{x}/{y}.png
+NEXT_PUBLIC_ROUTING_URL=https://router.project-osrm.org
+```
+
+Os servidores públicos servem só para demonstração (as regras de uso do OpenStreetMap e do OSRM não permitem tráfego de produção). Em produção, aponte para servidores próprios ou contratados e mantenha a atribuição «© Colaboradores do OpenStreetMap».
+
 ## Estrutura
 
 ```

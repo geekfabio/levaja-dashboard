@@ -145,6 +145,7 @@ export function createMockProviders(db: MockDatabase): ProvidersRepository {
             availability: provider.availability,
             rating: provider.rating,
             vehicleLabel: `${provider.vehicle.brand} ${provider.vehicle.model} · ${provider.vehicle.plate}`,
+            vehicleClass: provider.vehicle.vehicleClass,
             activeRequestId: ctx.state.requests.find(
               (request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status),
             )?.id,

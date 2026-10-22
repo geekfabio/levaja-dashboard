@@ -330,9 +330,13 @@ Todas as fases estão feitas, com um commit por fase. No fim de cada uma, `npx t
 - Aprovar um prestador exige os quatro documentos válidos; suspender exige que não tenha pedido em curso.
 - O contrato de suporte ganhou `assignees()`, para o papel Suporte poder atribuir ocorrências sem acesso à gestão de utilizadores.
 - A classe ABC do CRM (campanhas e automações) passou a ser calculada pelo valor em carteira, porque as vendas foram removidas.
-- O mapa operacional é um SVG de Luanda com zonas, prestadores e pedidos; as posições mexem com o ticker do mock.
+- O mapa (operacional, detalhe do pedido, cobertura do prestador e zonas) usa tiles do OpenStreetMap num componente próprio, `components/admin/map/osm-map/`, sem biblioteca nova: projecção Web Mercator em `lib/map-projection.ts`, arrastar, roda do rato, duplo clique, teclado (setas, + e −), botões «Angola» e «Luanda», agrupamento de marcadores abaixo do zoom 11, escala e atribuição «© Colaboradores do OpenStreetMap». O centro fica limitado à volta de Angola (zoom 5 a 18).
+- As viaturas aparecem com o ícone da classe (reboque, pickup, carrinha, camião), verdes quando livres e azuis quando em serviço; as posições mexem com o ticker do mock.
+- As rotas vêm do `RoutingRepository` (`data/leva-ja/repositories/routing.ts`): implementação OSRM em `data/leva-ja/http/routing.ts`, usada pelo mock e pelo HTTP, com cache e, se o serviço falhar, a estimativa de `lib/leva-ja/routing.ts` (linha recta × 1,35 a 28 km/h). A duração é ajustada à classe da viatura (camião e reboque × 1,25, carrinha × 1,1). O plano da rota (`routePlan`) liga o prestador à recolha até chegar e à entrega quando está em transporte.
+- Endereços configuráveis: `NEXT_PUBLIC_MAP_TILES_URL` (por omissão `https://tile.openstreetmap.org/{z}/{x}/{y}.png`) e `NEXT_PUBLIC_ROUTING_URL` (por omissão o servidor público de demonstração do OSRM). Os dois servidores públicos são só para demonstração; em produção usa-se um servidor de tiles e um OSRM próprios ou contratados.
 
 **Por decidir com o utilizador**
 - Ficheiros da marca antiga que já não são usados ou continuam com o logótipo da Alimenta Angola: `public/assets/images/_common/brand/alimenta-angola-logo.png`, `app/favicon.ico` e `app/apple-icon.png`. Não foram apagados nem substituídos porque não estavam na lista de remoção aprovada.
 - `UI_ROADMAP.md` ainda descreve o CRM da Alimenta Angola.
+- `components/admin/shared/luanda-map.tsx` (o mapa SVG anterior) deixou de ser usado com o mapa OpenStreetMap. Não foi apagado, por não estar na lista aprovada.
 - Código que ficou sem uso depois da remoção de Previsão e Relatórios: `components/_common/at-risk-list.tsx`, `lib/reports.ts` e `lib/dashboard.ts`. Compilam e não foram apagados, por não estarem na lista aprovada.

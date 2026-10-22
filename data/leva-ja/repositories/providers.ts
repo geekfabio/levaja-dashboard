@@ -5,6 +5,7 @@ import type {
   ServiceKind,
   ServiceRequest,
   Transaction,
+  VehicleClass,
 } from "@/types/leva-ja";
 import type { Page, PageQuery, RealtimeListener, Unsubscribe } from "./common";
 
@@ -20,7 +21,7 @@ export type ProviderFilters = PageQuery & {
 export type ProviderPosition = Pick<
   ProviderAccount,
   "id" | "name" | "initials" | "coords" | "services" | "availability" | "rating"
-> & { activeRequestId?: string; vehicleLabel: string };
+> & { activeRequestId?: string; vehicleLabel: string; vehicleClass: VehicleClass };
 
 export interface ProvidersRepository {
   list(filters?: ProviderFilters): Promise<Page<ProviderAccount>>;

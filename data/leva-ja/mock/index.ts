@@ -10,6 +10,8 @@ import { createMockMetrics } from "./metrics";
 import { createMockPricing } from "./pricing";
 import { createMockProviders } from "./providers";
 import { createMockRequests } from "./requests";
+import { createOsrmRouting } from "../http/routing";
+import type { RoutingRepository } from "../repositories/routing";
 import { createMockSettings } from "./settings";
 import { createMockSupport } from "./support";
 import { tick } from "./ticker";
@@ -17,7 +19,9 @@ import { createMockZones } from "./zones";
 
 export type MockRepositories = Repositories & { database: MockDatabase };
 
-export function createMockRepositories(options: MockDatabaseOptions = {}): MockRepositories {
+export type MockRepositoriesOptions = MockDatabaseOptions & { routing?: RoutingRepository };
+
+export function createMockRepositories(options: MockRepositoriesOptions = {}): MockRepositories {
   const database = new MockDatabase(options);
   database.setTicker(tick);
   return {
@@ -35,6 +39,7 @@ export function createMockRepositories(options: MockDatabaseOptions = {}): MockR
     metrics: createMockMetrics(database),
     audit: createMockAudit(database),
     settings: createMockSettings(database),
+    routing: options.routing ?? createOsrmRouting(),
     demo: {
       settings: () => ({ ...database.settings }),
       configure: (settings) => database.configure(settings),

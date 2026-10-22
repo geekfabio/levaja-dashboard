@@ -7,13 +7,14 @@ import SettingsPanel from "@/components/settings/settings-panel";
 import Button from "@/components/_ui/button";
 import Skeleton from "@/components/_ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/_ui/table";
-import LuandaMap from "@/components/admin/shared/luanda-map";
+import OsmMap from "@/components/admin/map/osm-map/osm-map";
 import { errorMessage } from "@/data/leva-ja";
 import type { ZoneWithStats } from "@/data/leva-ja";
 import { mutationError } from "@/hooks/admin/use-admin-mutation";
 import { useRemoveZone } from "@/hooks/admin/use-pricing";
 import { useZones } from "@/hooks/admin/use-zones";
 import { formatDecimal, formatNumber } from "@/lib/format";
+import { circlePoints } from "@/lib/map-projection";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 import ZoneDialog from "./zone-dialog";
 
@@ -103,9 +104,14 @@ export default function ZonesPanel({ canEdit }: { canEdit: boolean }) {
         </AsyncState>
       </SettingsPanel>
       <SettingsPanel title="Mapa das zonas" className="bg-card">
-        <div className="border-border relative aspect-square overflow-hidden rounded-xl border">
-          <LuandaMap zones={zones.data ?? []} markers={[]} ariaLabel={`Zonas de Luanda: ${(zones.data ?? []).map((zone) => zone.name).join(", ")}`} className="absolute inset-0 rounded-none" />
-        </div>
+        <OsmMap
+          zones={zones.data ?? []}
+          markers={[]}
+          fit={(zones.data ?? []).flatMap((zone) => circlePoints(zone.coords, zone.radiusKm))}
+          fitKey={zones.data ? "zones" : "loading"}
+          ariaLabel={`Zonas de cobertura: ${(zones.data ?? []).map((zone) => zone.name).join(", ")}`}
+          className="border-border aspect-square rounded-xl border"
+        />
       </SettingsPanel>
 
       {editing && <ZoneDialog key={editing === "new" ? "new" : editing.id} zone={editing === "new" ? null : editing} onClose={() => setEditing(null)} />}

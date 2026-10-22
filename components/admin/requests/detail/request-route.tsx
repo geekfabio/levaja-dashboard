@@ -1,34 +1,40 @@
 "use client";
 
-import LuandaMap from "@/components/admin/shared/luanda-map";
-import type { MapMarker } from "@/components/admin/shared/luanda-map";
+import OsmMap from "@/components/admin/map/osm-map/osm-map";
+import type { MapMarker } from "@/components/admin/map/osm-map/map-marker";
+import RouteSummary from "@/components/admin/map/route-summary";
+import { useRequestRoute } from "@/components/admin/map/use-request-route";
 import { formatKm, formatMinutes } from "@/lib/format";
 import { isActive } from "@/lib/leva-ja/status";
 import type { ServiceRequest, Zone } from "@/types/leva-ja";
 
 export default function RequestRoute({ request, zones }: { request: ServiceRequest; zones: Zone[] }) {
-  const markers: MapMarker[] = [
-    { id: "origin", kind: "origin", coords: request.origin.coords, label: `Recolha: ${request.origin.label}, ${request.origin.area}` },
-    ...request.stops.map((stop) => ({ id: stop.id, kind: "stop" as const, coords: stop.coords, label: `Paragem: ${stop.label}, ${stop.area}` })),
-    { id: "destination", kind: "destination", coords: request.destination.coords, label: `Entrega: ${request.destination.label}, ${request.destination.area}` },
-  ];
+  const route = useRequestRoute(request);
+  const markers: MapMarker[] = [...route.markers];
   if (request.provider && isActive(request.status)) {
-    markers.push({ id: request.provider.id, kind: "provider", coords: request.provider.coords, label: `Prestador: ${request.provider.name}` });
+    markers.push({
+      id: request.provider.id,
+      kind: "vehicle",
+      coords: request.provider.coords,
+      vehicleClass: request.provider.vehicle.vehicleClass,
+      busy: true,
+      label: `Prestador: ${request.provider.name}`,
+    });
   }
-  const points = [request.origin.coords, ...request.stops.map((stop) => stop.coords), request.destination.coords];
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-        <LuandaMap
-          markers={markers}
-          routes={[{ id: "route", points, tone: "info" }]}
-          zones={zones}
-          fit={markers.map((marker) => marker.coords)}
-          ariaLabel={`Trajecto de ${request.origin.area} para ${request.destination.area}`}
-          className="absolute inset-0"
-        />
-      </div>
+      <OsmMap
+        markers={markers}
+        routes={route.routes}
+        zones={zones}
+        fit={[...markers.map((marker) => marker.coords), ...route.points]}
+        fitKey={request.id}
+        ariaLabel={`Trajecto de ${request.origin.area} para ${request.destination.area}`}
+        compact
+        className="aspect-[4/3] w-full rounded-xl"
+      />
+      <RouteSummary legs={route.legs} />
       <ol className="flex flex-col gap-2">
         <li className="flex gap-2">
           <span className="caption-style bg-primary text-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-full font-semibold">A</span>
@@ -54,8 +60,8 @@ export default function RequestRoute({ request, zones }: { request: ServiceReque
           </span>
         </li>
       </ol>
-      <p className="caption-style text-soft tabular-nums">
-        {formatKm(request.distanceKm)} · cerca de {formatMinutes(request.durationMin)} de trajecto
+      <p className="caption-style text-subtle tabular-nums">
+        Estimativa usada no preço: {formatKm(request.distanceKm)} · cerca de {formatMinutes(request.durationMin)} de trajecto
       </p>
     </div>
   );
