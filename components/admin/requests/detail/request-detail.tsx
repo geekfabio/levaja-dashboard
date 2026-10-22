@@ -18,7 +18,7 @@ import { canAccessSection, hasPermission } from "@/lib/leva-ja/permissions";
 import { PAYMENT_LABELS } from "@/lib/leva-ja/services";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
-import StarIcon from "@/public/assets/images/companies/detail/star-filled.svg";
+import Stars from "@/components/admin/shared/stars";
 import RequestActions from "./request-actions";
 import RequestPrice from "./request-price";
 import RequestRoute from "./request-route";
@@ -176,15 +176,7 @@ export default function RequestDetail({ id }: { id: string }) {
                   )}
                   {request.rating !== undefined ? (
                     <div className="border-border flex flex-col gap-2 border-t pt-3">
-                      <span className="flex items-center gap-0.5" aria-label={`${request.rating} de 5 estrelas`} role="img">
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <StarIcon
-                            key={index}
-                            aria-hidden
-                            className={index < (request.rating ?? 0) ? "text-warning size-4 [&_path]:fill-current" : "text-line-strong size-4 [&_path]:fill-current"}
-                          />
-                        ))}
-                      </span>
+                      <Stars rating={request.rating} />
                       {request.review && <p className="caption-style text-soft">«{request.review}»</p>}
                     </div>
                   ) : (
