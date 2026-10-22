@@ -9,13 +9,13 @@ export default function ProviderCoverage({ provider, zones }: { provider: Provid
   const covered = zones.filter((zone) => provider.zoneIds.includes(zone.id));
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="border-border aspect-[4/3] overflow-hidden rounded-xl border">
+      <div className="border-border relative aspect-[4/3] overflow-hidden rounded-xl border">
         <LuandaMap
           zones={covered}
           markers={[{ id: provider.id, kind: "provider", coords: provider.coords, label: `Última posição de ${provider.name}` }]}
           fit={[provider.coords, ...covered.map((zone) => zone.coords)]}
           ariaLabel={`Zonas de cobertura de ${provider.name}: ${covered.map((zone) => zone.name).join(", ")}`}
-          className="rounded-none"
+          className="absolute inset-0 rounded-none"
         />
       </div>
       <div className="flex flex-col gap-5">

@@ -103,8 +103,8 @@ export default function ZonesPanel({ canEdit }: { canEdit: boolean }) {
         </AsyncState>
       </SettingsPanel>
       <SettingsPanel title="Mapa das zonas" className="bg-card">
-        <div className="border-border aspect-square overflow-hidden rounded-xl border">
-          <LuandaMap zones={zones.data ?? []} markers={[]} ariaLabel={`Zonas de Luanda: ${(zones.data ?? []).map((zone) => zone.name).join(", ")}`} className="rounded-none" />
+        <div className="border-border relative aspect-square overflow-hidden rounded-xl border">
+          <LuandaMap zones={zones.data ?? []} markers={[]} ariaLabel={`Zonas de Luanda: ${(zones.data ?? []).map((zone) => zone.name).join(", ")}`} className="absolute inset-0 rounded-none" />
         </div>
       </SettingsPanel>
 

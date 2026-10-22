@@ -19,13 +19,14 @@ export default function RequestRoute({ request, zones }: { request: ServiceReque
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="aspect-[16/9] w-full">
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
         <LuandaMap
           markers={markers}
           routes={[{ id: "route", points, tone: "info" }]}
           zones={zones}
           fit={markers.map((marker) => marker.coords)}
           ariaLabel={`Trajecto de ${request.origin.area} para ${request.destination.area}`}
+          className="absolute inset-0"
         />
       </div>
       <ol className="flex flex-col gap-2">

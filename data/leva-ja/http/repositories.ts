@@ -1,0 +1,171 @@
+import type { AdminSession } from "@/types/leva-ja";
+import type { Repositories } from "../repositories";
+import type { HttpClient, HttpClientOptions } from "./client";
+import { createHttpClient, polling } from "./client";
+
+export type HttpRepositoriesOptions = Omit<HttpClientOptions, "getToken" | "onUnauthorized"> & {
+  storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
+  pollMs?: number;
+};
+
+export const HTTP_SESSION_KEY = "levaja.admin.session.v1";
+
+const id = encodeURIComponent;
+
+function sessionStore(storage: HttpRepositoriesOptions["storage"]) {
+  return {
+    read(): AdminSession | null {
+      try {
+        const raw = storage?.getItem(HTTP_SESSION_KEY);
+        return raw ? (JSON.parse(raw) as AdminSession) : null;
+      } catch {
+        return null;
+      }
+    },
+    write(session: AdminSession | null) {
+      try {
+        if (session) storage?.setItem(HTTP_SESSION_KEY, JSON.stringify(session));
+        else storage?.removeItem(HTTP_SESSION_KEY);
+      } catch {}
+    },
+  };
+}
+
+function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollMs: number): Repositories {
+  const subscribe = polling(pollMs);
+  return {
+    source: "http",
+    demo: null,
+
+    auth: {
+      requestCode: (email) => http.post("/auth/request-code", { email }),
+      login: async (email, code) => {
+        const created = await http.post<AdminSession>("/auth/login", { email, code });
+        session.write(created);
+        return created;
+      },
+      currentSession: async () => {
+        if (!session.read()) return null;
+        try {
+          const current = await http.get<AdminSession>("/auth/session");
+          session.write(current);
+          return current;
+        } catch {
+          session.write(null);
+          return null;
+        }
+      },
+      logout: async () => {
+        try {
+          await http.post("/auth/logout");
+        } finally {
+          session.write(null);
+        }
+      },
+      listUsers: () => http.get("/admin/users"),
+      createUser: (input, reason) => http.post("/admin/users", { ...input, reason }),
+      changeRole: (userId, role, reason) => http.post(`/admin/users/${id(userId)}/role`, { role, reason }),
+      setActive: (userId, active, reason) => http.post(`/admin/users/${id(userId)}/${active ? "activate" : "deactivate"}`, { reason }),
+    },
+
+    requests: {
+      list: (filters = {}) => http.get("/admin/requests", filters),
+      get: (requestId) => http.get(`/admin/requests/${id(requestId)}`),
+      reassignCandidates: (requestId) => http.get(`/admin/requests/${id(requestId)}/candidates`),
+      reassign: (requestId, providerId, reason) => http.post(`/admin/requests/${id(requestId)}/reassign`, { providerId, reason }),
+      cancel: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/cancel`, { reason }),
+      openDispute: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/dispute`, { reason }),
+      forceComplete: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/force-complete`, { reason }),
+      active: () => http.get("/admin/requests/active"),
+      subscribe: (listener) => subscribe("requests", listener),
+    },
+
+    providers: {
+      list: (filters = {}) => http.get("/admin/providers", filters),
+      get: (providerId) => http.get(`/providers/${id(providerId)}`),
+      approve: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/approve`, { reason }),
+      suspend: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/suspend`, { reason }),
+      reactivate: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/reactivate`, { reason }),
+      transactions: (providerId, query = {}) => http.get(`/providers/${id(providerId)}/earnings`, query),
+      reviews: (providerId, query = {}) => http.get(`/providers/${id(providerId)}/reviews`, query),
+      requests: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/requests`, query),
+      positions: () => http.get("/admin/providers/positions"),
+      subscribe: (listener) => subscribe("providers", listener),
+    },
+
+    documents: {
+      queue: (filters = {}) => http.get("/admin/documents", filters),
+      expiring: (withinDays = 30) => http.get("/admin/documents/expiring", { withinDays }),
+      approve: (documentId, validUntil) => http.post(`/admin/documents/${id(documentId)}/approve`, { validUntil }),
+      reject: (documentId, reason) => http.post(`/admin/documents/${id(documentId)}/reject`, { reason }),
+    },
+
+    clients: {
+      list: (filters = {}) => http.get("/admin/clients", filters),
+      get: (clientId) => http.get(`/clients/${id(clientId)}`),
+      requests: (clientId, query = {}) => http.get(`/admin/clients/${id(clientId)}/requests`, query),
+      reviewsGiven: (clientId) => http.get(`/admin/clients/${id(clientId)}/reviews`),
+      tickets: (clientId) => http.get(`/admin/clients/${id(clientId)}/tickets`),
+      block: (clientId, reason) => http.post(`/admin/clients/${id(clientId)}/block`, { reason }),
+      unblock: (clientId, reason) => http.post(`/admin/clients/${id(clientId)}/unblock`, { reason }),
+    },
+
+    finance: {
+      revenue: (range) => http.get("/admin/revenue", range),
+      withdrawals: (filters = {}) => http.get("/admin/withdrawals", filters),
+      requestWithdrawal: (providerId, amount) => http.post("/admin/withdrawals", { providerId, amount }),
+      approveWithdrawal: (withdrawalId) => http.post(`/admin/withdrawals/${id(withdrawalId)}/approve`),
+      rejectWithdrawal: (withdrawalId, reason) => http.post(`/admin/withdrawals/${id(withdrawalId)}/reject`, { reason }),
+      markWithdrawalPaid: (withdrawalId, paymentReference) => http.post(`/admin/withdrawals/${id(withdrawalId)}/paid`, { paymentReference }),
+      transactions: (filters = {}) => http.get("/admin/transactions", filters),
+      exportTransactions: (filters = {}) => http.get("/admin/transactions/export", filters),
+    },
+
+    pricing: {
+      get: () => http.get("/admin/pricing"),
+      update: (update, reason) => http.put("/admin/pricing", { ...update, reason }),
+    },
+
+    zones: {
+      list: () => http.get("/admin/zones"),
+      create: (input, reason) => http.post("/admin/zones", { ...input, reason }),
+      update: (zoneId, input, reason) => http.put(`/admin/zones/${id(zoneId)}`, { ...input, reason }),
+      remove: (zoneId, reason) => http.del(`/admin/zones/${id(zoneId)}`, { reason }),
+    },
+
+    support: {
+      assignees: () => http.get("/admin/tickets/assignees"),
+      tickets: (filters = {}) => http.get("/admin/tickets", filters),
+      ticket: (ticketId) => http.get(`/admin/tickets/${id(ticketId)}`),
+      assignTicket: (ticketId, adminId) => http.post(`/admin/tickets/${id(ticketId)}/assign`, { adminId }),
+      replyTicket: (ticketId, body) => http.post(`/admin/tickets/${id(ticketId)}/reply`, { body }),
+      resolveTicket: (ticketId, resolution) => http.post(`/admin/tickets/${id(ticketId)}/resolve`, { resolution }),
+      sosAlerts: (status) => http.get("/admin/sos", { status }),
+      acknowledgeSos: (sosId) => http.post(`/admin/sos/${id(sosId)}/acknowledge`),
+      resolveSos: (sosId, resolution) => http.post(`/admin/sos/${id(sosId)}/resolve`, { resolution }),
+      lowRatings: (query = {}) => http.get("/admin/reviews/low", query),
+      markReviewHandled: (reviewId, note) => http.post(`/admin/reviews/${id(reviewId)}/handled`, { note }),
+      subscribe: (listener) => subscribe("support", listener),
+    },
+
+    metrics: {
+      overview: (range) => http.get("/admin/metrics", range),
+      attention: () => http.get("/admin/metrics/attention"),
+    },
+
+    audit: {
+      list: (filters = {}) => http.get("/admin/audit", filters),
+    },
+  };
+}
+
+export function createHttpRepositories(options: HttpRepositoriesOptions): Repositories {
+  const session = sessionStore(options.storage ?? null);
+  const http = createHttpClient({
+    baseUrl: options.baseUrl,
+    fetch: options.fetch,
+    getToken: () => session.read()?.token ?? null,
+    onUnauthorized: () => session.write(null),
+  });
+  return build(http, session, options.pollMs ?? 15_000);
+}

@@ -184,13 +184,13 @@ data/leva-ja/
 ### Fases (um commit pequeno por fase)
 
 1. Inventário e plano. **Feito.**
-2. Tipos, contratos, MockDatabase, gerador e testes de contrato. **Em curso.**
-3. Layout do painel (sidebar e topbar do CRM), login mock e permissões por papel. Inclui o rebrand do CRM e a remoção de módulos (secção 2).
-4. Visão geral e pedidos (lista, detalhe e acções).
-5. Prestadores e validação de documentos.
-6. Clientes, finanças e levantamentos.
-7. Preços, zonas, suporte e SOS, auditoria e utilizadores.
-8. Esqueleto HTTP, README (como correr, como ligar à API, credenciais de demonstração) e revisão final.
+2. Tipos, contratos, MockDatabase, gerador e testes de contrato. **Feito.**
+3. Layout do painel (sidebar e topbar do CRM), login mock e permissões por papel. Inclui o rebrand do CRM e a remoção de módulos (secção 2). **Feito.**
+4. Visão geral e pedidos (lista, detalhe e acções). **Feito.**
+5. Prestadores e validação de documentos. **Feito.**
+6. Clientes, finanças e levantamentos. **Feito.**
+7. Preços, zonas, suporte e SOS, auditoria e utilizadores. **Feito.**
+8. Esqueleto HTTP, README (como correr, como ligar à API, credenciais de demonstração) e revisão final. **Feito.**
 
 ### Critérios de conclusão
 
@@ -313,20 +313,26 @@ data/leva-ja/
 
 ---
 
-## 4. Estado actual (onde parou)
+## 4. Estado actual
 
-**Feito**
-- `git init` com o commit inicial `a7773df`. `.claude/settings.local.json` foi para o `.gitignore`.
-- `npm install`. Estado de partida: lint OK, 46 testes OK; o `tsc` só falhava nos imports de `.svg`.
-- `types/svg.d.ts`, que resolve esses erros (ainda por confirmar com `npx tsc --noEmit`).
-- `types/leva-ja.ts`.
-- `lib/leva-ja/status.ts`, `services.ts` (rótulos pt-PT), `pricing.ts`, `eligibility.ts` e `permissions.ts`.
-- `lib/format.ts`: acrescentados `formatKz`, `groupThousands`, `formatDateTimeNumeric`, `formatDateNumeric` e `luandaDay`.
-- Todos os contratos em `data/leva-ja/repositories/`: `errors`, `common`, `admin-auth`, `requests`, `providers`, `documents`, `clients`, `finance`, `pricing`, `zones`, `support`, `metrics`, `audit`, `demo` e `index`.
+Todas as fases estão feitas, com um commit por fase. No fim de cada uma, `npx tsc --noEmit`, `npm run lint`, `npm test` e `npm run build` passaram.
 
-**Próximos passos (para fechar a Fase 2)**
-1. `data/leva-ja/mock/`: `random.ts`, `seed.ts` (gerador), `database.ts` (MockDatabase), uma implementação por repositório e `index.ts` (`createMockRepositories`).
-2. `data/leva-ja/index.ts` com `repositories()`, por agora só com mock. O http entra na Fase 8.
-3. Testes de contrato e de preço/formatação em `tests/leva-ja-*.test.ts`.
-4. Correr `npx tsc --noEmit`, `npm run lint` e `npm test`, e depois fazer o commit da Fase 2.
-5. Seguir pelas Fases 3 a 8, com um commit por fase.
+**O que existe**
+- `data/leva-ja/mock/`: gerador com semente fixa (`seed.ts`), `MockDatabase` (latência, falhas, cópias defensivas, `localStorage` com deslocação das datas para o dia actual, `subscribe` e ticker), uma implementação por repositório e `createMockRepositories`.
+- `data/leva-ja/http/`: cliente REST com conversão de erros e todos os repositórios; `repositories()` escolhe por `NEXT_PUBLIC_DATA_SOURCE` (mock por omissão) e `NEXT_PUBLIC_API_URL`.
+- Páginas: `/admin/login`, `/admin`, `pedidos[/id]`, `mapa`, `prestadores[/id]`, `documentos`, `clientes[/id]`, `financas`, `precos`, `suporte`, `utilizadores`, `auditoria` e `definicoes`.
+- Hooks de TanStack Query em `hooks/admin/`; peças genéricas em `components/_ui/skeleton.tsx`, `components/_common/{async-state,pagination,confirm-dialog}.tsx` e `components/_common/charts/`.
+- Testes: `tests/leva-ja-contracts.test.ts` (regras de negócio, permissões, auditoria), `leva-ja-domain.test.ts` (preço, formatação, máquina de estados, gerador, CSV) e `leva-ja-http.test.ts` (endpoints e erros).
+
+**Decisões tomadas durante a implementação**
+- Os timestamps do painel são ISO em UTC; os dias (`YYYY-MM-DD`) são do fuso de Luanda.
+- O saldo reservado de um prestador inclui os levantamentos pendentes **e** aprovados ainda não pagos.
+- Aprovar um prestador exige os quatro documentos válidos; suspender exige que não tenha pedido em curso.
+- O contrato de suporte ganhou `assignees()`, para o papel Suporte poder atribuir ocorrências sem acesso à gestão de utilizadores.
+- A classe ABC do CRM (campanhas e automações) passou a ser calculada pelo valor em carteira, porque as vendas foram removidas.
+- O mapa operacional é um SVG de Luanda com zonas, prestadores e pedidos; as posições mexem com o ticker do mock.
+
+**Por decidir com o utilizador**
+- Ficheiros da marca antiga que já não são usados ou continuam com o logótipo da Alimenta Angola: `public/assets/images/_common/brand/alimenta-angola-logo.png`, `app/favicon.ico` e `app/apple-icon.png`. Não foram apagados nem substituídos porque não estavam na lista de remoção aprovada.
+- `UI_ROADMAP.md` ainda descreve o CRM da Alimenta Angola.
+- Código que ficou sem uso depois da remoção de Previsão e Relatórios: `components/_common/at-risk-list.tsx`, `lib/reports.ts` e `lib/dashboard.ts`. Compilam e não foram apagados, por não estarem na lista aprovada.

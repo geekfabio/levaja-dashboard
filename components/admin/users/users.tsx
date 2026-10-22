@@ -68,7 +68,7 @@ export default function Users() {
                               <span className="font-medium">{user.name}</span>
                               {self && (
                                 <Tag tone="neutral" size="sm">
-                                  Você
+                                  Sessão actual
                                 </Tag>
                               )}
                             </span>

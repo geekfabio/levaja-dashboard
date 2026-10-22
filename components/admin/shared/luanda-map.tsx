@@ -140,7 +140,8 @@ export default function LuandaMap({ markers, routes = [], zones = [], fit, ariaL
   const reduceMotion = useReducedMotion();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const viewBox = viewBoxFor(fit);
-  const scale = Number(viewBox.split(" ")[2]) / WIDTH;
+  const [, , boxWidth, boxHeight] = viewBox.split(" ").map(Number);
+  const scale = fit?.length ? Math.max(boxWidth, boxHeight * 1.6) / WIDTH : boxWidth / WIDTH;
   const size = Math.max(3, 9 * scale);
   const textSize = Math.max(7, 12 * scale);
 
