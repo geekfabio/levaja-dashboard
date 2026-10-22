@@ -127,6 +127,7 @@ export const TRANSACTION_KIND_LABELS: Record<Transaction["kind"], string> = {
   earning: "Ganho",
   fee: "Comissão",
   withdrawal: "Levantamento",
+  refund: "Reembolso",
 };
 
 export const TRANSACTION_STATUS_LABELS: Record<Transaction["status"], string> = {

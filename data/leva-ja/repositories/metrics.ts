@@ -1,4 +1,4 @@
-import type { ServiceKind, ServiceRequest, ServiceStatus, SosAlert, Withdrawal } from "@/types/leva-ja";
+import type { Refund, ServiceKind, ServiceRequest, ServiceStatus, SosAlert, Withdrawal } from "@/types/leva-ja";
 import type { DateRange } from "./common";
 import type { DocumentReviewItem } from "./documents";
 
@@ -35,6 +35,11 @@ export type AttentionItems = {
   pendingDocumentsTotal: number;
   pendingWithdrawals: Withdrawal[];
   pendingWithdrawalsTotal: number;
+  openDisputes: ServiceRequest[];
+  openDisputesTotal: number;
+  overdueDisputesTotal: number;
+  pendingRefunds: Refund[];
+  pendingRefundsTotal: number;
 };
 
 export interface MetricsRepository {

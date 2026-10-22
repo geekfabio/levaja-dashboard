@@ -127,7 +127,7 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
         return hydrate(ctx, request);
       }),
 
-    openDispute: (id, reason) =>
+    openDispute: (id, reason, category) =>
       db.run({ permission: "requests.dispute" }, (ctx) => {
         const request = find(ctx, id);
         if (!canDispute(request.status)) {
@@ -137,7 +137,7 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
           throw new RepositoryError("validation", "Este pedido já tem uma disputa aberta.");
         }
         const why = requireReason(reason, "o motivo da disputa");
-        request.dispute = { reason: why, openedAt: ctx.nowIso, openedBy: ctx.session.user.name };
+        request.dispute = { reason: why, category: category ?? "other", openedAt: ctx.nowIso, openedBy: ctx.session.user.name, notes: [] };
         db.audit(ctx, "request.dispute", { kind: "request", id: request.id, label: request.code }, why);
         db.commit("requests");
         return hydrate(ctx, request);
@@ -163,7 +163,7 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
         }
         if (!request.proof) request.proof = { receivedBy: "Confirmado pela operação", at: ctx.nowIso, photoLabel: "Sem fotografia" };
         if (!request.paymentMethod) request.paymentMethod = "cash";
-        request.dispute = { ...request.dispute, resolvedAt: ctx.nowIso, resolution: why };
+        request.dispute = { ...request.dispute, resolvedAt: ctx.nowIso, resolvedBy: ctx.session.user.name, resolution: why, outcome: request.dispute.outcome ?? "no_refund" };
         syncRequestTransactions(ctx.state, request);
         db.audit(ctx, "request.force_complete", { kind: "request", id: request.id, label: request.code }, why, [
           { field: "Estado", from: STATUS_LABELS[fromStatus], to: STATUS_LABELS.rated },

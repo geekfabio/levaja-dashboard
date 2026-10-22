@@ -1,3 +1,4 @@
+import { isDisputeOverdue } from "@/lib/leva-ja/refunds";
 import { luandaDay } from "@/lib/format";
 import { SERVICE_KINDS } from "@/lib/leva-ja/services";
 import { ACTIVE_STATUSES, COMPLETED_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
@@ -81,6 +82,10 @@ export function createMockMetrics(db: MockDatabase): MetricsRepository {
         const withdrawals = state.withdrawals
           .filter((withdrawal) => withdrawal.status === "pending")
           .sort((a, b) => (a.requestedAt < b.requestedAt ? -1 : 1));
+        const disputes = state.requests
+          .filter((request) => request.dispute && !request.dispute.resolvedAt)
+          .sort((a, b) => ((a.dispute?.openedAt ?? "") < (b.dispute?.openedAt ?? "") ? -1 : 1));
+        const refunds = state.refunds.filter((refund) => refund.status === "pending").sort((a, b) => (a.requestedAt < b.requestedAt ? -1 : 1));
         return {
           stalledSearching: state.requests
             .filter((request) => request.status === "searching" && Date.parse(request.createdAt) <= threshold)
@@ -91,6 +96,11 @@ export function createMockMetrics(db: MockDatabase): MetricsRepository {
           pendingDocumentsTotal: documents.length,
           pendingWithdrawals: withdrawals.slice(0, 5),
           pendingWithdrawalsTotal: withdrawals.length,
+          openDisputes: disputes.slice(0, 5).map((request) => hydrateRequest(state, request, today)),
+          openDisputesTotal: disputes.length,
+          overdueDisputesTotal: disputes.filter((request) => request.dispute && isDisputeOverdue(request.dispute, now.getTime())).length,
+          pendingRefunds: refunds.slice(0, 5),
+          pendingRefundsTotal: refunds.length,
         };
       }),
   };

@@ -4,11 +4,13 @@ import { createMockAuth } from "./auth";
 import { createMockClients } from "./clients";
 import { MockDatabase } from "./database";
 import type { MockDatabaseOptions } from "./database";
+import { createMockDisputes } from "./disputes";
 import { createMockDocuments } from "./documents";
 import { createMockFinance } from "./finance";
 import { createMockMetrics } from "./metrics";
 import { createMockPricing } from "./pricing";
 import { createMockProviders } from "./providers";
+import { createMockRefunds } from "./refunds";
 import { createMockRequests } from "./requests";
 import { createOsrmRouting } from "../http/routing";
 import type { RoutingRepository } from "../repositories/routing";
@@ -29,6 +31,8 @@ export function createMockRepositories(options: MockRepositoriesOptions = {}): M
     database,
     auth: createMockAuth(database),
     requests: createMockRequests(database),
+    disputes: createMockDisputes(database),
+    refunds: createMockRefunds(database),
     providers: createMockProviders(database),
     documents: createMockDocuments(database),
     clients: createMockClients(database),

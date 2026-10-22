@@ -52,6 +52,22 @@ export function PayoutsSection({ settings, canEdit }: Props) {
               error={issueFor("cashSettlementDays")}
               hint="Comissão de serviços pagos em numerário que o prestador tem de entregar."
             />
+            <NumberField
+              id="payout-refund-window"
+              label="Prazo para pedir reembolso (dias)"
+              value={draft.refundWindowDays}
+              onChange={(refundWindowDays) => update({ refundWindowDays })}
+              error={issueFor("refundWindowDays")}
+              hint="Contado a partir do pagamento do pedido."
+            />
+            <NumberField
+              id="payout-refund-dual"
+              label="Dupla aprovação de reembolsos acima de (Kz)"
+              value={draft.refundDualApprovalAbove}
+              onChange={(refundDualApprovalAbove) => update({ refundDualApprovalAbove })}
+              error={issueFor("refundDualApprovalAbove")}
+              hint="Acima deste valor, quem pediu o reembolso não o pode aprovar."
+            />
           </FieldGrid>
         </>
       )}

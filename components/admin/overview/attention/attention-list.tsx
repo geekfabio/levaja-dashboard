@@ -9,6 +9,7 @@ import { formatDateTimeNumeric, formatElapsed, formatKz } from "@/lib/format";
 import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
 import { DOCUMENT_STATE_LABELS, SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { canAccessSection } from "@/lib/leva-ja/permissions";
+import { DISPUTE_CATEGORY_LABELS, isDisputeOverdue } from "@/lib/leva-ja/refunds";
 import type { AdminSection } from "@/lib/leva-ja/permissions";
 import type { AdminRole } from "@/types/leva-ja";
 
@@ -16,6 +17,7 @@ type Row = { id: string; title: ReactNode; detail: string; meta: ReactNode; href
 
 type GroupProps = {
   title: string;
+  detail?: string;
   total: number;
   empty: string;
   rows: Row[];
@@ -23,7 +25,7 @@ type GroupProps = {
   role: AdminRole;
 };
 
-function Group({ title, total, empty, rows, section, role }: GroupProps) {
+function Group({ title, detail, total, empty, rows, section, role }: GroupProps) {
   const allowed = canAccessSection(role, section);
   return (
     <section className="flex min-w-0 flex-col gap-2">
@@ -31,6 +33,7 @@ function Group({ title, total, empty, rows, section, role }: GroupProps) {
         <h3 className="lead-style flex items-center gap-2 font-medium">
           {title}
           <CountBadge>{total}</CountBadge>
+          {detail && <span className="caption-style text-danger font-normal">{detail}</span>}
         </h3>
         {allowed && total > rows.length && (
           <Button variant="link" size="none" className="caption-style" href={SECTION_ROUTES[section]}>
@@ -127,6 +130,39 @@ export default function AttentionList({ items, role, now }: { items: AttentionIt
           detail: `Pedido a ${formatDateTimeNumeric(withdrawal.requestedAt)}`,
           meta: formatKz(withdrawal.amount),
           href: SECTION_ROUTES.finance,
+        }))}
+      />
+      <Group
+        title="Disputas abertas"
+        total={items.openDisputesTotal}
+        empty="Sem disputas abertas."
+        detail={items.overdueDisputesTotal ? `${items.overdueDisputesTotal} fora do prazo` : undefined}
+        section="disputes"
+        role={role}
+        rows={items.openDisputes.map((request) => ({
+          id: request.id,
+          title: `${request.code} · ${DISPUTE_CATEGORY_LABELS[request.dispute?.category ?? "other"]}`,
+          detail: request.dispute?.reason ?? "",
+          meta: (
+            <Tag tone={request.dispute && isDisputeOverdue(request.dispute, now) ? "red" : "amber"} size="sm">
+              há {formatElapsed(request.dispute?.openedAt ?? request.createdAt, now)}
+            </Tag>
+          ),
+          href: `${SECTION_ROUTES.requests}/${request.id}`,
+        }))}
+      />
+      <Group
+        title="Reembolsos por aprovar"
+        total={items.pendingRefundsTotal}
+        empty="Sem reembolsos por aprovar."
+        section="refunds"
+        role={role}
+        rows={items.pendingRefunds.map((refund) => ({
+          id: refund.id,
+          title: `${refund.code} · ${refund.requestCode}`,
+          detail: `${refund.clientName} · pedido por ${refund.requestedBy}`,
+          meta: formatKz(refund.amount),
+          href: SECTION_ROUTES.refunds,
         }))}
       />
     </div>

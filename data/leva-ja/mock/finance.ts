@@ -36,6 +36,9 @@ export function revenueReport(state: MockState, range: Required<DateRange>): Rev
   }
   const fees = byService.reduce((sum, item) => sum + item.fees, 0);
   const commissions = byService.reduce((sum, item) => sum + item.commissions, 0);
+  const refunds = state.refunds
+    .filter((refund) => refund.status === "paid" && !refund.chargeProvider && refund.paidAt && inRange(refund.paidAt, { from, to }))
+    .reduce((sum, refund) => sum + refund.amount, 0);
   return {
     from,
     to,
@@ -44,7 +47,8 @@ export function revenueReport(state: MockState, range: Required<DateRange>): Rev
     totals: {
       fees,
       commissions,
-      revenue: fees + commissions,
+      refunds,
+      revenue: fees + commissions - refunds,
       volume: byService.reduce((sum, item) => sum + item.volume, 0),
       count: settled.length,
     },

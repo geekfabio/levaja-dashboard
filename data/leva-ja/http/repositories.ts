@@ -76,10 +76,28 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       reassignCandidates: (requestId) => http.get(`/admin/requests/${id(requestId)}/candidates`),
       reassign: (requestId, providerId, reason) => http.post(`/admin/requests/${id(requestId)}/reassign`, { providerId, reason }),
       cancel: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/cancel`, { reason }),
-      openDispute: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/dispute`, { reason }),
+      openDispute: (requestId, reason, category) => http.post(`/admin/requests/${id(requestId)}/dispute`, { reason, category }),
       forceComplete: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/force-complete`, { reason }),
       active: () => http.get("/admin/requests/active"),
       subscribe: (listener) => subscribe("requests", listener),
+    },
+
+    disputes: {
+      list: (filters = {}) => http.get("/admin/disputes", filters),
+      summary: () => http.get("/admin/disputes/summary"),
+      addNote: (requestId, text) => http.post(`/admin/disputes/${id(requestId)}/notes`, { text }),
+      setCategory: (requestId, category) => http.put(`/admin/disputes/${id(requestId)}/category`, { category }),
+      resolve: (requestId, input) => http.post(`/admin/disputes/${id(requestId)}/resolve`, input),
+    },
+
+    refunds: {
+      list: (filters = {}) => http.get("/admin/refunds", filters),
+      summary: () => http.get("/admin/refunds/summary"),
+      forRequest: (requestId) => http.get(`/admin/requests/${id(requestId)}/refunds`),
+      create: (input) => http.post("/admin/refunds", input),
+      approve: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/approve`, { reason }),
+      reject: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/reject`, { reason }),
+      markPaid: (refundId, paymentReference) => http.post(`/admin/refunds/${id(refundId)}/paid`, { paymentReference }),
     },
 
     providers: {

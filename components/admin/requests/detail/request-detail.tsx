@@ -19,6 +19,8 @@ import { PAYMENT_LABELS } from "@/lib/leva-ja/services";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 import Stars from "@/components/admin/shared/stars";
+import RequestRefunds from "@/components/admin/refunds/request/request-refunds";
+import { DISPUTE_CATEGORY_LABELS, DISPUTE_OUTCOME_LABELS } from "@/lib/leva-ja/refunds";
 import RequestActions from "./request-actions";
 import RequestPrice from "./request-price";
 import RequestRoute from "./request-route";
@@ -93,16 +95,22 @@ export default function RequestDetail({ id }: { id: string }) {
                 }
               >
                 <span className="lead-style font-medium">
-                  {request.dispute.resolvedAt ? "Disputa resolvida" : "Disputa aberta"}
+                  {request.dispute.resolvedAt ? "Disputa resolvida" : "Disputa aberta"} · {DISPUTE_CATEGORY_LABELS[request.dispute.category ?? "other"]}
                 </span>
                 <span className="caption-style">
                   {request.dispute.reason} · aberta por {request.dispute.openedBy} a {formatDateTimeNumeric(request.dispute.openedAt)}
                 </span>
                 {request.dispute.resolution && (
                   <span className="caption-style">
-                    Resolução: {request.dispute.resolution}
+                    {request.dispute.outcome ? `${DISPUTE_OUTCOME_LABELS[request.dispute.outcome]}: ` : "Resolução: "}
+                    {request.dispute.resolution}
                     {request.dispute.resolvedAt && ` (${formatDateTimeNumeric(request.dispute.resolvedAt)})`}
                   </span>
+                )}
+                {canAccessSection(role, "disputes") && (
+                  <Button variant="link" size="none" href={SECTION_ROUTES.disputes} className="caption-style self-start text-current">
+                    {request.dispute.notes?.length ? `${request.dispute.notes.length} nota(s) interna(s) · ` : ""}Ver disputas
+                  </Button>
                 )}
               </div>
             )}
@@ -154,6 +162,11 @@ export default function RequestDetail({ id }: { id: string }) {
                     ]}
                   />
                 </SettingsPanel>
+                {(hasPermission(role, "refunds.request") || hasPermission(role, "refunds.decide")) && (
+                  <SettingsPanel title="Reembolsos" className="bg-card">
+                    <RequestRefunds request={request} canRequest={hasPermission(role, "refunds.request")} canOpenRefunds={canAccessSection(role, "refunds")} />
+                  </SettingsPanel>
+                )}
                 <SettingsPanel title="Comprovativo e avaliação" className="bg-card">
                   {request.proof ? (
                     <div className="flex flex-col gap-3">

@@ -1,4 +1,4 @@
-import type { PaymentMethodKind, ProviderAccount, ServiceKind, ServiceRequest, ServiceStatus } from "@/types/leva-ja";
+import type { DisputeCategory, PaymentMethodKind, ProviderAccount, ServiceKind, ServiceRequest, ServiceStatus } from "@/types/leva-ja";
 import type { EligibilityIssue } from "@/lib/leva-ja/eligibility";
 import type { DateRange, Page, PageQuery, RealtimeListener, Unsubscribe } from "./common";
 
@@ -24,7 +24,7 @@ export interface RequestsRepository {
   reassignCandidates(id: string): Promise<ReassignCandidate[]>;
   reassign(id: string, providerId: string, reason: string): Promise<ServiceRequest>;
   cancel(id: string, reason: string): Promise<ServiceRequest>;
-  openDispute(id: string, reason: string): Promise<ServiceRequest>;
+  openDispute(id: string, reason: string, category?: DisputeCategory): Promise<ServiceRequest>;
   forceComplete(id: string, reason: string): Promise<ServiceRequest>;
   active(): Promise<ServiceRequest[]>;
   subscribe(listener: RealtimeListener): Unsubscribe;

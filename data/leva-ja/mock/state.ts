@@ -7,6 +7,7 @@ import type {
   RolePermissions,
   PricingConfig,
   ProviderAccount,
+  Refund,
   ServiceRequest,
   SosAlert,
   Ticket,
@@ -15,7 +16,7 @@ import type {
 } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 
-export const MOCK_STATE_VERSION = 2;
+export const MOCK_STATE_VERSION = 3;
 
 export type StoredRequest = Omit<ServiceRequest, "client" | "provider">;
 
@@ -32,6 +33,7 @@ export type MockState = {
   requests: StoredRequest[];
   transactions: TransactionRecord[];
   withdrawals: Withdrawal[];
+  refunds: Refund[];
   tickets: Ticket[];
   sos: SosAlert[];
   reviewNotes: Record<string, string>;

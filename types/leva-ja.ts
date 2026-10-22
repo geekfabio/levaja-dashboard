@@ -66,12 +66,49 @@ export type ServiceDetails =
 
 export type DeliveryProof = { receivedBy: string; at: string; photoLabel: string };
 
+export type DisputeCategory = "damage" | "payment" | "price" | "no_show" | "delay" | "conduct" | "other";
+export type DisputeOutcome = "no_refund" | "refund_full" | "refund_partial";
+export type DisputeNote = { id: string; author: string; text: string; at: string };
+
 export type Dispute = {
   reason: string;
+  category?: DisputeCategory;
   openedAt: string;
   openedBy: string;
+  notes?: DisputeNote[];
   resolvedAt?: string;
+  resolvedBy?: string;
   resolution?: string;
+  outcome?: DisputeOutcome;
+  refundId?: string;
+};
+
+export type RefundStatus = "pending" | "approved" | "rejected" | "paid";
+export type RefundSource = "dispute" | "cancellation" | "manual";
+
+export type Refund = {
+  id: string;
+  code: string;
+  requestId: string;
+  requestCode: string;
+  clientId: string;
+  clientName: string;
+  providerId?: string;
+  providerName?: string;
+  amount: number;
+  reason: string;
+  source: RefundSource;
+  chargeProvider: boolean;
+  method: PaymentMethodKind;
+  status: RefundStatus;
+  requestedAt: string;
+  requestedBy: string;
+  requestedById: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  decisionReason?: string;
+  paidAt?: string;
+  paymentReference?: string;
 };
 
 export type ServiceRequest = {
@@ -106,7 +143,7 @@ export type ServiceRequest = {
 
 export type Transaction = {
   id: string;
-  kind: "earning" | "withdrawal" | "fee";
+  kind: "earning" | "withdrawal" | "fee" | "refund";
   title: string;
   amount: number;
   at: string;
@@ -313,6 +350,7 @@ export type AuditEntityKind =
   | "document"
   | "client"
   | "withdrawal"
+  | "refund"
   | "pricing"
   | "zone"
   | "ticket"
@@ -328,6 +366,12 @@ export type AuditAction =
   | "request.cancel"
   | "request.dispute"
   | "request.force_complete"
+  | "dispute.note"
+  | "dispute.resolve"
+  | "refund.request"
+  | "refund.approve"
+  | "refund.reject"
+  | "refund.paid"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"
@@ -425,6 +469,8 @@ export type PayoutSettings = {
   payoutFrequency: "daily" | "weekly" | "biweekly";
   multicaixaEntity: string;
   cashSettlementDays: number;
+  refundWindowDays: number;
+  refundDualApprovalAbove: number;
 };
 
 export type TaxSettings = { vatRate: number; invoiceSeries: string; creditNoteSeries: string; vatOnReceipts: boolean };

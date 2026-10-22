@@ -10,7 +10,7 @@ export type RevenueReport = {
   to: string;
   byDay: RevenuePoint[];
   byService: RevenueByService[];
-  totals: { fees: number; commissions: number; revenue: number; volume: number; count: number };
+  totals: { fees: number; commissions: number; refunds: number; revenue: number; volume: number; count: number };
 };
 
 export type TransactionRecord = Transaction & { providerId: string; providerName: string; requestId?: string };

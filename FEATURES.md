@@ -23,7 +23,9 @@ Todos os dados vêm de `repositories()` (`data/leva-ja/`). Em modo mock, a `Mock
 | 9 | Preços e zonas | `/admin/precos` | Base e preço por km, extras, taxa e comissão com pré-visualização; zonas com nome, centro e raio. |
 | 10 | Suporte | `/admin/suporte` | Ocorrências (atribuir, responder, resolver), alertas SOS em destaque e avaliações baixas para revisão. |
 | 11 | Utilizadores e auditoria | `/admin/utilizadores`, `/admin/auditoria` | Gestão de administradores e papéis; log de auditoria filtrável. |
-| 12 | Definições | `/admin/definicoes` | Conta da sessão e, em modo mock, «Repor dados de demonstração» e simulação de rede lenta ou com falhas. |
+| 12 | Definições | `/admin/definicoes` | Conta da sessão; definições da plataforma (geral, serviços, atribuição, cancelamentos, pagamentos e reembolsos, impostos, documentos, notificações, suporte, segurança e app), cada secção com motivo e auditoria; matriz editável de papéis e permissões; em modo mock, «Repor dados de demonstração» e simulação de rede lenta ou com falhas. |
+| 13 | Disputas | `/admin/disputas` | Pedidos contestados com categoria, prazo de 72 h e indicadores; painel com notas internas, reembolsos do pedido e resolução sem reembolso, com reembolso total ou parcial, imputado ou não ao prestador. |
+| 14 | Reembolsos | `/admin/reembolsos` | Pedidos de reembolso (manuais, de disputas e de cancelamentos) com aprovação das Finanças, dupla aprovação acima do limite, rejeição com motivo e pagamento com referência; o valor sai da receita ou da carteira do prestador. No detalhe do pedido, «Pedir reembolso». |
 
 **Transversal:** todas as listas têm esqueleto de carregamento, estado vazio, estado de erro com «Tentar novamente» e paginação; as acções destrutivas pedem confirmação; o feedback é dado por toast; todas as acções críticas ficam na auditoria com actor, motivo e alterações.
 

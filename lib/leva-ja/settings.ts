@@ -85,6 +85,8 @@ export function defaultPlatformSettings(updatedAt: string, updatedBy = "Sistema"
       payoutFrequency: "weekly",
       multicaixaEntity: "10725",
       cashSettlementDays: 7,
+      refundWindowDays: 30,
+      refundDualApprovalAbove: 20000,
     },
     tax: { vatRate: 0.14, invoiceSeries: "FT LJ", creditNoteSeries: "NC LJ", vatOnReceipts: true },
     documents: {
@@ -174,6 +176,8 @@ export function validateSettingsSection<K extends SettingsSection>(section: K, v
     need(finite(payouts.minimumWithdrawal) && payouts.minimumWithdrawal >= 0, "minimumWithdrawal", "O mínimo não pode ser negativo.");
     need(/^\d{5}$/.test(payouts.multicaixaEntity), "multicaixaEntity", "A entidade Multicaixa tem 5 dígitos.");
     need(Number.isInteger(payouts.cashSettlementDays) && payouts.cashSettlementDays >= 1 && payouts.cashSettlementDays <= 30, "cashSettlementDays", "O prazo tem de estar entre 1 e 30 dias.");
+    need(Number.isInteger(payouts.refundWindowDays) && payouts.refundWindowDays >= 1 && payouts.refundWindowDays <= 180, "refundWindowDays", "O prazo para reembolsos tem de estar entre 1 e 180 dias.");
+    need(finite(payouts.refundDualApprovalAbove) && payouts.refundDualApprovalAbove >= 0, "refundDualApprovalAbove", "O limite não pode ser negativo.");
   }
   if (section === "tax") {
     const tax = value as PlatformSettings["tax"];
@@ -256,6 +260,8 @@ const FIELD_LABELS: Record<string, [string, Formatter]> = {
   "payouts.payoutFrequency": ["Frequência dos pagamentos", (value) => PAYOUT_FREQUENCY_LABELS[value as keyof typeof PAYOUT_FREQUENCY_LABELS] ?? plain(value)],
   "payouts.multicaixaEntity": ["Entidade Multicaixa", plain],
   "payouts.cashSettlementDays": ["Prazo de entrega do numerário", (value) => `${value} dias`],
+  "payouts.refundWindowDays": ["Prazo para pedir reembolso", (value) => `${value} dias`],
+  "payouts.refundDualApprovalAbove": ["Dupla aprovação de reembolsos acima de", kz],
   "tax.vatRate": ["IVA", percent],
   "tax.invoiceSeries": ["Série das facturas", plain],
   "tax.creditNoteSeries": ["Série das notas de crédito", plain],

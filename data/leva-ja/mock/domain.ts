@@ -1,7 +1,7 @@
 import { documentsVerified } from "@/lib/leva-ja/eligibility";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { luandaDay, shiftDay } from "@/lib/format";
-import type { Client, ClientAccount, Provider, ProviderAccount, Review, ServiceRequest } from "@/types/leva-ja";
+import type { Client, ClientAccount, Provider, ProviderAccount, Refund, Review, ServiceRequest } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 import type { MockState, StoredRequest } from "./state";
 
@@ -174,4 +174,23 @@ export function hydrateRequest(state: MockState, request: StoredRequest, today: 
     client: client ? toClient(client) : undefined,
     provider: provider ? toProvider(refreshProvider(state, provider, today)) : undefined,
   };
+}
+
+export function syncRefundTransaction(state: MockState, refund: Refund) {
+  const id = `tx-${refund.id}`;
+  state.transactions = state.transactions.filter((transaction) => transaction.id !== id);
+  if (refund.status !== "paid" || !refund.chargeProvider || !refund.providerId) return;
+  const request = state.requests.find((item) => item.id === refund.requestId);
+  state.transactions.push({
+    id,
+    kind: "refund",
+    title: `Reembolso ${refund.code} — ${refund.requestCode}`,
+    amount: -refund.amount,
+    at: refund.paidAt ?? refund.requestedAt,
+    status: "completed",
+    serviceKind: request?.kind,
+    providerId: refund.providerId,
+    providerName: refund.providerName ?? "",
+    requestId: refund.requestId,
+  });
 }

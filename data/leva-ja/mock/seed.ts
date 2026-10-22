@@ -18,6 +18,7 @@ import type {
   PricingConfig,
   ProviderAccount,
   ProviderDocument,
+  Refund,
   ServiceDetails,
   ServiceKind,
   ServiceStatus,
@@ -50,7 +51,7 @@ import {
   initialsOf,
   slugify,
 } from "./fixtures";
-import { DAY, HOUR, MINUTE, addDays, eventAt, isoAt, luandaMidnight, providerBalance, syncRequestTransactions } from "./domain";
+import { DAY, HOUR, MINUTE, addDays, eventAt, isoAt, luandaMidnight, providerBalance, syncRefundTransaction, syncRequestTransactions } from "./domain";
 import { MOCK_STATE_VERSION } from "./state";
 import type { MockState, StoredRequest } from "./state";
 
@@ -609,6 +610,56 @@ function buildSos(ctx: Context, state: Pick<MockState, "clients" | "providers" |
   return alerts;
 }
 
+function buildRefunds(ctx: Context, state: MockState): Refund[] {
+  const { rng } = ctx;
+  const candidates = state.requests.filter(
+    (request) => (request.status === "paid" || request.status === "rated") && !request.dispute && request.createdAt > isoAt(ctx.now - 25 * DAY),
+  );
+  const support = state.adminUsers.find((user) => user.role === "support");
+  const finance = state.adminUsers.find((user) => user.role === "finance");
+  const plan: { status: Refund["status"]; share: number; source: Refund["source"]; chargeProvider: boolean; reason: string }[] = [
+    { status: "pending", share: 0.3, source: "manual", chargeProvider: false, reason: "Valor cobrado em duplicado." },
+    { status: "pending", share: 1, source: "manual", chargeProvider: true, reason: "Serviço não prestado: o prestador não chegou ao local." },
+    { status: "approved", share: 0.2, source: "manual", chargeProvider: false, reason: "Atraso de mais de uma hora na recolha." },
+    { status: "paid", share: 0.25, source: "manual", chargeProvider: true, reason: "Pequeno dano num móvel confirmado pelo prestador." },
+    { status: "paid", share: 0.15, source: "cancellation", chargeProvider: false, reason: "Taxa de espera cobrada indevidamente." },
+    { status: "rejected", share: 0.5, source: "manual", chargeProvider: false, reason: "Cliente diz que o valor final foi alto." },
+  ];
+  return rng.sample(candidates, Math.min(plan.length, candidates.length)).map((request, index) => {
+    const step = plan[index];
+    const client = state.clients.find((item) => item.id === request.clientId);
+    const provider = state.providers.find((item) => item.id === request.providerId);
+    const paidAt = new Date(eventAt(request, "paid") ?? request.createdAt).getTime();
+    const requested = Math.min(paidAt + rng.int(4, 30) * HOUR, ctx.now - 2 * HOUR);
+    const decided = Math.min(requested + rng.int(2, 12) * HOUR, ctx.now - HOUR);
+    const amount = Math.max(500, Math.round((request.price.total * step.share) / 100) * 100);
+    return {
+      id: `rf-${pad(index + 1)}`,
+      code: `RE-${1001 + index}`,
+      requestId: request.id,
+      requestCode: request.code,
+      clientId: request.clientId,
+      clientName: client?.name ?? "Cliente",
+      providerId: provider?.id,
+      providerName: provider?.name,
+      amount: Math.min(amount, request.price.total),
+      reason: step.reason,
+      source: step.source,
+      chargeProvider: step.chargeProvider && Boolean(provider),
+      method: request.paymentMethod ?? "card",
+      status: step.status,
+      requestedAt: isoAt(requested),
+      requestedBy: support?.name ?? "Suporte Leva Já",
+      requestedById: support?.id ?? "adm-support",
+      decidedAt: step.status === "pending" ? undefined : isoAt(decided),
+      decidedBy: step.status === "pending" ? undefined : finance?.name,
+      decisionReason: step.status === "rejected" ? "O valor corresponde à distância e aos extras confirmados." : undefined,
+      paidAt: step.status === "paid" ? isoAt(Math.min(decided + 4 * HOUR, ctx.now - 30 * MINUTE)) : undefined,
+      paymentReference: step.status === "paid" ? `DEV${rng.int(100000, 999999)}` : undefined,
+    };
+  });
+}
+
 function buildWithdrawals(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const providers = state.providers
@@ -774,12 +825,22 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     "Prestador diz que o cliente não pagou em numerário.",
     "Divergência no valor final da mudança.",
   ];
+  const disputeCategories = ["damage", "payment", "price"] as const;
   const operations = adminUsers.find((user) => user.role === "operations");
   rng.sample(recentSettled, 3).forEach((request, index) => {
+    const openedAt = Math.min(new Date(request.timeline[request.timeline.length - 1].at).getTime() + 2 * HOUR, now - HOUR);
     request.dispute = {
       reason: disputeReasons[index],
-      openedAt: isoAt(Math.min(new Date(request.timeline[request.timeline.length - 1].at).getTime() + 2 * HOUR, now - HOUR)),
+      category: disputeCategories[index],
+      openedAt: isoAt(openedAt),
       openedBy: index === 0 ? operations?.name ?? "Operações" : "Suporte Leva Já",
+      notes:
+        index === 0
+          ? [
+              { id: `dn-${request.id}-1`, author: operations?.name ?? "Operações", text: "Pedidas fotografias da carga ao cliente.", at: isoAt(Math.min(openedAt + HOUR, now - 30 * MINUTE)) },
+              { id: `dn-${request.id}-2`, author: "Suporte Leva Já", text: "Cliente enviou três fotografias; o prestador ainda não respondeu.", at: isoAt(Math.min(openedAt + 3 * HOUR, now - 20 * MINUTE)) },
+            ]
+          : [],
     };
   });
   const olderRated = requests.filter((request) => request.status === "rated" && !request.dispute && request.createdAt < isoAt(now - 15 * DAY));
@@ -787,10 +848,14 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     const opened = new Date(request.timeline[request.timeline.length - 1].at).getTime() + HOUR;
     request.dispute = {
       reason: "Cliente contestou o valor cobrado.",
+      category: "price",
       openedAt: isoAt(opened),
       openedBy: "Suporte Leva Já",
+      notes: [],
       resolvedAt: isoAt(opened + 2 * DAY),
+      resolvedBy: "Armando Silva",
       resolution: "Valor confirmado pelo comprovativo de entrega.",
+      outcome: "no_refund",
     };
   });
 
@@ -807,6 +872,7 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     requests,
     transactions: [],
     withdrawals: [],
+    refunds: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -817,6 +883,8 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   };
   for (const request of requests) syncRequestTransactions(state, request);
   state.withdrawals = buildWithdrawals(ctx, state);
+  state.refunds = buildRefunds(ctx, state);
+  for (const refund of state.refunds) syncRefundTransaction(state, refund);
   state.tickets = buildTickets(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);

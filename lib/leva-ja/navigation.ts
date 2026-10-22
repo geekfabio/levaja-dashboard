@@ -92,9 +92,9 @@ export const SECTION_DESCRIPTIONS: Record<AdminSection, string> = {
 export type NavGroup = { title?: string; sections: AdminSection[] };
 
 export const NAV_GROUPS: NavGroup[] = [
-  { sections: ["overview", "requests", "map"] },
+  { sections: ["overview", "requests", "disputes", "map"] },
   { title: "Rede", sections: ["providers", "documents", "clients"] },
-  { title: "Negócio", sections: ["finance", "pricing"] },
+  { title: "Negócio", sections: ["finance", "refunds", "pricing"] },
   { title: "Apoio", sections: ["support"] },
 ];
 

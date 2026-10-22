@@ -236,3 +236,8 @@ export function shiftDay(day: string, days: number) {
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
+
+export function parseKz(raw: string) {
+  const clean = raw.replace(/kz/i, "").replace(/[\s  .]/g, "").replace(",", ".");
+  return clean === "" ? Number.NaN : Number(clean);
+}

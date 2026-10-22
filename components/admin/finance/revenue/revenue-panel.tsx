@@ -52,6 +52,7 @@ export default function RevenuePanel({ today }: { today: string }) {
                 { label: "Receita da plataforma", value: formatKz(report.totals.revenue) },
                 { label: "Comissões", value: formatKz(report.totals.commissions) },
                 { label: "Taxas", value: formatKz(report.totals.fees) },
+                { label: "Reembolsos suportados", value: report.totals.refunds ? `−${formatKz(report.totals.refunds)}` : formatKz(0) },
                 { label: "Volume transaccionado", value: formatKz(report.totals.volume) },
                 { label: "Pedidos pagos", value: formatNumber(report.totals.count) },
               ].map((item) => (

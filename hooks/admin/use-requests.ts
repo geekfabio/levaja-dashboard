@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { repositories } from "@/data/leva-ja";
+import type { DisputeCategory } from "@/types/leva-ja";
 import type { RequestFilters } from "@/data/leva-ja";
 import { useAdminMutation } from "./use-admin-mutation";
 
@@ -13,10 +14,11 @@ export function useRequestsList(filters: RequestFilters) {
   });
 }
 
-export function useRequest(id: string) {
+export function useRequest(id: string | null) {
   return useQuery({
     queryKey: ["admin", "requests", "detail", id],
-    queryFn: () => repositories().requests.get(id),
+    queryFn: () => repositories().requests.get(id ?? ""),
+    enabled: id !== null,
   });
 }
 
@@ -53,7 +55,7 @@ export function useReassignRequest() {
 
 export function useOpenDispute() {
   return useAdminMutation(
-    ({ id, reason }: { id: string; reason: string }) => repositories().requests.openDispute(id, reason),
+    ({ id, reason, category }: { id: string; reason: string; category?: DisputeCategory }) => repositories().requests.openDispute(id, reason, category),
     { success: (request) => `Disputa aberta em ${request.code}` },
   );
 }

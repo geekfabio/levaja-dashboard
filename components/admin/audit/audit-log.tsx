@@ -35,6 +35,7 @@ function entityHref(entry: AuditLogEntry) {
   if (kind === "client") return `${SECTION_ROUTES.clients}/${id}`;
   if (kind === "document") return SECTION_ROUTES.documents;
   if (kind === "withdrawal") return SECTION_ROUTES.finance;
+  if (kind === "refund") return SECTION_ROUTES.refunds;
   if (kind === "pricing" || kind === "zone") return SECTION_ROUTES.pricing;
   if (kind === "ticket" || kind === "sos" || kind === "review") return SECTION_ROUTES.support;
   if (kind === "admin_user") return SECTION_ROUTES.users;
