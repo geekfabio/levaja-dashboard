@@ -1,5 +1,8 @@
 import type {
+  AccessLogEntry,
   AdminSession,
+  AdminSessionRecord,
+  ApiKey,
   AdminUser,
   AuditLogEntry,
   Broadcast,
@@ -12,6 +15,7 @@ import type {
   RolePermissions,
   PricingConfig,
   PayoutBatch,
+  PrivacyRequest,
   Promotion,
   Penalty,
   ProviderApplication,
@@ -21,12 +25,13 @@ import type {
   Settlement,
   SosAlert,
   Ticket,
+  Webhook,
   Withdrawal,
   Zone,
 } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 
-export const MOCK_STATE_VERSION = 7;
+export const MOCK_STATE_VERSION = 8;
 
 export type StoredSettlement = Omit<Settlement, "expected" | "count" | "status">;
 
@@ -56,6 +61,11 @@ export type MockState = {
   businessAccounts: BusinessAccount[];
   promotions: Promotion[];
   broadcasts: Broadcast[];
+  privacyRequests: PrivacyRequest[];
+  adminSessions: AdminSessionRecord[];
+  accessLog: AccessLogEntry[];
+  apiKeys: ApiKey[];
+  webhooks: Webhook[];
   tickets: Ticket[];
   sos: SosAlert[];
   reviewNotes: Record<string, string>;

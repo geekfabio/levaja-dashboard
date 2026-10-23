@@ -10,7 +10,7 @@ type AdminSessionState = {
   session: AdminSession | null;
   expired: boolean;
   load: () => Promise<void>;
-  login: (email: string, code: string) => Promise<AdminSession>;
+  login: (email: string, code: string, otp?: string) => Promise<AdminSession>;
   logout: () => Promise<void>;
   expire: () => void;
   setRolePermissions: (matrix: RolePermissions) => void;
@@ -31,8 +31,8 @@ export const useAdminSessionStore = create<AdminSessionState>((set, get) => ({
     }
   },
 
-  login: async (email, code) => {
-    const session = await repositories().auth.login(email, code);
+  login: async (email, code, otp) => {
+    const session = await repositories().auth.login(email, code, otp);
     applyRolePermissions(session.rolePermissions);
     set({ session, status: "authenticated", expired: false });
     return session;

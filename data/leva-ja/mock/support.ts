@@ -1,5 +1,6 @@
 import { TICKET_STATUS_LABELS } from "@/lib/leva-ja/services";
 import { hasPermission } from "@/lib/leva-ja/permissions";
+import { csatStats, ticketResponseSla } from "@/lib/leva-ja/trust";
 import type { SosAlert, Ticket } from "@/types/leva-ja";
 import type { LowRatingItem, SupportRepository } from "../repositories/support";
 import { RepositoryError } from "../repositories/errors";
@@ -173,6 +174,40 @@ export function createMockSupport(db: MockDatabase): SupportRepository {
         db.audit(ctx, "review.handled", { kind: "review", id, label: `${item.requestCode} — ${item.rating} estrela(s)` }, text);
         db.commit("support");
         return { ...item, handled: true, handledNote: text };
+      }),
+
+    responseSummary: () =>
+      db.run({ permission: "support.tickets" }, ({ state, now }) => {
+        const results = state.tickets.map((ticket) => ticketResponseSla(ticket, state.settings.support.firstResponseHours, now.getTime()));
+        const answered = results.filter((result) => result.respondedAt);
+        return {
+          pending: results.filter((result) => result.status === "pending").length,
+          atRisk: results.filter((result) => result.status === "at_risk").length,
+          breached: results.filter((result) => result.status === "breached" && !result.respondedAt).length,
+          metRate: answered.length ? answered.filter((result) => result.status === "met").length / answered.length : null,
+        };
+      }),
+
+    satisfaction: () =>
+      db.run({ permission: "support.tickets" }, ({ state }) => {
+        const resolved = state.tickets.filter((ticket) => ticket.status === "resolved");
+        const rated = resolved.filter((ticket) => ticket.satisfaction);
+        const stats = csatStats(rated.map((ticket) => ticket.satisfaction?.score ?? 0));
+        return {
+          ...stats,
+          responseRate: resolved.length ? rated.length / resolved.length : null,
+          recent: rated
+            .sort(byNewest((ticket) => ticket.satisfaction?.at ?? ticket.updatedAt))
+            .slice(0, 10)
+            .map((ticket) => ({
+              ticketId: ticket.id,
+              ticketCode: ticket.code,
+              requesterName: ticket.requesterName,
+              score: ticket.satisfaction?.score ?? 0,
+              comment: ticket.satisfaction?.comment,
+              at: ticket.satisfaction?.at ?? ticket.updatedAt,
+            })),
+        };
       }),
 
     subscribe: (listener) => db.subscribe("support", listener),

@@ -216,6 +216,72 @@ export type Broadcast = {
   cancelReason?: string;
 };
 
+export type PrivacyRequestKind = "access" | "rectification" | "erasure" | "portability" | "objection";
+export type PrivacyRequestStatus = "received" | "in_progress" | "completed" | "rejected";
+
+export type PrivacyRequest = {
+  id: string;
+  code: string;
+  subjectKind: "client" | "provider";
+  subjectId: string;
+  subjectName: string;
+  kind: PrivacyRequestKind;
+  channel: "app" | "email" | "phone";
+  details: string;
+  receivedAt: string;
+  dueAt: string;
+  status: PrivacyRequestStatus;
+  assigneeName?: string;
+  resolution?: string;
+  completedAt?: string;
+};
+
+export type AdminSessionRecord = {
+  id: string;
+  userId: string;
+  userName: string;
+  role: AdminRole;
+  device: string;
+  ip: string;
+  location: string;
+  createdAt: string;
+  lastSeenAt: string;
+  revokedAt?: string;
+  revokedBy?: string;
+};
+
+export type AccessResult = "success" | "wrong_code" | "two_factor_failed" | "inactive" | "logout" | "revoked";
+
+export type AccessLogEntry = { id: string; at: string; email: string; userName?: string; result: AccessResult; ip: string; device: string };
+
+export type ApiKey = {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  createdAt: string;
+  createdBy: string;
+  lastUsedAt?: string;
+  expiresAt?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokeReason?: string;
+};
+
+export type WebhookDelivery = { id: string; event: string; at: string; status: number | "timeout"; durationMs: number; simulated: boolean };
+
+export type Webhook = {
+  id: string;
+  url: string;
+  description: string;
+  events: string[];
+  active: boolean;
+  secretPreview: string;
+  createdAt: string;
+  createdBy: string;
+  deliveries: WebhookDelivery[];
+};
+
 export type ClaimKind = "cargo_damage" | "vehicle_damage" | "accident" | "theft" | "injury";
 export type ClaimStatus = "reported" | "under_review" | "approved" | "rejected" | "paid";
 
@@ -290,6 +356,7 @@ export type AdminUser = {
   active: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  twoFactorEnabled?: boolean;
 };
 
 export type AdminPermission =
@@ -480,6 +547,7 @@ export type Ticket = {
   updatedAt: string;
   resolvedAt?: string;
   resolution?: string;
+  satisfaction?: { score: number; comment?: string; at: string };
 };
 
 export type SosStatus = "open" | "acknowledged" | "resolved";
@@ -634,6 +702,9 @@ export type AuditEntityKind =
   | "business"
   | "promotion"
   | "broadcast"
+  | "privacy"
+  | "security"
+  | "integration"
   | "pricing"
   | "zone"
   | "ticket"
@@ -695,6 +766,17 @@ export type AuditAction =
   | "broadcast.schedule"
   | "broadcast.send"
   | "broadcast.cancel"
+  | "privacy.start"
+  | "privacy.complete"
+  | "privacy.reject"
+  | "privacy.export"
+  | "security.session_revoke"
+  | "security.two_factor"
+  | "integration.key_create"
+  | "integration.key_revoke"
+  | "integration.webhook_create"
+  | "integration.webhook_toggle"
+  | "integration.webhook_test"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"

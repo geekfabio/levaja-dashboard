@@ -13,9 +13,11 @@ import { createMockDisputes } from "./disputes";
 import { createMockDocuments } from "./documents";
 import { createMockFinance } from "./finance";
 import { createMockFleets } from "./fleets";
+import { createMockIntegrations } from "./integrations";
 import { createMockMetrics } from "./metrics";
 import { createMockOperations } from "./operations";
 import { createMockPricing } from "./pricing";
+import { createMockPrivacy } from "./privacy";
 import { createMockPromotions } from "./promotions";
 import { createMockProviders } from "./providers";
 import { createMockQuality } from "./quality";
@@ -24,6 +26,7 @@ import { createMockReports } from "./reports";
 import { createMockRequests } from "./requests";
 import { createOsrmRouting } from "../http/routing";
 import type { RoutingRepository } from "../repositories/routing";
+import { createMockSecurity } from "./security";
 import { createMockSettings } from "./settings";
 import { createMockSupport } from "./support";
 import { tick } from "./ticker";
@@ -63,6 +66,9 @@ export function createMockRepositories(options: MockRepositoriesOptions = {}): M
     metrics: createMockMetrics(database),
     audit: createMockAudit(database),
     settings: createMockSettings(database),
+    privacy: createMockPrivacy(database),
+    security: createMockSecurity(database),
+    integrations: createMockIntegrations(database),
     routing: options.routing ?? createOsrmRouting(),
     demo: {
       settings: () => ({ ...database.settings }),

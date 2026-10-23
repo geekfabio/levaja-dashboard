@@ -93,10 +93,10 @@ test("sinistros: participar, analisar, aprovar e pagar com as permissões certas
   const claim = await repos.claims.report({ requestId: delivered.id, kind: "cargo_damage", description: "Frigorífico amolgado na descarga", estimatedAmount: 40_000, occurredAt: "2026-10-22T10:00:00.000Z" });
   assert.equal(claim.status, "reported");
   await repos.claims.addNote(claim.id, "Cliente enviou fotografias.");
-  await rejectsWith(repos.claims.startReview(claim.id, "ENSA", "AP-1"), "forbidden");
+  await rejectsWith(repos.claims.startReview(claim.id, "Kianda", "AP-1"), "forbidden");
   await as(repos, "financas@levaja.ao");
   await rejectsWith(repos.claims.approve(claim.id, 30_000, "Confirmado"), "invalid_transition");
-  await repos.claims.startReview(claim.id, "ENSA Seguros", "AP-2026-1");
+  await repos.claims.startReview(claim.id, "Kianda Seguros", "AP-2026-1");
   await rejectsWith(repos.claims.approve(claim.id, 90_000, "Confirmado"), "validation");
   const approved = await repos.claims.approve(claim.id, 32_000, "Dano confirmado");
   assert.equal(approved.approvedAmount, 32_000);

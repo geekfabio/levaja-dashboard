@@ -175,6 +175,9 @@ export class MockDatabase {
     if (!user || !user.active) {
       throw new RepositoryError("unauthorized", "A sua conta foi desactivada.");
     }
+    if (this.state.adminSessions?.some((record) => record.id === session.token && record.revokedAt)) {
+      throw new RepositoryError("unauthorized", "A sua sessão foi terminada. Inicie sessão outra vez.");
+    }
     if (user.role !== session.user.role) session.user = { ...user };
     session.rolePermissions = this.state.rolePermissions;
     return session;

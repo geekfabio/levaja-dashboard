@@ -1,12 +1,16 @@
 import { ROLE_LABELS } from "@/lib/leva-ja/permissions";
-import type { AdminSession, AdminUser } from "@/types/leva-ja";
+import { isTwoFactorRequired } from "@/lib/leva-ja/trust";
+import type { AccessLogEntry, AdminSession, AdminUser } from "@/types/leva-ja";
 import type { AdminAuthRepository } from "../repositories/admin-auth";
 import { RepositoryError } from "../repositories/errors";
 import type { MockDatabase } from "./database";
 import { HOUR, isoAt } from "./domain";
 import { initialsOf } from "./fixtures";
 import { findOr404, requireReason } from "./helpers";
-import { DEMO_ADMIN_CODE } from "./seed";
+import { DEMO_ADMIN_CODE, DEMO_TOTP_CODE } from "./seed";
+
+export const DEMO_IP = "196.249.104.18";
+export const DEMO_DEVICE = "Navegador neste computador";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,26 +34,58 @@ export function createMockAuth(db: MockDatabase): AdminAuthRepository {
         return { sentTo: maskEmail(normalized) };
       }),
 
-    login: (email, code) =>
+    login: (email, code, otp) =>
       db.open(() => {
         const normalized = normalizeEmail(email);
         const user = db.state.adminUsers.find((item) => item.email === normalized);
+        const nowIso = db.now().toISOString();
+        const record = (result: AccessLogEntry["result"]) =>
+          db.state.accessLog.unshift({ id: db.nextId("acc"), at: nowIso, email: normalized, userName: user?.name, result, ip: DEMO_IP, device: DEMO_DEVICE });
         if (!user || code.trim() !== DEMO_ADMIN_CODE) {
+          record("wrong_code");
+          db.persist();
           throw new RepositoryError("unauthorized", "E-mail ou código incorrecto.");
         }
-        if (!user.active) throw new RepositoryError("unauthorized", "A sua conta está desactivada. Contacte um administrador.");
+        if (!user.active) {
+          record("inactive");
+          db.persist();
+          throw new RepositoryError("unauthorized", "A sua conta está desactivada. Contacte um administrador.");
+        }
+        if (isTwoFactorRequired(user, db.state.settings.security)) {
+          if (!otp?.trim()) {
+            throw new RepositoryError("unauthorized", "Indique o código da aplicação de autenticação.", [{ field: "otp", message: "Indique o código de 6 dígitos da aplicação de autenticação." }]);
+          }
+          if (otp.trim() !== DEMO_TOTP_CODE) {
+            record("two_factor_failed");
+            db.persist();
+            throw new RepositoryError("unauthorized", "Código de autenticação incorrecto.", [{ field: "otp", message: "Código de autenticação incorrecto." }]);
+          }
+        }
         const now = db.now().getTime();
         user.lastLoginAt = isoAt(now);
         const session: AdminSession = {
-          token: `mock-${user.id}-${now.toString(36)}`,
+          token: `mock-${user.id}-${now.toString(36)}-${db.nextId("s")}`,
           user: { ...user },
           expiresAt: isoAt(now + db.state.settings.security.sessionHours * HOUR),
           rolePermissions: db.state.rolePermissions,
         };
+        db.state.adminSessions.unshift({
+          id: session.token,
+          userId: user.id,
+          userName: user.name,
+          role: user.role,
+          device: DEMO_DEVICE,
+          ip: DEMO_IP,
+          location: "Luanda",
+          createdAt: isoAt(now),
+          lastSeenAt: isoAt(now),
+        });
+        record("success");
         db.session = session;
         db.saveSession();
         db.audit(db.context(session), "session.login", { kind: "session", id: user.id, label: user.email });
         db.commit();
+        db.flush();
         return session;
       }),
 
@@ -68,8 +104,15 @@ export function createMockAuth(db: MockDatabase): AdminAuthRepository {
       db.open(() => {
         if (db.session) {
           const session = db.session;
+          const record = db.state.adminSessions.find((item) => item.id === session.token);
+          if (record && !record.revokedAt) {
+            record.revokedAt = db.now().toISOString();
+            record.revokedBy = session.user.name;
+          }
+          db.state.accessLog.unshift({ id: db.nextId("acc"), at: db.now().toISOString(), email: session.user.email, userName: session.user.name, result: "logout", ip: DEMO_IP, device: DEMO_DEVICE });
           db.audit(db.context(session), "session.logout", { kind: "session", id: session.user.id, label: session.user.email });
           db.commit();
+          db.flush();
         }
         db.session = null;
         db.saveSession();

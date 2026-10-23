@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { isRepositoryError } from "@/data/leva-ja";
 import { mutationError } from "@/hooks/admin/use-admin-mutation";
 import { useChangeAdminRole, useCreateAdminUser, useSetAdminActive } from "@/hooks/admin/use-admin-users";
+import { useSetTwoFactor } from "@/hooks/admin/use-trust";
 import { ADMIN_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/leva-ja/permissions";
 import type { AdminRole, AdminUser } from "@/types/leva-ja";
 
@@ -101,6 +102,30 @@ export function ToggleActiveDialog({ user, onClose }: { user: AdminUser; onClose
       pending={mutation.isPending}
       error={mutationError(mutation.error)}
       onConfirm={(reason) => mutation.mutateAsync({ id: user.id, active: activating, reason }).then(onClose, () => undefined)}
+    />
+  );
+}
+
+export function TwoFactorDialog({ user, onClose }: { user: AdminUser; onClose: () => void }) {
+  const mutation = useSetTwoFactor();
+  const enabling = !user.twoFactorEnabled;
+  return (
+    <ConfirmDialog
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={enabling ? `Exigir segundo factor a ${user.name}?` : `Desligar o segundo factor de ${user.name}?`}
+      description={
+        enabling
+          ? "Na próxima entrada, além do código enviado por e-mail, a pessoa tem de indicar o código da aplicação de autenticação."
+          : "A pessoa passa a entrar só com o código enviado por e-mail, a menos que a política da plataforma o exija a todos."
+      }
+      confirmLabel={enabling ? "Exigir" : "Desligar"}
+      tone={enabling ? "primary" : "danger"}
+      requireReason
+      reasonLabel="Motivo"
+      pending={mutation.isPending}
+      error={mutationError(mutation.error)}
+      onConfirm={(reason) => mutation.mutateAsync({ userId: user.id, enabled: enabling, reason }).then(onClose, () => undefined)}
     />
   );
 }

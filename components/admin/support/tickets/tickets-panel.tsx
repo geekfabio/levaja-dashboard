@@ -11,9 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ToneBadge } from "@/components/admin/shared/status-badge";
 import { errorMessage } from "@/data/leva-ja";
 import { useClock } from "@/hooks/admin/use-clock";
-import { useTickets } from "@/hooks/admin/use-support";
-import { formatElapsed } from "@/lib/format";
+import SummaryTiles from "@/components/admin/shared/summary-tiles";
+import { usePlatformSettings } from "@/hooks/admin/use-settings";
+import { useResponseSummary, useTickets } from "@/hooks/admin/use-support";
+import { formatElapsed, formatMinutes, formatNumber, formatPercent } from "@/lib/format";
 import { TICKET_PRIORITY_LABELS, TICKET_STATUS_LABELS } from "@/lib/leva-ja/services";
+import { ticketResponseSla } from "@/lib/leva-ja/trust";
+import type { ResponseSla } from "@/lib/leva-ja/trust";
 import type { Ticket, TicketPriority, TicketStatus } from "@/types/leva-ja";
 import SearchIcon from "@/public/assets/images/_common/search.svg";
 import TicketSheet, { TICKET_PRIORITY_TONES, TICKET_STATUS_TONES } from "./ticket-sheet";
@@ -25,10 +29,26 @@ const STATUS_OPTIONS = [
 ];
 const PRIORITY_OPTIONS = [{ value: "all", label: "Todas" }, ...(Object.keys(TICKET_PRIORITY_LABELS) as TicketPriority[]).map((priority) => ({ value: priority, label: TICKET_PRIORITY_LABELS[priority] }))];
 
+const SLA_TONES = { met: "success", breached: "danger", pending: "neutral", at_risk: "warning" } as const;
+
+function slaLabel(sla: ResponseSla, now: number) {
+  if (sla.status === "met") return "Cumprida";
+  if (sla.respondedAt) return "Respondida fora do prazo";
+  if (sla.status === "breached") return `Atrasada ${formatElapsed(sla.dueAt, now)}`;
+  return `Faltam ${formatMinutes(Math.max(1, sla.minutesLeft))}`;
+}
+
+function SlaBadge({ sla, now }: { sla: ResponseSla; now: number }) {
+  return <ToneBadge tone={SLA_TONES[sla.status]} label={slaLabel(sla, now)} />;
+}
+
 type Props = { userId: string; canOpenRequest: boolean; canOpenRequester: (ticket: Ticket) => boolean };
 
 export default function TicketsPanel({ userId, canOpenRequest, canOpenRequester }: Props) {
   const now = useClock();
+  const settings = usePlatformSettings();
+  const summary = useResponseSummary();
+  const hours = settings.data?.support.firstResponseHours;
   const [status, setStatus] = useState("unresolved");
   const [priority, setPriority] = useState("all");
   const [mine, setMine] = useState(false);
@@ -55,6 +75,18 @@ export default function TicketsPanel({ userId, canOpenRequest, canOpenRequester 
 
   return (
     <div className="flex flex-col gap-4">
+      <SummaryTiles
+        tiles={
+          summary.data
+            ? [
+                { label: "Sem resposta, dentro do prazo", value: summary.data.pending, display: formatNumber(summary.data.pending) },
+                { label: "Prazo quase a terminar", value: summary.data.atRisk, display: formatNumber(summary.data.atRisk) },
+                { label: "Prazo ultrapassado sem resposta", value: summary.data.breached, display: formatNumber(summary.data.breached) },
+                { label: "Respondidas no prazo", value: Math.round((summary.data.metRate ?? 0) * 100), display: summary.data.metRate === null ? "—" : formatPercent(summary.data.metRate * 100) },
+              ]
+            : null
+        }
+      />
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative flex min-w-[220px] flex-1 items-center sm:max-w-[300px]">
           <span className="sr-only">Pesquisar por código, assunto ou requerente</span>
@@ -84,6 +116,7 @@ export default function TicketsPanel({ userId, canOpenRequest, canOpenRequester 
                     <TableHead scope="col">Requerente</TableHead>
                     <TableHead scope="col">Prioridade</TableHead>
                     <TableHead scope="col">Estado</TableHead>
+                    <TableHead scope="col">Primeira resposta</TableHead>
                     <TableHead scope="col">Responsável</TableHead>
                     <TableHead scope="col">Actualizada</TableHead>
                   </TableRow>
@@ -106,6 +139,7 @@ export default function TicketsPanel({ userId, canOpenRequest, canOpenRequester 
                       <TableCell>
                         <ToneBadge tone={TICKET_STATUS_TONES[ticket.status]} label={TICKET_STATUS_LABELS[ticket.status]} />
                       </TableCell>
+                      <TableCell className="whitespace-nowrap">{hours ? <SlaBadge sla={ticketResponseSla(ticket, hours, now)} now={now} /> : "—"}</TableCell>
                       <TableCell className="text-soft">{ticket.assigneeName ?? "Por atribuir"}</TableCell>
                       <TableCell className="text-soft tabular-nums">há {formatElapsed(ticket.updatedAt, now)}</TableCell>
                     </TableRow>

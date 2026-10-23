@@ -70,18 +70,13 @@ Mapa de Angola com tiles do OpenStreetMap, zoom e arrastar (rato, teclado e bot�
 
 `/admin/empresas` com contrato, utilizadores e extractos; `/admin/promocoes` com regras e orçamento; `/admin/comunicacoes` só com envio simulado; `/admin/relatorios` com exportação CSV.
 
+## Fase 16 — Suporte avançado, segurança, protecção de dados e integrações ✅
+
+Suporte com prazos de primeira resposta, respostas prontas e satisfação; segundo factor no login, sessões activas e registo de acessos em `/admin/utilizadores`; `/admin/proteccao-dados` com prazos de 30 dias, exportação JSON e eliminação por anonimização; `/admin/integracoes` com chaves de API e webhooks (testes só simulados).
+
 ---
 
 ## Por fazer
-
-As rotas, os nomes e as permissões destas secções já existem em `lib/leva-ja/navigation.ts` e `lib/leva-ja/permissions.ts`; falta implementá-las e acrescentá-las a `NAV_GROUPS`. Cada fase mantém as regras de sempre: dados mock em `data/leva-ja/mock/`, contrato e implementação HTTP, hooks em `hooks/admin/`, regras em `lib/leva-ja/`, auditoria das acções críticas e testes de contrato.
-
-### Fase 16 — Suporte avançado, segurança, protecção de dados e integrações
-
-- Suporte: respostas prontas, prazos de resposta (`support.firstResponseHours`) e inquérito de satisfação.
-- Segurança: dois factores no login, sessões activas com terminar sessão remotamente e registo de acessos (`security.manage`).
-- `/admin/proteccao-dados`: pedidos de acesso, rectificação e eliminação ao abrigo da Lei 22/11, com prazos (`privacy.manage`).
-- `/admin/integracoes`: chaves de API e webhooks, com rotação e registo de entregas (`integrations.manage`).
 
 ### Pendente de decisão
 

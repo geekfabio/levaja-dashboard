@@ -148,7 +148,7 @@ function Body({ claim, canManage, canOpenRequest }: { claim: Claim; canManage: b
         onConfirm={() => review.mutateAsync({ id: claim.id, insurer: insurer.trim(), policyNumber: policy.trim() }).then(() => setDialog(null), () => undefined)}
       >
         <Field label="Seguradora" htmlFor="claim-insurer" required>
-          <Input id="claim-insurer" value={insurer} placeholder="Por exemplo: ENSA Seguros" onChange={(event) => setInsurer(event.target.value)} />
+          <Input id="claim-insurer" value={insurer} placeholder="Por exemplo: Kianda Seguros" onChange={(event) => setInsurer(event.target.value)} />
         </Field>
         <Field label="Número da apólice" htmlFor="claim-policy" required>
           <Input id="claim-policy" value={policy} placeholder="AP-2026-000123" onChange={(event) => setPolicy(event.target.value)} />

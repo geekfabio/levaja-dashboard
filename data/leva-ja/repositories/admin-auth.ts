@@ -4,7 +4,7 @@ export type CreateAdminUserInput = { name: string; email: string; role: AdminRol
 
 export interface AdminAuthRepository {
   requestCode(email: string): Promise<{ sentTo: string }>;
-  login(email: string, code: string): Promise<AdminSession>;
+  login(email: string, code: string, otp?: string): Promise<AdminSession>;
   currentSession(): Promise<AdminSession | null>;
   logout(): Promise<void>;
   listUsers(): Promise<AdminUser[]>;

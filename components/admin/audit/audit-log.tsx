@@ -47,7 +47,9 @@ function entityHref(entry: AuditLogEntry) {
   if (kind === "broadcast") return SECTION_ROUTES.communications;
   if (kind === "pricing" || kind === "zone") return SECTION_ROUTES.pricing;
   if (kind === "ticket" || kind === "sos" || kind === "review") return SECTION_ROUTES.support;
-  if (kind === "admin_user") return SECTION_ROUTES.users;
+  if (kind === "admin_user" || kind === "security") return SECTION_ROUTES.users;
+  if (kind === "privacy") return SECTION_ROUTES.privacy;
+  if (kind === "integration") return SECTION_ROUTES.integrations;
   return null;
 }
 

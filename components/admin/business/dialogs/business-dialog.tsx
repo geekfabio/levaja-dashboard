@@ -12,7 +12,7 @@ import { ContractFields, contractFromDraft } from "./contract-fields";
 import type { ContractDraft } from "./contract-fields";
 
 const FIELDS = [
-  { key: "name", label: "Nome da empresa", placeholder: "Por exemplo: Sonangol Logística" },
+  { key: "name", label: "Nome da empresa", placeholder: "Por exemplo: Kifangondo Logística" },
   { key: "nif", label: "NIF", placeholder: "5410002871" },
   { key: "sector", label: "Sector", placeholder: "Retalho, energia, saúde…" },
   { key: "contactName", label: "Responsável", placeholder: "Nome e apelido" },

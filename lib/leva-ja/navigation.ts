@@ -83,8 +83,8 @@ export const SECTION_DESCRIPTIONS: Record<AdminSection, string> = {
   communications: "Avisos por notificação e SMS para clientes e prestadores.",
   reports: "Retenção, funil da app e desempenho por zona e prestador.",
   users: "Administradores do painel, sessões activas e acessos.",
-  privacy: "Pedidos de acesso, rectificação e apagamento de dados (Lei n.º 22/11).",
-  integrations: "Chaves da API, webhooks e fornecedores externos.",
+  privacy: "Pedidos de acesso, rectificação e eliminação de dados pessoais (Lei n.º 22/11).",
+  integrations: "Chaves de API e webhooks para sistemas de parceiros.",
   audit: "Registo de quem fez o quê, quando e porquê.",
   settings: "Plataforma, regras de operação, pagamentos, papéis e dados de demonstração.",
 };
@@ -95,10 +95,10 @@ export const NAV_GROUPS: NavGroup[] = [
   { sections: ["overview", "requests", "scheduled", "disputes", "map"] },
   { title: "Rede", sections: ["applications", "providers", "fleets", "documents", "clients", "business"] },
   { title: "Negócio", sections: ["finance", "billing", "refunds", "pricing", "promotions", "reports"] },
-  { title: "Apoio", sections: ["support", "claims", "communications"] },
+  { title: "Apoio", sections: ["support", "claims", "communications", "privacy"] },
 ];
 
-export const NAV_FOOTER: AdminSection[] = ["users", "audit", "settings"];
+export const NAV_FOOTER: AdminSection[] = ["users", "integrations", "audit", "settings"];
 
 export const NAV_SECTIONS: AdminSection[] = [...NAV_GROUPS.flatMap((group) => group.sections), ...NAV_FOOTER];
 

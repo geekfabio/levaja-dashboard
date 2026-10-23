@@ -31,13 +31,13 @@ Antes de dar uma alteração por terminada, os quatro (`tsc`, `lint`, `test`, `b
 
 ## Credenciais de demonstração
 
-Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções.
+Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções. `nelson.cardoso@levaja.ao` (Operações) tem o segundo factor activo: depois do código, peça-se o da aplicação de autenticação, que em demonstração é **`246810`**.
 
 | E-mail | Papel | O que vê |
 | --- | --- | --- |
-| `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel e auditoria |
+| `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
 | `operacoes@levaja.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
-| `suporte@levaja.ao` | Suporte | Ocorrências, SOS, avaliações baixas e clientes |
+| `suporte@levaja.ao` | Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
 | `financas@levaja.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
 
 Os dados de demonstração são gerados com uma semente fixa (os mesmos a cada arranque), ficam guardados no navegador e podem ser repostos em **Definições → Repor dados de demonstração**. Nas mesmas definições pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro.
@@ -71,14 +71,17 @@ Endpoints usados (os da app móvel mantêm os nomes):
 
 | Área | Endpoints |
 | --- | --- |
-| Sessão | `POST /auth/request-code`, `POST /auth/login`, `GET /auth/session`, `POST /auth/logout` |
+| Sessão | `POST /auth/request-code`, `POST /auth/login` (com `otp` quando o segundo factor é exigido), `GET /auth/session`, `POST /auth/logout` |
 | Pedidos | `GET /admin/requests?status=&kind=&zone=&from=&to=&q=&page=`, `GET /admin/requests/:id`, `POST /admin/requests/:id/cancel\|reassign\|dispute\|force-complete` |
 | Prestadores | `GET /admin/providers`, `GET /providers/:id`, `GET /providers/:id/earnings\|reviews`, `POST /admin/providers/:id/approve\|suspend\|reactivate` |
 | Documentos | `GET /admin/documents`, `POST /admin/documents/:id/approve\|reject` |
 | Clientes | `GET /admin/clients`, `GET /clients/:id`, `POST /admin/clients/:id/block\|unblock` |
 | Finanças | `GET /admin/revenue`, `GET /admin/withdrawals`, `POST /admin/withdrawals/:id/approve\|reject\|paid`, `GET /admin/transactions` |
 | Preços e zonas | `GET\|PUT /admin/pricing`, `GET\|POST /admin/zones`, `PUT\|DELETE /admin/zones/:id` |
-| Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low` |
+| Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low`, `GET /admin/tickets/response-summary\|satisfaction` |
+| Protecção de dados | `GET /admin/privacy-requests`, `GET /admin/privacy-requests/summary`, `GET /admin/privacy-requests/:id`, `GET /admin/privacy-requests/:id/export`, `POST /admin/privacy-requests/:id/start\|complete\|reject` |
+| Segurança | `GET /admin/security/sessions`, `POST /admin/security/sessions/:id/revoke`, `GET /admin/security/access-log?result=&q=&page=`, `POST /admin/users/:id/two-factor` |
+| Integrações | `GET\|POST /admin/integrations/keys`, `POST /admin/integrations/keys/:id/revoke`, `GET\|POST /admin/integrations/webhooks`, `POST /admin/integrations/webhooks/:id/activate\|deactivate\|test` |
 | Contas empresariais | `GET\|POST /admin/business-accounts`, `GET /admin/business-accounts/candidates`, `GET /admin/business-accounts/:id`, `PUT /admin/business-accounts/:id/contract`, `POST /admin/business-accounts/:id/members`, `POST /admin/business-accounts/:id/members/:clientId/remove`, `POST /admin/business-accounts/:id/statements/:month/paid`, `POST /admin/business-accounts/:id/suspend\|reactivate` |
 | Promoções | `GET\|POST /admin/promotions`, `GET /admin/promotions/:id`, `POST /admin/promotions/:id/pause\|resume\|end` |
 | Comunicações | `GET\|POST /admin/broadcasts`, `POST /admin/broadcasts/estimate`, `POST /admin/broadcasts/:id/schedule\|send\|cancel` |

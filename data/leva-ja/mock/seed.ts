@@ -18,7 +18,9 @@ import type {
   PricingConfig,
   ProviderAccount,
   ProviderDocument,
+  AccessLogEntry,
   ApplicationStage,
+  PrivacyRequest,
   Broadcast,
   BusinessAccount,
   Promotion,
@@ -71,6 +73,7 @@ import type { MockState, StoredSettlement, StoredRequest } from "./state";
 export const DEFAULT_SEED = 20_250_611;
 
 export const DEMO_ADMIN_CODE = "123456";
+export const DEMO_TOTP_CODE = "246810";
 
 export const SEED_ELIGIBLE_AFTER_APPROVAL = "prv-04";
 
@@ -998,7 +1001,7 @@ function buildClaims(ctx: Context, state: MockState): Claim[] {
       reportedBy: support,
       estimatedAmount: step.amount,
       status: step.status,
-      insurer: reviewed ? (index % 2 ? "ENSA Seguros" : "Fidelidade Angola") : undefined,
+      insurer: reviewed ? (index % 2 ? "Kianda Seguros" : "Imbondeiro Seguros") : undefined,
       policyNumber: reviewed ? `AP-${2026}-${String(40_000 + index * 137).padStart(6, "0")}` : undefined,
       approvedAmount: step.status === "approved" || step.status === "paid" ? Math.round(step.amount * 0.8) : undefined,
       decisionReason: step.status === "rejected" ? "A guia de entrega assinada pelo cliente indica todas as caixas." : decidedStatus ? "Dano confirmado pelas fotografias da entrega." : undefined,
@@ -1018,12 +1021,12 @@ function buildBusinessAccounts(ctx: Context, state: MockState): BusinessAccount[
   const accounts: BusinessAccount[] = [
     {
       id: "emp-01",
-      name: "Sonangol Logística",
+      name: "Kifangondo Logística",
       nif: "5410002871",
       sector: "Energia",
       contactName: "Marta Gaspar",
       phone: "+244 923 118 940",
-      email: "compras@sonangol-logistica.ao",
+      email: "compras@kifangondo-logistica.ao",
       status: "active",
       contract: { startsAt: start, endsAt: end, discountRate: 0.1, paymentTermsDays: 30, creditLimit: 400_000 },
       clientIds: state.clients.slice(0, 4).map((client) => client.id),
@@ -1032,12 +1035,12 @@ function buildBusinessAccounts(ctx: Context, state: MockState): BusinessAccount[
     },
     {
       id: "emp-02",
-      name: "Shoprite Angola",
+      name: "Mercados Palanca",
       nif: "5403318820",
       sector: "Retalho",
       contactName: "Daniel Fortunato",
       phone: "+244 912 440 207",
-      email: "frota@shoprite.co.ao",
+      email: "frota@mercadospalanca.ao",
       status: "active",
       contract: { startsAt: start, endsAt: end, discountRate: 0.07, paymentTermsDays: 15, creditLimit: 150_000 },
       clientIds: state.clients.slice(4, 7).map((client) => client.id),
@@ -1046,12 +1049,12 @@ function buildBusinessAccounts(ctx: Context, state: MockState): BusinessAccount[
     },
     {
       id: "emp-03",
-      name: "Clínica Girassol",
+      name: "Clínica Mutamba",
       nif: "5417790012",
       sector: "Saúde",
       contactName: "Rosa Tchivinda",
       phone: "+244 934 880 115",
-      email: "administracao@clinicagirassol.ao",
+      email: "administracao@clinicamutamba.ao",
       status: "suspended",
       suspensionReason: "Dois extractos em atraso.",
       contract: { startsAt: start, endsAt: end, discountRate: 0.05, paymentTermsDays: 30, creditLimit: 80_000 },
@@ -1160,6 +1163,137 @@ function buildBroadcasts(ctx: Context, state: MockState): Broadcast[] {
       status: "draft",
       createdAt: isoAt(ctx.now - 3 * HOUR),
       createdBy: support,
+    },
+  ];
+}
+
+const CSAT_COMMENTS: Record<number, string[]> = {
+  5: ["Resolveram rápido, obrigado.", "Atendimento simpático.", ""],
+  4: ["Demorou mas resolveram.", "Resolvido, mas tive de insistir.", ""],
+  3: ["Resolveram, mas demorou dias.", ""],
+  2: ["Ainda não recebi o reembolso.", "Tive de explicar o problema três vezes."],
+};
+
+function addSatisfaction(ctx: Context, state: MockState) {
+  state.tickets.forEach((ticket, index) => {
+    if (ticket.status !== "resolved" || index % 4 === 0) return;
+    const score = [5, 4, 5, 3, 4, 2, 5][index % 7];
+    const comments = CSAT_COMMENTS[score];
+    const comment = comments[index % comments.length];
+    ticket.satisfaction = { score, comment: comment || undefined, at: isoAt(Math.min(Date.parse(ticket.resolvedAt ?? ticket.updatedAt) + 3 * HOUR, ctx.now - 10 * MINUTE)) };
+  });
+}
+
+function buildPrivacyRequests(ctx: Context, state: MockState): PrivacyRequest[] {
+  const support = state.adminUsers.find((user) => user.role === "support")?.name ?? "Suporte";
+  const plan: { kind: PrivacyRequest["kind"]; status: PrivacyRequest["status"]; daysAgo: number; provider?: boolean; details: string }[] = [
+    { kind: "access", status: "received", daysAgo: 2, details: "Pede cópia de todos os dados que a Leva Já tem sobre si." },
+    { kind: "erasure", status: "received", daysAgo: 26, details: "Quer apagar a conta e os dados pessoais." },
+    { kind: "rectification", status: "in_progress", daysAgo: 9, details: "O nome está escrito com erro nos recibos." },
+    { kind: "portability", status: "in_progress", daysAgo: 33, provider: true, details: "Prestador pede o histórico de serviços num ficheiro." },
+    { kind: "objection", status: "completed", daysAgo: 40, details: "Não quer receber comunicações de marketing." },
+    { kind: "access", status: "rejected", daysAgo: 50, details: "Pedido feito por terceiro sem procuração." },
+  ];
+  return plan.map((step, index) => {
+    const subject = step.provider ? state.providers[11 + index] : state.clients[20 + index];
+    const received = ctx.now - step.daysAgo * DAY - (index + 1) * HOUR;
+    const closed = step.status === "completed" || step.status === "rejected";
+    return {
+      id: `pd-${pad(index + 1)}`,
+      code: `PD-${1001 + index}`,
+      subjectKind: step.provider ? "provider" : "client",
+      subjectId: subject.id,
+      subjectName: subject.name,
+      kind: step.kind,
+      channel: (["app", "email", "phone"] as const)[index % 3],
+      details: step.details,
+      receivedAt: isoAt(received),
+      dueAt: isoAt(received + 30 * DAY),
+      status: step.status,
+      assigneeName: step.status === "received" ? undefined : support,
+      resolution: step.status === "completed" ? "Marketing desligado na conta do cliente." : step.status === "rejected" ? "Sem prova de identidade ou procuração do titular." : undefined,
+      completedAt: closed ? isoAt(received + 5 * DAY) : undefined,
+    };
+  });
+}
+
+function buildSecurity(ctx: Context, state: MockState) {
+  const { rng } = ctx;
+  const devices = ["Chrome · Windows", "Safari · iPhone", "Edge · Windows", "Chrome · Android", "Firefox · Ubuntu"];
+  const ips = ["196.249.104.18", "105.168.33.201", "41.223.156.9", "197.149.90.44"];
+  const nelson = state.adminUsers.find((user) => user.email === "nelson.cardoso@levaja.ao");
+  if (nelson) nelson.twoFactorEnabled = true;
+  state.adminSessions = state.adminUsers
+    .filter((user) => user.active)
+    .slice(0, 5)
+    .map((user, index) => {
+      const created = ctx.now - rng.int(1, 30) * HOUR;
+      return {
+        id: `sess-${pad(index + 1)}`,
+        userId: user.id,
+        userName: user.name,
+        role: user.role,
+        device: devices[index % devices.length],
+        ip: ips[index % ips.length],
+        location: index === 3 ? "Benguela" : "Luanda",
+        createdAt: isoAt(created),
+        lastSeenAt: isoAt(Math.min(created + rng.int(1, 6) * HOUR, ctx.now - rng.int(1, 50) * MINUTE)),
+      };
+    });
+  const results: AccessLogEntry["result"][] = ["success", "success", "wrong_code", "success", "logout", "success", "wrong_code", "wrong_code", "two_factor_failed", "success", "inactive", "success"];
+  state.accessLog = Array.from({ length: 30 }, (_, index) => {
+    const user = state.adminUsers[index % state.adminUsers.length];
+    const result = user.active ? results[index % results.length] : "inactive";
+    return {
+      id: `acc-${pad(index + 1)}`,
+      at: isoAt(ctx.now - index * 3 * HOUR - rng.int(1, 120) * MINUTE),
+      email: index === 7 ? "desconhecido@gmail.com" : user.email,
+      userName: index === 7 ? undefined : user.name,
+      result: index === 7 ? "wrong_code" : result === "two_factor_failed" && !user.twoFactorEnabled ? "wrong_code" : result,
+      ip: ips[index % ips.length],
+      device: devices[index % devices.length],
+    };
+  });
+}
+
+function buildIntegrations(ctx: Context, state: MockState) {
+  const admin = state.adminUsers.find((user) => user.role === "admin")?.name ?? "Administração";
+  state.apiKeys = [
+    { id: "key-01", name: "ERP da Kifangondo Logística", prefix: "lj_live_8k2p", scopes: ["requests.read", "requests.write", "finance.read"], createdAt: isoAt(ctx.now - 90 * DAY), createdBy: admin, lastUsedAt: isoAt(ctx.now - 2 * HOUR), expiresAt: isoAt(ctx.now + 275 * DAY) },
+    { id: "key-02", name: "Painel de BI", prefix: "lj_live_q7vd", scopes: ["requests.read", "providers.read", "finance.read"], createdAt: isoAt(ctx.now - 40 * DAY), createdBy: admin, lastUsedAt: isoAt(ctx.now - DAY) },
+    { id: "key-03", name: "Integração antiga dos Mercados Palanca", prefix: "lj_live_m3xa", scopes: ["requests.write"], createdAt: isoAt(ctx.now - 200 * DAY), createdBy: admin, lastUsedAt: isoAt(ctx.now - 60 * DAY), revokedAt: isoAt(ctx.now - 55 * DAY), revokedBy: admin, revokeReason: "Substituída pela nova integração." },
+  ];
+  const deliveries = (events: string[], failing: boolean) =>
+    Array.from({ length: 8 }, (_, index) => ({
+      id: `whd-${events[0]}-${index}`,
+      event: events[index % events.length],
+      at: isoAt(ctx.now - index * 5 * HOUR - 7 * MINUTE),
+      status: failing && index % 3 === 0 ? (index % 2 ? ("timeout" as const) : 500) : 200,
+      durationMs: 90 + ((index * 53) % 400),
+      simulated: false,
+    }));
+  state.webhooks = [
+    {
+      id: "wh-01",
+      url: "https://erp.kifangondo-logistica.ao/webhooks/levaja",
+      description: "Actualiza as ordens de transporte no ERP.",
+      events: ["request.created", "request.assigned", "request.delivered"],
+      active: true,
+      secretPreview: "whsec_4f••••••••91ab",
+      createdAt: isoAt(ctx.now - 90 * DAY),
+      createdBy: admin,
+      deliveries: deliveries(["request.created", "request.assigned", "request.delivered"], false),
+    },
+    {
+      id: "wh-02",
+      url: "https://bi.levaja.ao/ingest/pagamentos",
+      description: "Pagamentos e reembolsos para o painel de BI.",
+      events: ["payment.paid", "refund.paid"],
+      active: true,
+      secretPreview: "whsec_c2••••••••07de",
+      createdAt: isoAt(ctx.now - 40 * DAY),
+      createdBy: admin,
+      deliveries: deliveries(["payment.paid", "refund.paid"], true),
     },
   ];
 }
@@ -1387,6 +1521,11 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     businessAccounts: [],
     promotions: [],
     broadcasts: [],
+    privacyRequests: [],
+    adminSessions: [],
+    accessLog: [],
+    apiKeys: [],
+    webhooks: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -1411,7 +1550,11 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   state.businessAccounts = buildBusinessAccounts(ctx, state);
   state.promotions = buildPromotions(ctx, state);
   state.broadcasts = buildBroadcasts(ctx, state);
+  state.privacyRequests = buildPrivacyRequests(ctx, state);
+  buildSecurity(ctx, state);
+  buildIntegrations(ctx, state);
   state.tickets = buildTickets(ctx, state);
+  addSatisfaction(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);
   for (const request of rng.sample(lowRated, Math.min(3, lowRated.length))) {

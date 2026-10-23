@@ -13,6 +13,7 @@ import { Textarea } from "@/components/_ui/textarea";
 import { ToneBadge } from "@/components/admin/shared/status-badge";
 import { errorMessage } from "@/data/leva-ja";
 import { mutationError } from "@/hooks/admin/use-admin-mutation";
+import { usePlatformSettings } from "@/hooks/admin/use-settings";
 import { useAssignees, useAssignTicket, useReplyTicket, useResolveTicket, useTicket } from "@/hooks/admin/use-support";
 import { formatDateTimeNumeric } from "@/lib/format";
 import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
@@ -31,6 +32,8 @@ function TicketBody({ ticket, canOpenRequest, canOpenRequester }: { ticket: Tick
   const assign = useAssignTicket();
   const reply = useReplyTicket();
   const resolve = useResolveTicket();
+  const settings = usePlatformSettings();
+  const cannedReplies = settings.data?.support.cannedReplies ?? [];
   const [body, setBody] = useState("");
   const [resolveOpen, setResolveOpen] = useState(false);
   const resolved = ticket.status === "resolved";
@@ -143,6 +146,22 @@ function TicketBody({ ticket, canOpenRequest, canOpenRequester }: { ticket: Tick
             reply.mutateAsync({ id: ticket.id, body: body.trim() }).then(() => setBody(""), () => undefined);
           }}
         >
+          {cannedReplies.length > 0 && (
+            <Field label="Resposta pronta" htmlFor="ticket-canned">
+              <Select value="" onValueChange={(id) => setBody(cannedReplies.find((reply) => reply.id === id)?.body ?? body)}>
+                <SelectTrigger id="ticket-canned">
+                  <SelectValue placeholder="Escolha uma resposta para preencher o texto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cannedReplies.map((reply) => (
+                    <SelectItem key={reply.id} value={reply.id}>
+                      {reply.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
           <Field label="Responder" htmlFor="ticket-reply" error={reply.error ? (mutationError(reply.error) ?? undefined) : undefined}>
             <Textarea id="ticket-reply" rows={3} value={body} placeholder="Escreva a resposta ao utilizador." onChange={(event) => setBody(event.target.value)} />
           </Field>

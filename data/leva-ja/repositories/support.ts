@@ -18,6 +18,16 @@ export type LowRatingItem = Review & {
 
 export type TicketAssignee = Pick<AdminUser, "id" | "name" | "initials" | "role">;
 
+export type ResponseSummary = { pending: number; atRisk: number; breached: number; metRate: number | null };
+
+export type SatisfactionReport = {
+  responses: number;
+  average: number | null;
+  satisfiedRate: number | null;
+  responseRate: number | null;
+  recent: { ticketId: string; ticketCode: string; requesterName: string; score: number; comment?: string; at: string }[];
+};
+
 export interface SupportRepository {
   assignees(): Promise<TicketAssignee[]>;
   tickets(filters?: TicketFilters): Promise<Page<Ticket>>;
@@ -30,5 +40,7 @@ export interface SupportRepository {
   resolveSos(id: string, resolution: string): Promise<SosAlert>;
   lowRatings(query?: PageQuery & { handled?: boolean }): Promise<Page<LowRatingItem>>;
   markReviewHandled(id: string, note: string): Promise<LowRatingItem>;
+  responseSummary(): Promise<ResponseSummary>;
+  satisfaction(): Promise<SatisfactionReport>;
   subscribe(listener: RealtimeListener): Unsubscribe;
 }

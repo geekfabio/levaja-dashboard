@@ -42,6 +42,14 @@ export function useLowRatings(query: PageQuery & { handled?: boolean }) {
   });
 }
 
+export function useResponseSummary() {
+  return useQuery({ queryKey: ["admin", "support", "response-summary"], queryFn: () => repositories().support.responseSummary(), refetchInterval: 60_000 });
+}
+
+export function useSatisfaction(enabled = true) {
+  return useQuery({ queryKey: ["admin", "support", "satisfaction"], queryFn: () => repositories().support.satisfaction(), enabled });
+}
+
 export function useAssignTicket() {
   return useAdminMutation(({ id, adminId }: { id: string; adminId: string }) => repositories().support.assignTicket(id, adminId), {
     success: (ticket) => `${ticket.code} atribuída`,

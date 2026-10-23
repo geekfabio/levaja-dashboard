@@ -10,6 +10,7 @@ import type { Ticket } from "@/types/leva-ja";
 import SosAlerts from "./sos/sos-alerts";
 import TicketsPanel from "./tickets/tickets-panel";
 import LowRatingsPanel from "./reviews/low-ratings-panel";
+import SatisfactionPanel from "./satisfaction/satisfaction-panel";
 
 export default function Support() {
   const user = useAdminSessionStore((state) => state.session?.user);
@@ -36,6 +37,11 @@ export default function Support() {
                     Ocorrências
                   </TabsTrigger>
                 )}
+                {tickets && (
+                  <TabsTrigger value="satisfacao" className="focus-visible:ring-ring/60 focus-visible:ring-2 focus-visible:ring-inset">
+                    Satisfação
+                  </TabsTrigger>
+                )}
                 {reviews && (
                   <TabsTrigger value="avaliacoes" className="focus-visible:ring-ring/60 focus-visible:ring-2 focus-visible:ring-inset">
                     Avaliações baixas
@@ -45,6 +51,11 @@ export default function Support() {
               {tickets && (
                 <TabsContent value="ocorrencias" className="pt-4">
                   <TicketsPanel userId={user.id} canOpenRequest={canOpenRequest} canOpenRequester={canOpenRequester} />
+                </TabsContent>
+              )}
+              {tickets && (
+                <TabsContent value="satisfacao" className="pt-4">
+                  <SatisfactionPanel />
                 </TabsContent>
               )}
               {reviews && (

@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/_ui/button";
 import Field from "@/components/_ui/field";
 import { Input } from "@/components/_ui/input";
-import { errorMessage, repositories } from "@/data/leva-ja";
+import { errorMessage, isRepositoryError, repositories } from "@/data/leva-ja";
 import { safeNextRoute } from "@/lib/leva-ja/navigation";
 import { ROLE_LABELS } from "@/lib/leva-ja/permissions";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import { toast } from "@/stores/toast-store";
 import type { AdminRole } from "@/types/leva-ja";
 
-type Step = "email" | "code";
+type Step = "email" | "code" | "otp";
 
 export const DEMO_ACCOUNTS: { email: string; role: AdminRole }[] = [
   { email: "admin@levaja.ao", role: "admin" },
@@ -34,6 +34,7 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [otp, setOtp] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -73,14 +74,24 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
       setError("O código tem 6 dígitos.");
       return;
     }
+    if (step === "otp" && !/^\d{6}$/.test(otp.trim())) {
+      setError("O código da aplicação tem 6 dígitos.");
+      return;
+    }
     setPending(true);
     setError(null);
     try {
-      const created = await login(email, code);
+      const created = await login(email, code, step === "otp" ? otp : undefined);
       toast({ title: `Bem-vindo, ${created.user.name.split(" ")[0]}`, description: ROLE_LABELS[created.user.role], tone: "success" });
       router.replace(safeNextRoute(nextParam(), created.user.role));
     } catch (failure) {
-      setError(errorMessage(failure));
+      const needsOtp = isRepositoryError(failure) && failure.issues.some((issue) => issue.field === "otp");
+      if (needsOtp && step === "code") {
+        setStep("otp");
+        setError(null);
+      } else {
+        setError(errorMessage(failure));
+      }
       setPending(false);
     }
   }
@@ -107,6 +118,45 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
           </Field>
           <Button type="submit" variant="primary" size="md" disabled={pending} className="justify-center">
             {pending ? "A enviar…" : "Receber código"}
+          </Button>
+        </form>
+      ) : step === "otp" ? (
+        <form onSubmit={verify} noValidate className="flex flex-col gap-4">
+          <p className="caption-style text-soft">
+            Esta conta tem o segundo factor activo. Indique o código de 6 dígitos da aplicação de autenticação.
+          </p>
+          <Field label="Código da aplicação de autenticação" htmlFor="admin-otp" required error={error ?? undefined}>
+            <Input
+              id="admin-otp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              aria-invalid={Boolean(error)}
+              className="tracking-[0.4em] tabular-nums"
+              onChange={(event) => {
+                setOtp(event.target.value.replace(/\D/g, ""));
+                if (error) setError(null);
+              }}
+              autoFocus
+            />
+          </Field>
+          <Button type="submit" variant="primary" size="md" disabled={pending} className="justify-center">
+            {pending ? "A verificar…" : "Confirmar"}
+          </Button>
+          {demo && <p className="caption-style text-subtle text-center">Em demonstração, o código da aplicação é 246810.</p>}
+          <Button
+            variant="link"
+            size="none"
+            className="caption-style mx-auto"
+            onClick={() => {
+              setStep("email");
+              setCode("");
+              setOtp("");
+              setError(null);
+            }}
+          >
+            Usar outro e-mail
           </Button>
         </form>
       ) : (

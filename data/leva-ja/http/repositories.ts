@@ -41,8 +41,8 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     auth: {
       requestCode: (email) => http.post("/auth/request-code", { email }),
-      login: async (email, code) => {
-        const created = await http.post<AdminSession>("/auth/login", { email, code });
+      login: async (email, code, otp) => {
+        const created = await http.post<AdminSession>("/auth/login", { email, code, otp });
         session.write(created);
         return created;
       },
@@ -80,6 +80,33 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       forceComplete: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/force-complete`, { reason }),
       active: () => http.get("/admin/requests/active"),
       subscribe: (listener) => subscribe("requests", listener),
+    },
+
+    privacy: {
+      list: (filters = {}) => http.get("/admin/privacy-requests", filters),
+      summary: () => http.get("/admin/privacy-requests/summary"),
+      get: (requestId) => http.get(`/admin/privacy-requests/${id(requestId)}`),
+      start: (requestId) => http.post(`/admin/privacy-requests/${id(requestId)}/start`),
+      complete: (requestId, resolution) => http.post(`/admin/privacy-requests/${id(requestId)}/complete`, { resolution }),
+      reject: (requestId, reason) => http.post(`/admin/privacy-requests/${id(requestId)}/reject`, { reason }),
+      exportData: (requestId) => http.get(`/admin/privacy-requests/${id(requestId)}/export`),
+    },
+
+    security: {
+      sessions: () => http.get("/admin/security/sessions"),
+      revokeSession: (sessionId, reason) => http.post(`/admin/security/sessions/${id(sessionId)}/revoke`, { reason }),
+      accessLog: (filters = {}) => http.get("/admin/security/access-log", filters),
+      setTwoFactor: (userId, enabled, reason) => http.post(`/admin/users/${id(userId)}/two-factor`, { enabled, reason }),
+    },
+
+    integrations: {
+      keys: () => http.get("/admin/integrations/keys"),
+      createKey: (name, scopes, expiresInDays) => http.post("/admin/integrations/keys", { name, scopes, expiresInDays }),
+      revokeKey: (keyId, reason) => http.post(`/admin/integrations/keys/${id(keyId)}/revoke`, { reason }),
+      webhooks: () => http.get("/admin/integrations/webhooks"),
+      createWebhook: (input) => http.post("/admin/integrations/webhooks", input),
+      setWebhookActive: (webhookId, active) => http.post(`/admin/integrations/webhooks/${id(webhookId)}/${active ? "activate" : "deactivate"}`),
+      testWebhook: (webhookId) => http.post(`/admin/integrations/webhooks/${id(webhookId)}/test`),
     },
 
     business: {
@@ -264,6 +291,8 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       acknowledgeSos: (sosId) => http.post(`/admin/sos/${id(sosId)}/acknowledge`),
       resolveSos: (sosId, resolution) => http.post(`/admin/sos/${id(sosId)}/resolve`, { resolution }),
       lowRatings: (query = {}) => http.get("/admin/reviews/low", query),
+      responseSummary: () => http.get("/admin/tickets/response-summary"),
+      satisfaction: () => http.get("/admin/tickets/satisfaction"),
       markReviewHandled: (reviewId, note) => http.post(`/admin/reviews/${id(reviewId)}/handled`, { note }),
       subscribe: (listener) => subscribe("support", listener),
     },
