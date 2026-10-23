@@ -33,14 +33,14 @@ export function buildIcs(events: CalendarEvent[], calendarName: string, stamp: s
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Alimenta Angola//CRM//PT",
+    "PRODID:-//Leva Já//CRM//PT",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeText(calendarName)}`,
     "X-WR-TIMEZONE:Africa/Luanda",
     ...events.flatMap((event) => [
       "BEGIN:VEVENT",
-      `UID:${event.uid}@crm.alimentaangola.co.ao`,
+      `UID:${event.uid}@crm.levaja.ao`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${compactDate(event.date)}`,
       `DTEND;VALUE=DATE:${compactDate(nextDay(event.date))}`,

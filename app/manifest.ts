@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Alimenta Angola CRM",
-    short_name: "Alimenta CRM",
-    description: "Carteira de clientes, follow-up, vendas e rota do dia da Alimenta Angola — Cash and Carry.",
+    name: "Leva Já CRM",
+    short_name: "Leva Já CRM",
+    description: "Carteira de clientes, follow-up, campanhas e rota do dia do Leva Já.",
     lang: "pt-AO",
     start_url: "/atividades",
     display: "standalone",

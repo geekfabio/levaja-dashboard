@@ -6,18 +6,23 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/_ui/sheet";
-import SidebarContent from "./sidebar-content";
+import type { ReactNode } from "react";
 import SidebarResizer from "./sidebar-resizer";
 import { useUiStore } from "@/stores/ui-store";
 
-export default function Sidebar() {
+type SidebarProps = {
+  children: ReactNode;
+  description: string;
+};
+
+export default function Sidebar({ children, description }: SidebarProps) {
   const sidebarOpen = useUiStore((state) => state.sidebarOpen);
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
 
   return (
     <>
       <aside className="relative hidden w-(--sidebar-width) shrink-0 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-        <SidebarContent />
+        {children}
         <SidebarResizer />
       </aside>
 
@@ -27,10 +32,8 @@ export default function Sidebar() {
           className="w-[254px] max-w-[85vw] border-sidebar-border bg-sidebar"
         >
           <SheetTitle className="sr-only">Navegação</SheetTitle>
-          <SheetDescription className="sr-only">
-            Secções do CRM da Alimenta Angola
-          </SheetDescription>
-          <SidebarContent />
+          <SheetDescription className="sr-only">{description}</SheetDescription>
+          {children}
         </SheetContent>
       </Sheet>
     </>

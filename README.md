@@ -1,76 +1,142 @@
-# Alimenta Angola CRM
+# Leva Já — painel de administração e CRM
 
-CRM interno da **Alimenta Angola — Cash and Carry**: carteira de clientes, funil comercial, atividades, **Email Marketing** e **SMS**, tudo em português de Angola.
+Repositório web do **Leva Já**, a app de Luanda que liga clientes a prestadores de reboque, carga com pickup, mudança pequena e mudança de casa.
 
-Construído sobre o template `kargul-starter` (Next.js 16 · React 19 · Tailwind CSS 4 · Zustand · Supabase), actualmente a ser adaptado de um "Sales CRM" genérico em inglês. O estado de cada módulo está em [FEATURES.md](FEATURES.md); a ordem de trabalho em [ROADMAP.md](ROADMAP.md).
+- **Painel de administração** em `/admin`: pedidos, mapa operacional, prestadores e documentos, clientes, finanças, preços e zonas, suporte e SOS, utilizadores do painel e auditoria. Todo em português de Portugal.
+- **CRM comercial** em `/`: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações e tickets.
 
-## Arrancar
+Next.js 16 · React 19 · Tailwind CSS 4 · TanStack Query · Zustand. A especificação do painel está em [LEVA_JA_ADMIN.md](LEVA_JA_ADMIN.md).
+
+## Como correr
+
+Requer Node.js 22.18 ou mais recente (os testes correm TypeScript por type stripping).
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
+Abra [http://localhost:3000/admin](http://localhost:3000/admin) para o painel ou [http://localhost:3000](http://localhost:3000) para o CRM.
 
-| Comando                | O que faz                                               |
-| ---------------------- | ------------------------------------------------------- |
-| `npm run dev`          | Servidor de desenvolvimento                             |
-| `npm run build`        | Build de produção                                       |
-| `npm run start`        | Serve o build de produção                               |
-| `npm run lint`         | ESLint                                                  |
-| `npm run to:avif`      | Converte uma imagem para AVIF e reporta o custo inline  |
-| `npm run extract:avif` | Extrai o primeiro frame de cada `.webm` em `public/`    |
-| `npm run frame:rive`   | Gera um poster a partir de um ficheiro `.riv`           |
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm run start` | Serve o build de produção |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Verificação de tipos |
+| `npm test` | Testes (`node:test`), incluindo os de contrato do painel |
 
-## Documentação
+Antes de dar uma alteração por terminada, os quatro (`tsc`, `lint`, `test`, `build`) têm de passar.
 
-| Ficheiro                     | O que tem                                                        |
-| ---------------------------- | ---------------------------------------------------------------- |
-| [CLAUDE.md](CLAUDE.md)       | Contexto do produto, regras de código, marca, stack. **Lê primeiro.** |
-| [FEATURES.md](FEATURES.md)   | Especificação por módulo, glossário do negócio, estado actual    |
-| [ROADMAP.md](ROADMAP.md)     | Fases de entrega, decisões em aberto, riscos                     |
-| [AGENTS.md](AGENTS.md)       | Regras de execução para agentes + notas da versão do Next.js     |
-| `.builderrules`              | As 7 regras de base do template                                  |
+## Credenciais de demonstração
+
+Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções. `nelson.cardoso@levaja.ao` (Operações) tem o segundo factor activo: depois do código, peça-se o da aplicação de autenticação, que em demonstração é **`246810`**.
+
+| E-mail | Papel | O que vê |
+| --- | --- | --- |
+| `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
+| `operacoes@levaja.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
+| `suporte@levaja.ao` | Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
+| `financas@levaja.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
+
+Os dados de demonstração são gerados com uma semente fixa (os mesmos a cada arranque), ficam guardados no navegador e podem ser repostos em **Definições → Repor dados de demonstração**. Nas mesmas definições pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro.
+
+## Dados: padrão Repository
+
+```
+data/leva-ja/
+  repositories/   contratos por área e RepositoryError
+  mock/           MockDatabase semeada com as regras de negócio e tempo real simulado
+  http/           implementação REST com fetch
+  index.ts        repositories(): escolhe mock ou http
+```
+
+Páginas e componentes nunca importam a implementação: usam os hooks de `hooks/admin/`, que chamam `repositories()`. As regras de negócio (estados, preços, elegibilidade e permissões) estão em `lib/leva-ja/` e são as mesmas na UI e no mock.
+
+### Ligar à API real
+
+1. Crie `.env.local` (fica fora do Git):
+
+   ```bash
+   NEXT_PUBLIC_DATA_SOURCE=http
+   NEXT_PUBLIC_API_URL=https://api.levaja.ao
+   ```
+
+2. Reinicie o servidor. `repositories()` passa a usar `data/leva-ja/http/`, sem mudanças na UI.
+
+A implementação HTTP envia `Authorization: Bearer <token>` com o token devolvido por `POST /auth/login`, converte os erros em `RepositoryError` (`400`/`422` → `validation` com `issues`, `401` → `unauthorized`, `403` → `forbidden`, `404` → `not_found`, `409` → `invalid_transition`, falha de rede ou `5xx` → `network`) e, como ainda não há canal de tempo real, actualiza as listas por consulta periódica.
+
+Endpoints usados (os da app móvel mantêm os nomes):
+
+| Área | Endpoints |
+| --- | --- |
+| Sessão | `POST /auth/request-code`, `POST /auth/login` (com `otp` quando o segundo factor é exigido), `GET /auth/session`, `POST /auth/logout` |
+| Pedidos | `GET /admin/requests?status=&kind=&zone=&from=&to=&q=&page=`, `GET /admin/requests/:id`, `POST /admin/requests/:id/cancel\|reassign\|dispute\|force-complete` |
+| Prestadores | `GET /admin/providers`, `GET /providers/:id`, `GET /providers/:id/earnings\|reviews`, `POST /admin/providers/:id/approve\|suspend\|reactivate` |
+| Documentos | `GET /admin/documents`, `POST /admin/documents/:id/approve\|reject` |
+| Clientes | `GET /admin/clients`, `GET /clients/:id`, `POST /admin/clients/:id/block\|unblock` |
+| Finanças | `GET /admin/revenue`, `GET /admin/withdrawals`, `POST /admin/withdrawals/:id/approve\|reject\|paid`, `GET /admin/transactions` |
+| Preços e zonas | `GET\|PUT /admin/pricing`, `GET\|POST /admin/zones`, `PUT\|DELETE /admin/zones/:id` |
+| Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low`, `GET /admin/tickets/response-summary\|satisfaction` |
+| Protecção de dados | `GET /admin/privacy-requests`, `GET /admin/privacy-requests/summary`, `GET /admin/privacy-requests/:id`, `GET /admin/privacy-requests/:id/export`, `POST /admin/privacy-requests/:id/start\|complete\|reject` |
+| Segurança | `GET /admin/security/sessions`, `POST /admin/security/sessions/:id/revoke`, `GET /admin/security/access-log?result=&q=&page=`, `POST /admin/users/:id/two-factor` |
+| Integrações | `GET\|POST /admin/integrations/keys`, `POST /admin/integrations/keys/:id/revoke`, `GET\|POST /admin/integrations/webhooks`, `POST /admin/integrations/webhooks/:id/activate\|deactivate\|test` |
+| Contas empresariais | `GET\|POST /admin/business-accounts`, `GET /admin/business-accounts/candidates`, `GET /admin/business-accounts/:id`, `PUT /admin/business-accounts/:id/contract`, `POST /admin/business-accounts/:id/members`, `POST /admin/business-accounts/:id/members/:clientId/remove`, `POST /admin/business-accounts/:id/statements/:month/paid`, `POST /admin/business-accounts/:id/suspend\|reactivate` |
+| Promoções | `GET\|POST /admin/promotions`, `GET /admin/promotions/:id`, `POST /admin/promotions/:id/pause\|resume\|end` |
+| Comunicações | `GET\|POST /admin/broadcasts`, `POST /admin/broadcasts/estimate`, `POST /admin/broadcasts/:id/schedule\|send\|cancel` |
+| Relatórios | `GET /admin/reports/:kind?from=&to=` (`operations`, `finance`, `providers`, `zones`, `business`) |
+| Operação | `GET /admin/requests/scheduled?state=&days=&zone=`, `GET /admin/metrics/sla?from=&to=`, `GET /admin/metrics/heatmap?kind=&days=&hour=` |
+| Sinistros | `GET\|POST /admin/claims`, `GET /admin/claims/summary`, `GET /admin/claims/:id`, `GET /admin/requests/:id/claims`, `POST /admin/claims/:id/review\|notes\|approve\|reject\|paid` |
+| Candidaturas | `GET /admin/applications`, `GET /admin/applications/summary`, `GET /admin/applications/:id`, `POST /admin/applications/:id/documents\|interview\|inspection\|advance\|approve\|reject` |
+| Frotas | `GET\|POST /admin/fleets`, `GET /admin/fleets/:id`, `POST /admin/fleets/:id/drivers`, `POST /admin/fleets/:id/drivers/:providerId/remove`, `POST /admin/fleets/:id/suspend\|reactivate` |
+| Qualidade | `GET /admin/quality`, `GET /admin/quality/:providerId`, `GET /admin/penalties`, `POST /admin/providers/:id/penalties`, `POST /admin/penalties/:id/revoke` |
+| Facturação | `GET /admin/invoices`, `GET /admin/invoices/export`, `GET /admin/invoices/:id`, `GET /admin/settlements?from=&to=`, `POST /admin/settlements/:id/received\|resolve`, `GET /admin/cash-debts`, `GET\|POST /admin/cash-debts/:providerId/deposits` |
+| Lotes de pagamento | `GET\|POST /admin/payout-batches`, `GET /admin/payout-batches/:id`, `POST /admin/payout-batches/:id/send\|paid\|cancel` |
+| Disputas | `GET /admin/disputes?state=&category=&q=&page=`, `GET /admin/disputes/summary`, `POST /admin/disputes/:id/notes\|resolve`, `PUT /admin/disputes/:id/category` |
+| Reembolsos | `GET /admin/refunds?status=&source=&q=&page=`, `GET /admin/refunds/summary`, `GET /admin/requests/:id/refunds`, `POST /admin/refunds`, `POST /admin/refunds/:id/approve\|reject\|paid` |
+| Métricas e auditoria | `GET /admin/metrics?from=&to=`, `GET /admin/metrics/attention`, `GET /admin/audit` |
+| Utilizadores | `GET\|POST /admin/users`, `POST /admin/users/:id/role\|activate\|deactivate` |
+
+As acções críticas enviam `reason` no corpo, que o servidor deve guardar na auditoria.
+
+### Mapa e rotas
+
+Os mapas usam tiles do OpenStreetMap e as rotas pelas estradas vêm de um servidor OSRM (`GET /route/v1/driving/{lng},{lat};…?overview=full&geometries=geojson`). Se o servidor de rotas falhar, o painel mostra uma estimativa em linha recta e avisa. Os dois endereços são configuráveis:
+
+```bash
+NEXT_PUBLIC_MAP_TILES_URL=https://tile.openstreetmap.org/{z}/{x}/{y}.png
+NEXT_PUBLIC_ROUTING_URL=https://router.project-osrm.org
+```
+
+Os servidores públicos servem só para demonstração (as regras de uso do OpenStreetMap e do OSRM não permitem tráfego de produção). Em produção, aponte para servidores próprios ou contratados e mantenha a atribuição «© Colaboradores do OpenStreetMap».
 
 ## Estrutura
 
 ```
-app/                    rotas, layout, globals.css, robots/sitemap/llms.txt
-components/_ui/         primitivas (button, dialog, table, asset…)
-components/_common/     sidebar, header, scroll-to-top
-components/companies/   módulo de Clientes — a referência para todos os outros
-data/                   dados fictícios, substituídos por Supabase ao longo do roadmap
-lib/                    lógica pura: filtros, formatação, CSV, SEO, easings
-stores/                 stores Zustand
-hooks/                  hooks de React
-public/assets/images/   ícones e imagens, a espelhar components/
+app/(app)/              CRM
+app/admin/login/        login do painel
+app/admin/(painel)/     guarda de sessão e de papel, sidebar, topbar e páginas
+components/_ui/         primitivas (button, dialog, table, skeleton…)
+components/_common/     peças partilhadas (sidebar, charts/, async-state, pagination, confirm-dialog)
+components/admin/       módulos do painel, shell/ e shared/
+components/<modulo>/    módulos do CRM
+data/leva-ja/           repositórios do painel
+lib/leva-ja/            regras de negócio do painel
+hooks/admin/            hooks de TanStack Query
+tests/                  testes (leva-ja-*.test.ts para o painel)
 ```
 
-## Regras que não se negoceiam
+## Documentação
 
-1. **Tudo em pt-AO no ecrã**, identificadores em inglês no código.
-2. **Kwanza (Kz)**, datas em `Africa/Luanda`, telefones `+244` — sempre pelos helpers de `lib/`.
-3. **Sem comentários no código**; sem estilos de fonte em `h1`/`h2`/`h3`/`p` (a escala é global em `app/globals.css`); botões sempre pelo componente `Button` com `variant` explícito.
-4. **RLS activo em todas as tabelas** do Supabase, desde a primeira migração.
-5. **Email e SMS em sandbox** por omissão. Envio real exige `MESSAGING_LIVE=true` e confirmação humana.
-
-O detalhe está em [CLAUDE.md](CLAUDE.md).
+| Ficheiro | O que tem |
+| --- | --- |
+| [LEVA_JA_ADMIN.md](LEVA_JA_ADMIN.md) | Especificação do painel, decisões e estado |
+| [CLAUDE.md](CLAUDE.md) | Contexto do produto, regras de código, marca e stack |
+| [FEATURES.md](FEATURES.md) | O que cada módulo faz |
+| [ROADMAP.md](ROADMAP.md) | Fases de entrega e critérios de conclusão |
+| [AGENTS.md](AGENTS.md) | Regras para agentes e notas da versão do Next.js |
 
 ## Marca
 
-Logótipo: `public/assets/images/_common/brand/alimenta-angola-logo.png`
-
-| Token          | Hex       |
-| -------------- | --------- |
-| `brand`        | `#DF2828` |
-| `brand-accent` | `#F9EB2A` |
-| `brand-ink`    | `#000000` |
-| `brand-paper`  | `#FFFFFF` |
-
-## Configuração inicial de ambiente
-
-1. **`lib/seo.ts`** — `SITE_NAME`, `SITE_URL`, `SITE_DESCRIPTION`, `SITE_ROUTES`. `app/robots.ts`, `app/sitemap.ts`, `app/llms.txt/route.ts` e a metadata de cada página derivam daqui. `NEXT_PUBLIC_SITE_URL` sobrepõe o URL por deploy.
-2. **`app/globals.css`** — escala tipográfica (`@layer base`) e tokens de cor, incluindo os de marca.
-3. **`app/opengraph-image.jpg`** — 1200×630, com `opengraph-image.alt.txt` ao lado.
-4. **Supabase** — servidor MCP configurado em `.mcp.json`; precisa de ser autorizado numa sessão interactiva (`/mcp`). As variáveis de ambiente ficam em `.env.local`, fora do Git.
+Logótipo provisório em `public/assets/images/_common/brand/leva-ja-logo.svg` (e o símbolo `leva-ja-mark.svg`). Primário `#0A8743`, verde vivo `#12A150` (só em elementos sem texto), tinta `#0F2A1E`, fundo `#F8F9F7`. Os tokens estão em `app/globals.css`.

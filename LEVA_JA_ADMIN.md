@@ -184,13 +184,13 @@ data/leva-ja/
 ### Fases (um commit pequeno por fase)
 
 1. Inventário e plano. **Feito.**
-2. Tipos, contratos, MockDatabase, gerador e testes de contrato. **Em curso.**
-3. Layout do painel (sidebar e topbar do CRM), login mock e permissões por papel. Inclui o rebrand do CRM e a remoção de módulos (secção 2).
-4. Visão geral e pedidos (lista, detalhe e acções).
-5. Prestadores e validação de documentos.
-6. Clientes, finanças e levantamentos.
-7. Preços, zonas, suporte e SOS, auditoria e utilizadores.
-8. Esqueleto HTTP, README (como correr, como ligar à API, credenciais de demonstração) e revisão final.
+2. Tipos, contratos, MockDatabase, gerador e testes de contrato. **Feito.**
+3. Layout do painel (sidebar e topbar do CRM), login mock e permissões por papel. Inclui o rebrand do CRM e a remoção de módulos (secção 2). **Feito.**
+4. Visão geral e pedidos (lista, detalhe e acções). **Feito.**
+5. Prestadores e validação de documentos. **Feito.**
+6. Clientes, finanças e levantamentos. **Feito.**
+7. Preços, zonas, suporte e SOS, auditoria e utilizadores. **Feito.**
+8. Esqueleto HTTP, README (como correr, como ligar à API, credenciais de demonstração) e revisão final. **Feito.**
 
 ### Critérios de conclusão
 
@@ -313,20 +313,42 @@ data/leva-ja/
 
 ---
 
-## 4. Estado actual (onde parou)
+## 4. Estado actual
 
-**Feito**
-- `git init` com o commit inicial `a7773df`. `.claude/settings.local.json` foi para o `.gitignore`.
-- `npm install`. Estado de partida: lint OK, 46 testes OK; o `tsc` só falhava nos imports de `.svg`.
-- `types/svg.d.ts`, que resolve esses erros (ainda por confirmar com `npx tsc --noEmit`).
-- `types/leva-ja.ts`.
-- `lib/leva-ja/status.ts`, `services.ts` (rótulos pt-PT), `pricing.ts`, `eligibility.ts` e `permissions.ts`.
-- `lib/format.ts`: acrescentados `formatKz`, `groupThousands`, `formatDateTimeNumeric`, `formatDateNumeric` e `luandaDay`.
-- Todos os contratos em `data/leva-ja/repositories/`: `errors`, `common`, `admin-auth`, `requests`, `providers`, `documents`, `clients`, `finance`, `pricing`, `zones`, `support`, `metrics`, `audit`, `demo` e `index`.
+Todas as fases estão feitas, com um commit por fase. No fim de cada uma, `npx tsc --noEmit`, `npm run lint`, `npm test` e `npm run build` passaram.
 
-**Próximos passos (para fechar a Fase 2)**
-1. `data/leva-ja/mock/`: `random.ts`, `seed.ts` (gerador), `database.ts` (MockDatabase), uma implementação por repositório e `index.ts` (`createMockRepositories`).
-2. `data/leva-ja/index.ts` com `repositories()`, por agora só com mock. O http entra na Fase 8.
-3. Testes de contrato e de preço/formatação em `tests/leva-ja-*.test.ts`.
-4. Correr `npx tsc --noEmit`, `npm run lint` e `npm test`, e depois fazer o commit da Fase 2.
-5. Seguir pelas Fases 3 a 8, com um commit por fase.
+**O que existe**
+- `data/leva-ja/mock/`: gerador com semente fixa (`seed.ts`), `MockDatabase` (latência, falhas, cópias defensivas, `localStorage` com deslocação das datas para o dia actual, `subscribe` e ticker), uma implementação por repositório e `createMockRepositories`.
+- `data/leva-ja/http/`: cliente REST com conversão de erros e todos os repositórios; `repositories()` escolhe por `NEXT_PUBLIC_DATA_SOURCE` (mock por omissão) e `NEXT_PUBLIC_API_URL`.
+- Páginas: `/admin/login`, `/admin`, `pedidos[/id]`, `agendados`, `disputas`, `mapa`, `candidaturas`, `prestadores[/id]`, `frotas`, `documentos`, `clientes[/id]`, `empresas`, `financas`, `facturacao`, `reembolsos`, `precos`, `promocoes`, `relatorios`, `suporte`, `sinistros`, `comunicacoes`, `proteccao-dados`, `utilizadores`, `integracoes`, `auditoria` e `definicoes`.
+- Hooks de TanStack Query em `hooks/admin/`; peças genéricas em `components/_ui/skeleton.tsx`, `components/_common/{async-state,pagination,confirm-dialog}.tsx` e `components/_common/charts/`.
+- Testes: `tests/leva-ja-contracts.test.ts` (regras de negócio, permissões, auditoria), `leva-ja-domain.test.ts` (preço, formatação, máquina de estados, gerador, CSV), `leva-ja-http.test.ts` (endpoints e erros) e um ficheiro por fase acrescentada: `leva-ja-map`, `-refunds`, `-billing`, `-network`, `-operations`, `-commerce` e `-trust`.
+
+**Decisões tomadas durante a implementação**
+- Os timestamps do painel são ISO em UTC; os dias (`YYYY-MM-DD`) são do fuso de Luanda.
+- O saldo reservado de um prestador inclui os levantamentos pendentes **e** aprovados ainda não pagos.
+- Aprovar um prestador exige os quatro documentos válidos; suspender exige que não tenha pedido em curso.
+- O contrato de suporte ganhou `assignees()`, para o papel Suporte poder atribuir ocorrências sem acesso à gestão de utilizadores.
+- A classe ABC do CRM (campanhas e automações) passou a ser calculada pelo valor em carteira, porque as vendas foram removidas.
+- O mapa (operacional, detalhe do pedido, cobertura do prestador e zonas) usa tiles do OpenStreetMap num componente próprio, `components/admin/map/osm-map/`, sem biblioteca nova: projecção Web Mercator em `lib/map-projection.ts`, arrastar, roda do rato, duplo clique, teclado (setas, + e −), botões «Angola» e «Luanda», agrupamento de marcadores abaixo do zoom 11, escala e atribuição «© Colaboradores do OpenStreetMap». O centro fica limitado à volta de Angola (zoom 5 a 18).
+- As viaturas aparecem com o ícone da classe (reboque, pickup, carrinha, camião), verdes quando livres e azuis quando em serviço; as posições mexem com o ticker do mock.
+- As rotas vêm do `RoutingRepository` (`data/leva-ja/repositories/routing.ts`): implementação OSRM em `data/leva-ja/http/routing.ts`, usada pelo mock e pelo HTTP, com cache e, se o serviço falhar, a estimativa de `lib/leva-ja/routing.ts` (linha recta × 1,35 a 28 km/h). A duração é ajustada à classe da viatura (camião e reboque × 1,25, carrinha × 1,1). O plano da rota (`routePlan`) liga o prestador à recolha até chegar e à entrega quando está em transporte.
+- Endereços configuráveis: `NEXT_PUBLIC_MAP_TILES_URL` (por omissão `https://tile.openstreetmap.org/{z}/{x}/{y}.png`) e `NEXT_PUBLIC_ROUTING_URL` (por omissão o servidor público de demonstração do OSRM). Os dois servidores públicos são só para demonstração; em produção usa-se um servidor de tiles e um OSRM próprios ou contratados.
+
+- Disputas e reembolsos (`lib/leva-ja/refunds.ts`, repositórios `disputes` e `refunds`): só pedidos pagos são reembolsáveis; o total reembolsado (pendente, aprovado ou pago) nunca passa o valor pago; o pedido tem de ser feito no prazo de `payouts.refundWindowDays` (30 dias) desde o pagamento; acima de `payouts.refundDualApprovalAbove` (20 000 Kz) quem pediu não pode aprovar. Reembolso pago e imputado ao prestador cria uma transacção «Reembolso» negativa na carteira; se for da plataforma, desconta à receita (`totals.refunds`). Uma disputa está fora do prazo depois de 72 h aberta; resolvê-la com reembolso exige também `refunds.request` e cria o reembolso por aprovar. O estado do mock passou à versão 3.
+
+- Facturação (`lib/leva-ja/billing.ts`, repositório `billing`): as facturas-recibo e as notas de crédito são calculadas a partir dos pedidos pagos e dos reembolsos pagos, com o IVA de `tax.vatRate` incluído no preço e numeração sequencial por série e ano (`FT LJ 2026/00001`, `NC LJ 2026/00001`). A reconciliação compara, por dia e canal (cartão e Multicaixa), o valor dos pedidos pagos com o recebido no extracto; o numerário em dívida é a taxa mais a comissão dos serviços pagos em numerário, abatida pelas entregas por ordem de antiguidade, e fica fora do prazo depois de `payouts.cashSettlementDays`. Os lotes de pagamento só aceitam levantamentos aprovados que não estejam noutro lote aberto; ao marcar o lote como pago, cada levantamento fica pago com a referência do banco. O estado do mock passou à versão 4.
+
+- Rede (`lib/leva-ja/quality.ts`, repositórios `applications`, `fleets` e `quality`): uma candidatura passa por registo, documentos (os quatro obrigatórios), entrevista (marcada e já realizada) e vistoria aprovada; aprovar cria o prestador «por aprovar» com os documentos na fila de validação. Um prestador pertence no máximo a uma frota, e uma frota suspensa não recebe motoristas nem aprova candidaturas. A pontuação de qualidade (0 a 100) usa os últimos 30 dias e os limites de `dispatch.arrivalTargetMinutes` e `cancellation.providerCancelLimit`. A multa cria uma transacção «Multa» negativa; a suspensão temporária grava `suspendedUntil` e o ticker reactiva o prestador no fim do prazo; anular repõe a carteira ou reactiva. O estado do mock passou à versão 5.
+
+- Operação (`lib/leva-ja/scheduling.ts`, repositórios `operations` e `claims`): um pedido agendado só fica «em curso» (mapa, atribuição automática, pedidos parados, prestador ocupado) a `dispatch.scheduleLeadMinutes` (60 min) da hora marcada; antes disso conta só em Agendados, e está em risco se faltarem menos de 3 h sem prestador. Os prazos medem a atribuição desde o início da atribuição (criação ou hora marcada menos a antecedência) e a chegada desde a atribuição, contra `assignTargetMinutes` e `arrivalTargetMinutes`. O mapa de calor agrupa a procura em células de cerca de 1 km e compara, por zona, os pedidos com os prestadores activos que a cobrem. Um sinistro só se participa depois da recolha; quem tem `claims.view` participa e acrescenta notas, quem tem `claims.manage` analisa, aprova, recusa e paga. As fotografias do pedido são etiquetas de demonstração, sem imagens reais. O estado do mock passou à versão 6.
+
+- Negócio (`lib/leva-ja/commerce.ts`, repositórios `business`, `promotions`, `communications` e `reports`): o extracto mensal de uma empresa soma os pedidos pagos dos seus utilizadores desde o início do contrato, com o desconto do contrato, e vence `paymentTermsDays` depois do fim do mês; um cliente só pertence a uma empresa. Uma promoção está agendada, activa, em pausa, terminada ou esgotada (orçamento gasto), e o desconto respeita serviços, zonas, mínimo, primeiro pedido, usos por cliente, máximo e orçamento restante. As comunicações calculam o público pelos segmentos e zonas, mas o envio é sempre simulado (entregas e falhas fictícias) e a auditoria regista que nenhuma mensagem saiu; ligar um fornecedor real exige `MESSAGING_LIVE=true` e pedido explícito, como no CRM. O estado do mock passou à versão 7.
+
+- Confiança (`lib/leva-ja/trust.ts`, repositórios `privacy`, `security` e `integrations`, e `support.responseSummary()`/`satisfaction()`): o prazo de primeira resposta de uma ocorrência conta desde a abertura até à primeira mensagem da equipa, com as horas de `support.firstResponseHours` por prioridade, e fica «quase a terminar» no último quarto. O segundo factor é pedido no login quando `security.require2fa` está ligado ou o utilizador o tem activo; em demonstração o código é `246810` (Nelson Cardoso tem-no activo). Cada entrada cria uma sessão registada; terminar uma sessão remotamente invalida-a na próxima acção, e a sessão actual não se termina por aí. Os pedidos de dados pessoais têm 30 dias de prazo (aviso a 7 dias); a exportação JSON só existe para acesso e portabilidade e fica na auditoria; a eliminação anonimiza o titular, mantém pedidos e facturas sem dados pessoais e é recusada se houver pedidos em curso ou disputas abertas. As chaves de API e os segredos dos webhooks só são mostrados uma vez (fica guardado o início da chave e uma versão mascarada do segredo); os webhooks só aceitam `https` com endereço público, e o teste é simulado, sem pedido de rede. O estado do mock passou à versão 8.
+
+**Por decidir com o utilizador**
+- Ficheiros da marca antiga que já não são usados ou continuam com o logótipo da Alimenta Angola: `public/assets/images/_common/brand/alimenta-angola-logo.png`, `app/favicon.ico` e `app/apple-icon.png`. Não foram apagados nem substituídos porque não estavam na lista de remoção aprovada.
+- `UI_ROADMAP.md` ainda descreve o CRM da Alimenta Angola.
+- `components/admin/shared/luanda-map.tsx` (o mapa SVG anterior) deixou de ser usado com o mapa OpenStreetMap. Não foi apagado, por não estar na lista aprovada.
+- Código que ficou sem uso depois da remoção de Previsão e Relatórios: `components/_common/at-risk-list.tsx`, `lib/reports.ts` e `lib/dashboard.ts`. Compilam e não foram apagados, por não estarem na lista aprovada.

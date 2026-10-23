@@ -1,5 +1,16 @@
 import type { DiscountScope } from "./automations";
-import type { ProductCategory } from "./sales";
+
+export const PRODUCT_CATEGORIES = [
+  "Mercearia",
+  "Bebidas",
+  "Óleos e gorduras",
+  "Arroz e massas",
+  "Laticínios",
+  "Congelados",
+  "Higiene e limpeza",
+] as const;
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 export const OFFER_STATUSES = [
   "Por apresentar",

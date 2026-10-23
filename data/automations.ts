@@ -20,9 +20,7 @@ export const TRIGGER_TYPES = [
   "fase-alterada",
   "oportunidade-ganha",
   "oportunidade-perdida",
-  "dias-sem-comprar",
   "aniversario",
-  "divida-vencida",
   "campanha-aberta",
 ] as const;
 
@@ -34,9 +32,7 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
   "fase-alterada": "Oportunidade muda de fase",
   "oportunidade-ganha": "Oportunidade ganha",
   "oportunidade-perdida": "Oportunidade perdida",
-  "dias-sem-comprar": "N dias sem comprar",
   aniversario: "Aniversário do cliente",
-  "divida-vencida": "Dívida vencida",
   "campanha-aberta": "Campanha aberta ou clicada",
 };
 
@@ -53,7 +49,7 @@ export type Trigger = {
 };
 
 export const DEFAULT_TRIGGER: Trigger = {
-  type: "dias-sem-comprar",
+  type: "cliente-criado",
   days: 30,
   stage: OPPORTUNITY_STAGES[1],
   clientStage: "Reactivação",
@@ -178,68 +174,6 @@ export const AUTOMATIONS: Automation[] = [
     lastRunAt: "2026-10-10T09:00",
     activatedAt: "2026-09-15",
     updatedAt: "2026-09-15",
-  },
-  {
-    id: "aut-2",
-    name: "Reativação de cliente inativo",
-    status: "Ativa",
-    trigger: { ...DEFAULT_TRIGGER, type: "dias-sem-comprar", days: 60 },
-    conditions: { ...DEFAULT_CONDITIONS },
-    steps: [
-      step("aut-2-s1", "enviar-sms", { smsTemplateId: "sms-promocao" }),
-      step("aut-2-s2", "enviar-email", { waitDays: 7, emailTemplateId: "promocao-semanal" }),
-      step("aut-2-s3", "mudar-fase", { waitDays: 7, stage: "Reactivação" }),
-      step("aut-2-s4", "notificar-gestor", {
-        message: "Cliente sem compras há mais de 60 dias — agendar visita.",
-      }),
-    ],
-    enrolled: 12,
-    completed: 4,
-    lastRunAt: "2026-10-11T08:00",
-    activatedAt: "2026-10-05",
-    updatedAt: "2026-10-02",
-  },
-  {
-    id: "aut-5",
-    name: "Desconto para clientes sem compras",
-    status: "Ativa",
-    trigger: { ...DEFAULT_TRIGGER, type: "dias-sem-comprar", days: 30 },
-    conditions: { ...DEFAULT_CONDITIONS },
-    steps: [
-      step("aut-5-s1", "propor-desconto", { discountPercent: 5, discountValidDays: 14 }),
-      step("aut-5-s2", "enviar-sms", { waitDays: 1, smsTemplateId: "sms-desconto" }),
-      step("aut-5-s3", "propor-desconto", {
-        waitDays: 14,
-        discountPercent: 10,
-        discountValidDays: 14,
-      }),
-      step("aut-5-s4", "notificar-gestor", {
-        waitDays: 14,
-        message: "Não aproveitou as propostas de desconto — agendar visita.",
-      }),
-    ],
-    enrolled: 0,
-    completed: 0,
-    activatedAt: "2026-10-10",
-    updatedAt: "2026-10-10",
-  },
-  {
-    id: "aut-6",
-    name: "Cobrança de dívida vencida",
-    status: "Ativa",
-    trigger: { ...DEFAULT_TRIGGER, type: "divida-vencida", days: 30 },
-    conditions: { ...DEFAULT_CONDITIONS },
-    steps: [
-      step("aut-6-s1", "criar-tarefa", { taskTitle: "Contactar o cliente sobre a fatura vencida" }),
-      step("aut-6-s2", "notificar-gestor", {
-        waitDays: 7,
-        message: "Fatura a crédito continua por pagar uma semana depois do contacto.",
-      }),
-    ],
-    enrolled: 0,
-    completed: 0,
-    activatedAt: "2026-10-10",
-    updatedAt: "2026-10-10",
   },
   {
     id: "aut-3",

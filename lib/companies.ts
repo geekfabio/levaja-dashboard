@@ -1,3 +1,4 @@
+import type { AbcClass } from "@/data/campaigns";
 import type { Company, SortKey } from "@/data/companies";
 import { formatDateShort, formatMoney } from "@/lib/format";
 
@@ -171,4 +172,17 @@ export function companyTotals(companies: Company[]) {
   );
   const inactive = companies.filter((company) => company.activityDays > 30).length;
   return { pipeline, deals, probability, weighted, inactive };
+}
+
+export function abcByPipeline(companies: Company[]): Map<string, AbcClass> {
+  const sorted = [...companies].sort((a, b) => b.pipelineValue - a.pipelineValue);
+  const total = sorted.reduce((sum, company) => sum + company.pipelineValue, 0) || 1;
+  const classes = new Map<string, AbcClass>();
+  let cumulative = 0;
+  for (const company of sorted) {
+    const share = cumulative / total;
+    classes.set(company.id, share < 0.8 ? "A" : share < 0.95 ? "B" : "C");
+    cumulative += company.pipelineValue;
+  }
+  return classes;
 }

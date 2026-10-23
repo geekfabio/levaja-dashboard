@@ -201,3 +201,47 @@ export function luandaDay(iso: string | Date) {
   const { day, month, year } = luandaParts(typeof iso === "string" ? iso : iso.toISOString());
   return `${year}-${month}-${day}`;
 }
+
+const DECIMAL_FORMATTERS = new Map<number, Intl.NumberFormat>();
+
+export function formatDecimal(value: number, digits = 1) {
+  let formatter = DECIMAL_FORMATTERS.get(digits);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    DECIMAL_FORMATTERS.set(digits, formatter);
+  }
+  return formatter.format(value);
+}
+
+export function formatKm(value: number) {
+  return `${formatDecimal(value, 1)}${NBSP}km`;
+}
+
+export function formatMinutes(value: number) {
+  if (value < 60) return `${Math.round(value)}${NBSP}min`;
+  const hours = Math.floor(value / 60);
+  const minutes = Math.round(value % 60);
+  return minutes ? `${hours}${NBSP}h ${minutes}${NBSP}min` : `${hours}${NBSP}h`;
+}
+
+export function formatElapsed(fromIso: string, now: number) {
+  const minutes = Math.max(0, (now - Date.parse(fromIso)) / 60_000);
+  if (minutes < 1) return "menos de 1 min";
+  if (minutes >= 48 * 60) return `${Math.floor(minutes / (24 * 60))} dias`;
+  return formatMinutes(minutes);
+}
+
+export function shiftDay(day: string, days: number) {
+  const date = new Date(`${day}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function parseKz(raw: string) {
+  const clean = raw.replace(/kz/i, "").replace(/[\s  .]/g, "").replace(",", ".");
+  return clean === "" ? Number.NaN : Number(clean);
+}
+
+export function formatClock(iso: string) {
+  return TIME_FORMATTER.format(new Date(iso));
+}

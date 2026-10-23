@@ -1,5 +1,4 @@
 import { COMPANIES, type CompanyProfile } from "./companies";
-import { CREDIT_LIMITS, CUSTOMER_IDENTIFIERS } from "./sales";
 
 const MUNICIPALITIES: Record<string, string[]> = {
   Luanda: ["Talatona", "Viana", "Cazenga", "Kilamba Kiaxi", "Maianga", "Ingombota"],
@@ -36,9 +35,25 @@ const CUSTOMER_SINCE: Record<string, string> = {
   kilamba: "2020-10-27",
 };
 
+const CREDIT_LIMITS: Record<string, number> = {
+  "mussulo-bay": 15_000_000,
+  "cantina-kilamba": 8_000_000,
+  lobito: 6_000_000,
+  "talatona-plaza": 12_000_000,
+  "baia-azul": 10_000_000,
+};
+
+function identifiersFor(index: number) {
+  return {
+    card: `AA-${String(104_320 + index * 37).padStart(6, "0")}`,
+    nif: String(5_417_200_000 + index * 1_013),
+    phone: `+244 9${(23 + (index % 7)) % 100} ${String(400_000 + index * 2_311).slice(0, 3)} ${String(100 + index * 17).slice(-3)}`,
+  };
+}
+
 export const COMPANY_PROFILES: Record<string, CompanyProfile> = Object.fromEntries(
   COMPANIES.map((company, index) => {
-    const ids = CUSTOMER_IDENTIFIERS[company.id];
+    const ids = identifiersFor(index);
     const municipalities = MUNICIPALITIES[company.zone] ?? [company.zone];
     const limit = CREDIT_LIMITS[company.id] ?? 0;
     return [

@@ -11,7 +11,6 @@ import ActiveDot from "@/public/assets/images/companies/header/active-dot.svg";
 const VIEWS = [
   { href: "/", label: "Clientes" },
   { href: "/oportunidades", label: "Oportunidades" },
-  { href: "/previsao", label: "Previsão" },
 ];
 
 export default function CompaniesHeader() {

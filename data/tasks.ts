@@ -103,6 +103,6 @@ export const TASKS: Task[] = [
     assignee: "Tiago Fernandes",
     dueDate: "2026-10-16",
     status: "Por Fazer",
-    notes: "Cruzar com a lista de clientes em risco da Previsão.",
+    notes: "Cruzar com a lista de clientes sem contacto há mais de 30 dias.",
   },
 ];

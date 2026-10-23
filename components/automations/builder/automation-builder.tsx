@@ -43,11 +43,9 @@ import {
   stepDays,
   stepSummary,
   triggerSummary,
-  triggerUsesDays,
 } from "@/lib/automations";
 import { useAutomationsStore } from "@/stores/automations-store";
 import { useCompaniesStore } from "@/stores/companies-store";
-import { useSalesStore } from "@/stores/sales-store";
 import { useToday } from "@/hooks/use-today";
 import AutomationResults from "./automation-results";
 import { campaignAutomationEvents, simulateTrigger } from "@/lib/automation-engine";
@@ -74,10 +72,6 @@ const ABC_OPTIONS = [
 ];
 
 const TRIGGER_NOTES: Record<TriggerType, string> = {
-  "dias-sem-comprar":
-    "Conta a partir da última compra registada em Vendas. Quando o cliente volta a comprar, a sequência pára.",
-  "divida-vencida":
-    "Conta a partir da compra a crédito mais antiga por pagar em Vendas. Quando é paga, a sequência seguinte só começa com uma nova dívida.",
   aniversario: "Usa a data «Cliente desde» dos dados fiscais do cliente; corre uma vez por ano.",
   "cliente-criado": "Corre para cada cliente criado ou importado depois de a automação ser ativada.",
   "cliente-muda-fase":
@@ -128,7 +122,6 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
   const weeklyCap = useAutomationsStore((state) => state.weeklyCap);
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
   const companies = useCompaniesStore((state) => state.companies);
-  const sales = useSalesStore((state) => state.sales);
   const today = useToday();
   const emailTemplates = useSettingsStore((state) => state.emailTemplates);
   const smsTemplates = useSettingsStore((state) => state.smsTemplates);
@@ -150,11 +143,10 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
       simulateTrigger(
         automation,
         companies,
-        sales,
         [...campaignAutomationEvents(CAMPAIGN_EVENTS, contacts), ...recordedEvents],
         today,
       ),
-    [automation, companies, sales, recordedEvents, contacts, today],
+    [automation, companies, recordedEvents, contacts, today],
   );
   const entries = simulation.entries;
   const simulationTitle =
@@ -235,26 +227,6 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
                   </Select>
                 </Field>
 
-                {triggerUsesDays(trigger) && (
-                  <Field
-                    label="Dias"
-                    htmlFor="trigger-days"
-                    error={trigger.days < 1 ? "Mínimo 1 dia." : undefined}
-                  >
-                    <Input
-                      id="trigger-days"
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      value={trigger.days}
-                      disabled={readOnly}
-                      className="tabular-nums"
-                      onChange={(event) =>
-                        updateTrigger(automation.id, { days: Number(event.target.value) || 0 })
-                      }
-                    />
-                  </Field>
-                )}
                 {trigger.type === "fase-alterada" && (
                   <Field label="Nova fase" htmlFor="trigger-stage">
                     <Select

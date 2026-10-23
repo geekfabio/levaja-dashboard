@@ -1,93 +1,114 @@
 @AGENTS.md
 
-# Alimenta Angola CRM
+# Leva Já — CRM e painel de administração
 
-CRM interno da **Alimenta Angola — Cash and Carry** (distribuição grossista e retalho alimentar, Luanda / Angola). Construído sobre o template `kargul-starter` (Next.js 16 + React 19 + Tailwind 4), que está a ser adaptado de um "Sales CRM" genérico em inglês para um CRM completo em **português de Angola**, com **Email Marketing** e **SMS** integrados.
+Repositório web do **Leva Já**, a app móvel de Luanda que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. Tem duas áreas:
+
+| Área | Rotas | O que é |
+| --- | --- | --- |
+| **Painel de administração** | `/admin/*` | Operação da plataforma: pedidos, mapa, prestadores, documentos, clientes, finanças, preços e zonas, suporte, utilizadores e auditoria. Especificação completa em `LEVA_JA_ADMIN.md`. |
+| **CRM** | `/`, `/oportunidades`, `/campanhas`… | CRM comercial herdado do template `kargul-starter`, já com a marca Leva Já: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações, tickets, auditoria e definições. |
 
 Antes de escrever código, lê também:
 
-| Ficheiro        | O que tem                                                    |
-| --------------- | ------------------------------------------------------------ |
-| `FEATURES.md`   | Especificação funcional por módulo (o quê e porquê)          |
-| `ROADMAP.md`    | Fases de entrega, ordem de trabalho, critérios de aceitação  |
-| `AGENTS.md`     | Regras de execução para agentes + notas da versão do Next.js |
-| `.builderrules` | As 7 regras de base do template                              |
+| Ficheiro | O que tem |
+| --- | --- |
+| `LEVA_JA_ADMIN.md` | Especificação do painel, decisões tomadas e estado do trabalho. **Prevalece sobre os restantes.** |
+| `FEATURES.md` | O que cada módulo faz, nas duas áreas |
+| `ROADMAP.md` | Fases de entrega e critérios de conclusão |
+| `AGENTS.md` | Regras de execução para agentes + notas da versão do Next.js |
+| `.builderrules` | As 7 regras de base do template |
 
 ## Regras do produto
 
-1. **Idioma: português de Angola (pt-AO).** Toda a UI, conteúdo, e-mails, SMS, mensagens de erro e metadata são em português. `<html lang="pt-AO">`. Nenhuma string em inglês chega ao ecrã.
-2. **Identificadores ficam em inglês.** Nomes de ficheiros, componentes, variáveis, tipos, colunas de base de dados e chaves de API continuam em inglês (`companies`, `pipelineValue`, `openDeals`). Só o texto visível é traduzido. Isto evita um rename em cascata e mantém o código legível para quem vem do template.
-3. **Moeda: Kwanza (AOA).** Formata sempre via o helper de `lib/format.ts` — `Intl.NumberFormat("pt-AO", { style: "currency", currency: "AOA" })`, apresentado como `Kz`. Nunca `toLocaleString("en-US")`.
-4. **Datas e horas: `pt-AO`, fuso `Africa/Luanda`.** Meses e dias da semana por extenso em português. Formato curto `dd/MM`, longo `d 'de' MMMM 'de' yyyy`.
-5. **Telefones: Angola.** Prefixo `+244`, 9 dígitos, operadoras Unitel / Africell / Movicel. A validação e a normalização para E.164 vivem em `lib/phone.ts` e são usadas tanto pelos formulários como pelo módulo de SMS.
-6. **Domínio é Cash & Carry, não SaaS.** Os registos são clientes reais do negócio — mercearias, restaurantes, hotéis, cantinas, revendedores, instituições. Os termos do template (`Deals`, `Pipeline`, `SDR Team`, `ARR`) traduzem-se para o vocabulário do negócio: encomendas, carteira de clientes, equipa comercial, volume de compras. `FEATURES.md` tem o glossário completo.
+1. **Idioma.** O painel `/admin` está todo em **português de Portugal (pt-PT)**: «ecrã», «utilizador», «registo», «facturação», «activo». O CRM mantém o texto que já tem. Nenhuma string em inglês chega ao ecrã. `<html lang="pt-AO">`.
+2. **Identificadores ficam em inglês.** Ficheiros, componentes, variáveis, tipos e chaves de API em inglês (`requests`, `providerEarning`). Só o texto visível é traduzido.
+3. **Moeda: Kwanza.** No painel usa `formatKz` de `lib/format.ts` (`12 500 Kz`, espaço nos milhares, sem decimais). No CRM, `formatMoney`. Nunca `toLocaleString("en-US")`.
+4. **Datas: fuso `Africa/Luanda`.** No painel, `formatDateTimeNumeric` (`dd/MM/yyyy HH:mm`) e `formatDateNumeric`. Os timestamps do painel são ISO em UTC.
+5. **Telefones de Angola.** `+244 9XX XXX XXX`. Validação e E.164 em `lib/phone.ts`.
+6. **Regras de negócio num só sítio.** Estados, preço, elegibilidade e permissões vivem em `lib/leva-ja/` e são usadas pela UI e pela implementação mock dos repositórios.
+
+## Dados — padrão Repository
+
+```
+data/leva-ja/
+  repositories/   contratos (interfaces) por área e RepositoryError
+  mock/           MockDatabase semeada, regras de negócio, tempo real simulado
+  http/           implementação REST (troca por NEXT_PUBLIC_DATA_SOURCE=http)
+  index.ts        repositories()
+```
+
+- Páginas e componentes **nunca** importam `data/leva-ja/mock`. Usam os hooks de TanStack Query em `hooks/admin/`, que chamam `repositories()`.
+- Os erros chegam como `RepositoryError` com `code` (`network`, `not_found`, `invalid_transition`, `forbidden`, `validation`, `unauthorized`).
+- O CRM continua com dados fictícios em `data/*.ts` e stores Zustand em `stores/`.
 
 ## Marca
 
-Logótipo em `public/assets/images/_common/brand/alimenta-angola-logo.png` (origem: `alimentaangola.co.ao`). Cores extraídas do ficheiro:
+Logótipo provisório em `public/assets/images/_common/brand/leva-ja-logo.svg` (wordmark) e `leva-ja-mark.svg` (símbolo).
 
-| Token          | Hex       | Uso                                            |
-| -------------- | --------- | ---------------------------------------------- |
-| `brand`        | `#DF2828` | Vermelho principal — ações primárias, destaque |
-| `brand-accent` | `#F9EB2A` | Amarelo — avisos, realces, badges              |
-| `brand-ink`    | `#000000` | Texto sobre amarelo                            |
-| `brand-paper`  | `#FFFFFF` | Texto sobre vermelho                           |
+| Token | Hex | Uso |
+| --- | --- | --- |
+| `primary` / `brand` | `#0A8743` | Botões com texto branco (AA) |
+| `brand-vivid` | `#12A150` | Verde vivo, só em elementos sem texto |
+| `foreground` (painel) | `#0F2A1E` | Tinta |
+| `background` (painel) | `#F8F9F7` | Fundo |
+| `border` (painel) | `#E3E9E5` | Bordas |
+| `danger` | `#D92D20` | Perigo |
+| `warning` | `#B45309` | Aviso |
+| `info` | `#2457A8` | Informação |
 
-Estes tokens entram em `app/globals.css` junto dos existentes (`--brand`, `--brand-accent`, …) e são expostos via `@theme inline`. Não introduzas cores de marca inline — todas passam por token. O tema base é escuro (`color-scheme: dark`, `--background: #161616`); o vermelho da marca só é legível sobre escuro com o peso certo, por isso valida contraste antes de o usar em texto.
+Os tokens do painel estão em `app/globals.css`, no bloco `:root[data-area="admin"]` (tema claro), e são expostos via `@theme inline`. O atributo `data-area` é posto no `<html>` por `components/admin/shell/admin-area.tsx`, para que diálogos e menus em portal herdem o tema. Não introduzas cores inline — todas passam por token.
 
 ## Stack
 
-- **Next.js 16 (App Router) + React 19 + TypeScript** — `app/`
+- **Next.js 16.3 (App Router) + React 19 + TypeScript** — `app/`. `params` é uma `Promise`; o middleware chama-se `proxy`.
 - **Tailwind CSS 4** — tokens e escala tipográfica em `app/globals.css`
-- **Zustand** — estado de UI e de domínio em `stores/`
+- **TanStack Query** — dados do painel (`QueryClientProvider` em `app/admin/(painel)/layout.tsx`)
+- **Zustand** — estado de UI e do CRM em `stores/`
 - **Radix UI + cmdk** — primitivas em `components/_ui/`
-- **Motion (Framer Motion) + Rive + Lottie** — via o componente `Asset`
-- **Supabase** — Postgres, Auth, RLS, Storage, Realtime e Edge Functions. Configurado em `.mcp.json` (requer autorização do servidor MCP numa sessão interactiva). As skills `supabase` e `supabase-postgres-best-practices` em `.claude/skills/` são de leitura obrigatória antes de mexer em schema ou em políticas RLS.
-- **Email/SMS** — fornecedores ainda por fechar; ver `ROADMAP.md` (Fase 4 e 5). A camada de envio é abstraída atrás de `lib/messaging/` para que a troca de fornecedor não toque na UI.
+- **Motion + Rive + Lottie** — via o componente `Asset`
 
 ## Estrutura
 
 ```
-app/                    rotas, layout, globals.css, robots/sitemap/llms.txt
-components/_ui/         primitivas reutilizáveis (button, dialog, table, asset…)
-components/_common/     chrome partilhado (sidebar, header, scroll-to-top)
-components/<modulo>/    um folder por módulo de negócio, com subfolders por bloco
-data/                   dados de exemplo (mock) — substituídos por Supabase ao longo do roadmap
-lib/                    lógica pura: filtros, formatação, CSV, SEO, easings
-stores/                 stores Zustand
-hooks/                  hooks de React
-public/assets/images/   ícones e imagens, espelhando a estrutura de components/
+app/(app)/              CRM
+app/admin/login/        login do painel (fora da guarda)
+app/admin/(painel)/     guarda de sessão e papel, sidebar e topbar, páginas do painel
+components/_ui/         primitivas reutilizáveis (button, dialog, table, skeleton…)
+components/_common/     chrome partilhado (sidebar, module-header, charts/, async-state, pagination, confirm-dialog)
+components/admin/       um folder por módulo do painel, mais shell/ e shared/
+components/<modulo>/    módulos do CRM
+data/leva-ja/           repositórios do painel
+lib/leva-ja/            regras de negócio do painel
+hooks/admin/            hooks de TanStack Query do painel
+tests/leva-ja-*.test.ts testes de contrato e de domínio do painel
 ```
 
-Cada módulo novo segue o padrão de `components/companies/`: um `<modulo>.tsx` que compõe `header/`, `toolbar/`, `table/`, `detail/` e os diálogos, um store em `stores/`, a lógica pura em `lib/` e os dados em `data/`.
+Cada módulo segue o padrão de `components/companies/`: um `<modulo>.tsx` que compõe `header/`, `toolbar/`, `table/`, `detail/` e os diálogos.
 
 ## Regras de código
 
 Herdadas do template (`.builderrules`) e obrigatórias:
 
 1. Usa a estrutura de secção já existente nos módulos (ver `components/companies/companies.tsx`).
-2. **Não acrescentes estilos de fonte a `p`, `h1`, `h2`, `h3`** — a escala está global em `app/globals.css` (`@layer base`). Para variantes usa as classes utilitárias já definidas: `.lead-style`, `.caption-style`, `.eyebrow-style`.
+2. **Não acrescentes estilos de fonte a `p`, `h1`, `h2`, `h3`** — a escala está global em `app/globals.css` (`@layer base`). Para variantes usa `.lead-style`, `.caption-style`, `.eyebrow-style`.
 3. Qualquer botão passa pelo componente `Button` de `components/_ui/button.tsx`, **sempre com `variant` explícito**.
-4. `max-width` de títulos e parágrafos em `em` (px alvo ÷ font-size).
+4. `max-width` de títulos e parágrafos em `em`.
 5. Tailwind primeiro; CSS à parte só quando o Tailwind não chega.
 6. Bordas entre elementos empilhados com `divide-*` / `outline`, não `border` repetida.
 7. **Sem comentários no código.** O nome diz o que faz.
 
 Mais:
 
-8. SVGs: `<Image />` por caminho; componente SVGR só quando o ícone precisa de ser estilizado por CSS (ver os imports em `sidebar-content.tsx`).
-9. Toda a imagem, vídeo, Rive e Lottie passa pelo componente `Asset`, tipado por `type`, com `width`/`height` a servir de rácio.
+8. SVGs: `<Image />` por caminho; componente SVGR só quando o ícone precisa de ser estilizado por CSS.
+9. Toda a imagem, vídeo, Rive e Lottie passa pelo componente `Asset`.
 10. Ícones exportados do Figma — não instales bibliotecas de ícones.
-11. Easings partilhados: usa os tokens `--ease-power*` de `app/globals.css` em Tailwind e em Motion.
-12. SEO por `lib/seo.ts` → `pageMetadata()`, com `robots.ts`, `sitemap.ts` e `llms.txt` a derivarem de `SITE_ROUTES`.
-
-> **Nota:** o `CONVENTIONS.md` referido pelo README do template não existe neste repositório. Esta secção é a fonte de verdade. Se o `CONVENTIONS.md` for recuperado, as regras acima têm de ser reconciliadas com ele.
+11. Easings partilhados: tokens `--ease-power*` de `app/globals.css`.
+12. SEO do CRM por `lib/seo.ts` → `pageMetadata()`. O painel não é indexado (`robots: noindex`).
+13. Acessibilidade WCAG AA no painel: foco visível, teclado nas tabelas e nos modais, `aria-label` nos botões só com ícone.
 
 ## Dados sensíveis
 
-Os registos são clientes reais e os módulos de Email/SMS enviam para pessoas reais.
-
-- Nunca faças commit de chaves de API, de dumps de base de dados ou de listas de contactos. `.env.local` fica fora do Git.
-- Em desenvolvimento, Email e SMS correm em **modo sandbox** (destinatário fixo de teste); o envio real exige `MESSAGING_LIVE=true` e confirmação explícita.
-- Nenhum envio em massa é disparado por um agente sem pedido explícito do utilizador.
-- O RLS do Supabase é obrigatório em todas as tabelas — sem excepção, nem em tabelas "internas".
+- Nunca faças commit de chaves de API, dumps de base de dados ou listas de contactos. `.env.local` fica fora do Git.
+- `data/` e `data/leva-ja/mock/` só têm dados fictícios.
+- O envio real de e-mails e SMS do CRM exige `MESSAGING_LIVE=true` e confirmação explícita.

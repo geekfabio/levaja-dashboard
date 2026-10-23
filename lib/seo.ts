@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-export const SITE_NAME = "Alimenta Angola CRM";
+export const SITE_NAME = "Leva Já CRM";
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://crm.alimentaangola.co.ao";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://crm.levaja.ao";
 export const SITE_DESCRIPTION =
-  "CRM da Alimenta Angola — carteira de clientes, oportunidades e campanhas da equipa comercial.";
+  "CRM do Leva Já — carteira de clientes, oportunidades e campanhas da equipa comercial.";
 export const DEFAULT_OG_IMAGE = "/opengraph-image.jpg";
 
 export function absoluteUrl(path: string) {
@@ -42,13 +42,6 @@ export const SITE_ROUTES: SiteRoute[] = [
     priority: 0.8,
   },
   {
-    path: "/previsao",
-    title: "Previsão",
-    description: "Previsão de vendas por gestor e por zona.",
-    changeFrequency: "weekly",
-    priority: 0.7,
-  },
-  {
     path: "/atividades",
     title: "Atividades",
     description: "Visitas, chamadas e outras interações com os clientes.",
@@ -70,13 +63,6 @@ export const SITE_ROUTES: SiteRoute[] = [
     priority: 0.8,
   },
   {
-    path: "/vendas",
-    title: "Vendas",
-    description: "Compras dos clientes recebidas do sistema de vendas, por associar e em dívida.",
-    changeFrequency: "daily",
-    priority: 0.7,
-  },
-  {
     path: "/conversas",
     title: "Conversas",
     description: "Mensagens de WhatsApp e SMS com os contactos, com consentimento e janela de 24 horas.",
@@ -84,25 +70,11 @@ export const SITE_ROUTES: SiteRoute[] = [
     priority: 0.6,
   },
   {
-    path: "/cotacoes",
-    title: "Cotações",
-    description: "Cotações com a tabela de preços do cliente e encomendas até à entrega.",
-    changeFrequency: "daily",
-    priority: 0.7,
-  },
-  {
     path: "/campanhas",
     title: "Campanhas",
     description: "Campanhas de Email Marketing e SMS.",
     changeFrequency: "weekly",
     priority: 0.7,
-  },
-  {
-    path: "/relatorios",
-    title: "Relatórios",
-    description: "Desempenho por gestor, zona e equipa, e clientes em risco.",
-    changeFrequency: "weekly",
-    priority: 0.6,
   },
   {
     path: "/automacoes",
@@ -135,7 +107,7 @@ export const SITE_ROUTES: SiteRoute[] = [
   {
     path: "/login",
     title: "Entrar",
-    description: "Entrar no CRM da Alimenta Angola.",
+    description: "Entrar no CRM do Leva Já.",
     changeFrequency: "yearly",
     priority: 0.3,
   },

@@ -1,10 +1,11 @@
 "use client";
 
-import { SALES_ANCHOR } from "@/data/sales";
 import { nowLuandaLocal } from "@/lib/format";
 import { useNow } from "./use-now";
 
+const FALLBACK_TODAY = "2026-10-11";
+
 export function useToday() {
   const now = useNow();
-  return now === null ? SALES_ANCHOR.slice(0, 10) : nowLuandaLocal(new Date(now)).slice(0, 10);
+  return now === null ? FALLBACK_TODAY : nowLuandaLocal(new Date(now)).slice(0, 10);
 }

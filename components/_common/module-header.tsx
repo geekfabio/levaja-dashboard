@@ -13,6 +13,7 @@ type ModuleHeaderProps = {
   count?: number;
   badge?: ReactNode;
   actions?: ReactNode;
+  trailing?: ReactNode;
   children?: ReactNode;
 };
 
@@ -21,6 +22,7 @@ export default function ModuleHeader({
   count,
   badge,
   actions,
+  trailing,
   children,
 }: ModuleHeaderProps) {
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
@@ -40,7 +42,7 @@ export default function ModuleHeader({
         <h1 className="truncate">{title}</h1>
         {count !== undefined && <CountBadge>{count}</CountBadge>}
         {badge}
-        <HeaderActions>{actions}</HeaderActions>
+        {trailing ?? <HeaderActions>{actions}</HeaderActions>}
       </div>
       {children}
     </header>

@@ -2,8 +2,8 @@ export type CsvCell = string | number;
 
 function escapeCell(cell: CsvCell) {
   let value = String(cell);
-  if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`;
-  if (/[",\r\n]/.test(value)) value = `"${value.replace(/"/g, '""')}"`;
+  if (typeof cell === "string" && /^[=+\-@\t\r]/.test(value)) value = `'${value}`;
+  if (/[";,\r\n]/.test(value)) value = `"${value.replace(/"/g, '""')}"`;
   return value;
 }
 
@@ -12,9 +12,14 @@ export function toCsv(rows: CsvCell[][]) {
 }
 
 export function downloadCsv(filename: string, rows: CsvCell[][]) {
-  const blob = new Blob(["﻿", toCsv(rows)], {
-    type: "text/csv;charset=utf-8",
-  });
+  saveBlob(filename, new Blob(["﻿", toCsv(rows)], { type: "text/csv;charset=utf-8" }));
+}
+
+export function downloadJson(filename: string, value: unknown) {
+  saveBlob(filename, new Blob([JSON.stringify(value, null, 2)], { type: "application/json;charset=utf-8" }));
+}
+
+function saveBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

@@ -4,12 +4,10 @@ import { ACTION_LABELS, type ActionType, type DiscountScope } from "@/data/autom
 import { STAGES, type Company, type Stage } from "@/data/companies";
 import { DISCOUNT_OFFERS, OPEN_OFFER_STATUSES, type DiscountOffer } from "@/data/discount-offers";
 import type { Notification } from "@/data/notifications";
-import type { Sale } from "@/data/sales";
 import type { Task } from "@/data/tasks";
 import {
   daysSince,
   dueSteps,
-  offerDiscountValue,
   offerScopeLabel,
   renderTemplate,
   campaignAutomationEvents,
@@ -20,7 +18,6 @@ import {
 import { CAMPAIGN_EVENTS } from "@/data/campaign-events";
 import { addDays } from "@/lib/follow-up";
 import { formatDateShort, formatMoney, formatPercent, nowLuandaLocal, plural } from "@/lib/format";
-import { purchaseStats } from "@/lib/sales";
 import { useActivitiesStore } from "./activities-store";
 import { useAuditStore, recordEvent } from "./audit-store";
 import { useAutomationsStore } from "./automations-store";
@@ -28,7 +25,6 @@ import { useCompaniesStore } from "./companies-store";
 import { useContactsStore } from "./contacts-store";
 import { useMessagingStore } from "./messaging-store";
 import { useNotificationsStore } from "./notifications-store";
-import { useSalesStore } from "./sales-store";
 import { useSettingsStore } from "./settings-store";
 import { toast } from "./toast-store";
 
@@ -72,7 +68,6 @@ type AutomationRunsState = {
   runDue: (today: string, options?: { manual?: boolean }) => number;
   createOffer: (input: ManualOffer, today: string) => void;
   setOfferStatus: (id: string, status: "Apresentada" | "Recusada") => void;
-  registerPurchase: (sale: Sale) => DiscountOffer | undefined;
 };
 
 function newId(prefix: string) {
@@ -100,20 +95,17 @@ function buildOffer(
   origin: string,
   extra: Partial<DiscountOffer> = {},
 ): DiscountOffer {
-  const sales = useSalesStore.getState().sales;
-  const stats = purchaseStats(sales, company.id, today);
   return {
     id: newId("of"),
     companyId: company.id,
     percent,
     scope,
-    categories: scope === "Categorias habituais" ? stats.topCategories : [],
+    categories: [],
     createdAt: nowLuandaLocal(),
     validUntil: addDays(today, validDays),
     status: "Por apresentar",
     owner: company.owner,
     origin,
-    daysWithoutPurchase: stats.daysSincePurchase,
     ...extra,
   };
 }
@@ -142,14 +134,12 @@ export const useAutomationRunsStore = create<AutomationRunsState>((set, get) => 
   runDue: (today, options = {}) => {
     const { automations, weeklyCap } = useAutomationsStore.getState();
     const companies = useCompaniesStore.getState().companies;
-    const sales = useSalesStore.getState().sales;
     const contacts = useContactsStore.getState().contacts;
     const { emailTemplates, smsTemplates } = useSettingsStore.getState();
     const campaignEvents = campaignAutomationEvents(CAMPAIGN_EVENTS, contacts);
     const due = dueSteps({
       automations,
       companies,
-      sales,
       events: [...campaignEvents, ...get().events],
       today,
       done: new Set(get().runs.map((run) => run.key)),
@@ -187,7 +177,7 @@ export const useAutomationRunsStore = create<AutomationRunsState>((set, get) => 
             step.discountValidDays,
             today,
             `Automação «${automation.name}»`,
-            { automationId: automation.id, daysWithoutPurchase: item.daysWithoutPurchase },
+            { automationId: automation.id },
           );
           offers = [offer, ...offers];
           return {
@@ -452,44 +442,5 @@ export const useAutomationRunsStore = create<AutomationRunsState>((set, get) => 
         },
       },
     });
-  },
-
-  registerPurchase: (sale) => {
-    if (!sale.companyId) return undefined;
-    const day = sale.at.slice(0, 10);
-    const offer = get().offers.find(
-      (item) =>
-        item.companyId === sale.companyId &&
-        OPEN_OFFER_STATUSES.includes(item.status) &&
-        item.validUntil >= day &&
-        item.createdAt.slice(0, 10) <= day,
-    );
-    if (!offer) return undefined;
-    const discountValue = offerDiscountValue(offer, sale);
-    if (discountValue === 0) return undefined;
-    const accepted: DiscountOffer = {
-      ...offer,
-      status: "Aproveitada",
-      saleId: sale.id,
-      saleDocument: sale.document,
-      saleTotal: sale.total,
-      discountValue,
-    };
-    set((state) => ({
-      offers: state.offers.map((item) => (item.id === offer.id ? accepted : item)),
-    }));
-    useAuditStore.getState().append({
-      id: `au-${newId("of")}`,
-      at: nowLuandaLocal(),
-      actor: SYSTEM_ACTOR,
-      action: "registou a proposta de desconto aproveitada por",
-      target: { module: "Clientes", id: sale.companyId, label: useCompaniesStore.getState().companies.find((item) => item.id === sale.companyId)?.name ?? sale.companyId },
-      changes: [
-        { field: "Venda", to: `${sale.document} · ${formatMoney(sale.total)}` },
-        { field: "Desconto concedido", to: formatMoney(accepted.discountValue ?? 0) },
-      ],
-      sensitive: false,
-    });
-    return accepted;
   },
 }));

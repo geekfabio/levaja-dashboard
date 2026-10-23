@@ -13,17 +13,17 @@ export type CompanyProfile = {
 };
 
 export const COMPANY_PROFILE: CompanyProfile = {
-  tradeName: "Alimenta Angola — Cash and Carry",
-  legalName: "Alimenta Angola, Lda.",
+  tradeName: "Leva Já",
+  legalName: "Leva Já, Lda.",
   nif: "5417000000",
   address: "Estrada de Catete, Km 12, Viana",
   city: "Luanda",
   phone: "+244 923 000 000",
-  email: "geral@alimentaangola.co.ao",
-  website: "https://alimentaangola.co.ao",
+  email: "geral@levaja.ao",
+  website: "https://levaja.ao",
 };
 
-export const COMPANY_EMAIL_DOMAIN = "alimentaangola.co.ao";
+export const COMPANY_EMAIL_DOMAIN = "levaja.ao";
 
 export type SenderSettings = {
   emailName: string;
@@ -35,7 +35,7 @@ export type SenderSettings = {
 };
 
 export const SENDER_SETTINGS: SenderSettings = {
-  emailName: "Alimenta Angola",
+  emailName: "Leva Já",
   emailAddress: `promocoes@${COMPANY_EMAIL_DOMAIN}`,
   replyTo: `comercial@${COMPANY_EMAIL_DOMAIN}`,
   smsSenderId: "ALIMENTA",
@@ -154,7 +154,7 @@ export const PERMISSIONS = [
   { key: "campanhas.criar", group: "Mensagens", label: "Criar campanhas e modelos" },
   { key: "campanhas.agendar", group: "Mensagens", label: "Agendar envios de e-mail e SMS" },
   { key: "automacoes.gerir", group: "Mensagens", label: "Ativar e pausar automações" },
-  { key: "relatorios.ver", group: "Relatórios", label: "Ver relatórios e previsão" },
+  { key: "relatorios.ver", group: "Relatórios", label: "Ver indicadores e totais" },
   { key: "relatorios.exportar", group: "Relatórios", label: "Exportar CSV" },
   { key: "definicoes.gerir", group: "Administração", label: "Gerir definições, equipas e acessos" },
 ] as const;
