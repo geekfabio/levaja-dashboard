@@ -121,7 +121,13 @@ function advance(db: MockDatabase, request: StoredRequest) {
 export function tick(db: MockDatabase) {
   const { state, random } = db;
   let requestsChanged = false;
+  const nowMs = db.now().getTime();
   for (const provider of state.providers) {
+    if (provider.accountStatus === "suspended" && provider.suspendedUntil && Date.parse(provider.suspendedUntil) <= nowMs) {
+      provider.accountStatus = "active";
+      provider.suspendedUntil = undefined;
+      provider.suspensionReason = undefined;
+    }
     if (provider.availability !== "online" || provider.accountStatus !== "active") continue;
     const active = state.requests.find((request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status));
     if (!active) provider.coords = jitter(provider.coords, random);

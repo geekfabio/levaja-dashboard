@@ -36,7 +36,7 @@ Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as
 | E-mail | Papel | O que vê |
 | --- | --- | --- |
 | `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel e auditoria |
-| `operacoes@levaja.ao` | Operações | Pedidos, mapa, prestadores, documentos, clientes, zonas e SOS |
+| `operacoes@levaja.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
 | `suporte@levaja.ao` | Suporte | Ocorrências, SOS, avaliações baixas e clientes |
 | `financas@levaja.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
 
@@ -79,6 +79,9 @@ Endpoints usados (os da app móvel mantêm os nomes):
 | Finanças | `GET /admin/revenue`, `GET /admin/withdrawals`, `POST /admin/withdrawals/:id/approve\|reject\|paid`, `GET /admin/transactions` |
 | Preços e zonas | `GET\|PUT /admin/pricing`, `GET\|POST /admin/zones`, `PUT\|DELETE /admin/zones/:id` |
 | Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low` |
+| Candidaturas | `GET /admin/applications`, `GET /admin/applications/summary`, `GET /admin/applications/:id`, `POST /admin/applications/:id/documents\|interview\|inspection\|advance\|approve\|reject` |
+| Frotas | `GET\|POST /admin/fleets`, `GET /admin/fleets/:id`, `POST /admin/fleets/:id/drivers`, `POST /admin/fleets/:id/drivers/:providerId/remove`, `POST /admin/fleets/:id/suspend\|reactivate` |
+| Qualidade | `GET /admin/quality`, `GET /admin/quality/:providerId`, `GET /admin/penalties`, `POST /admin/providers/:id/penalties`, `POST /admin/penalties/:id/revoke` |
 | Facturação | `GET /admin/invoices`, `GET /admin/invoices/export`, `GET /admin/invoices/:id`, `GET /admin/settlements?from=&to=`, `POST /admin/settlements/:id/received\|resolve`, `GET /admin/cash-debts`, `GET\|POST /admin/cash-debts/:providerId/deposits` |
 | Lotes de pagamento | `GET\|POST /admin/payout-batches`, `GET /admin/payout-batches/:id`, `POST /admin/payout-batches/:id/send\|paid\|cancel` |
 | Disputas | `GET /admin/disputes?state=&category=&q=&page=`, `GET /admin/disputes/summary`, `POST /admin/disputes/:id/notes\|resolve`, `PUT /admin/disputes/:id/category` |

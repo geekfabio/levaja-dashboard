@@ -1,4 +1,5 @@
 import type { AdminAuthRepository } from "./admin-auth";
+import type { ApplicationsRepository } from "./applications";
 import type { AuditRepository } from "./audit";
 import type { BillingRepository } from "./billing";
 import type { ClientsRepository } from "./clients";
@@ -6,9 +7,11 @@ import type { DemoControls } from "./demo";
 import type { DisputesRepository } from "./disputes";
 import type { DocumentsRepository } from "./documents";
 import type { FinanceRepository } from "./finance";
+import type { FleetsRepository } from "./fleets";
 import type { MetricsRepository } from "./metrics";
 import type { PricingRepository } from "./pricing";
 import type { ProvidersRepository } from "./providers";
+import type { QualityRepository } from "./quality";
 import type { RefundsRepository } from "./refunds";
 import type { RequestsRepository } from "./requests";
 import type { RoutingRepository } from "./routing";
@@ -25,6 +28,9 @@ export type Repositories = {
   disputes: DisputesRepository;
   refunds: RefundsRepository;
   providers: ProvidersRepository;
+  applications: ApplicationsRepository;
+  fleets: FleetsRepository;
+  quality: QualityRepository;
   documents: DocumentsRepository;
   clients: ClientsRepository;
   finance: FinanceRepository;
@@ -40,6 +46,7 @@ export type Repositories = {
 };
 
 export type * from "./admin-auth";
+export type * from "./applications";
 export type * from "./audit";
 export type * from "./billing";
 export type * from "./clients";
@@ -48,9 +55,11 @@ export type * from "./demo";
 export type * from "./disputes";
 export type * from "./documents";
 export type * from "./finance";
+export type * from "./fleets";
 export type * from "./metrics";
 export type * from "./pricing";
 export type * from "./providers";
+export type * from "./quality";
 export type * from "./refunds";
 export type * from "./requests";
 export type * from "./routing";

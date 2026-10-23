@@ -82,6 +82,35 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       subscribe: (listener) => subscribe("requests", listener),
     },
 
+    applications: {
+      list: (filters = {}) => http.get("/admin/applications", filters),
+      get: (applicationId) => http.get(`/admin/applications/${id(applicationId)}`),
+      summary: () => http.get("/admin/applications/summary"),
+      receiveDocument: (applicationId, icon) => http.post(`/admin/applications/${id(applicationId)}/documents`, { icon }),
+      scheduleInterview: (applicationId, at) => http.post(`/admin/applications/${id(applicationId)}/interview`, { at }),
+      recordInspection: (applicationId, passed, notes) => http.post(`/admin/applications/${id(applicationId)}/inspection`, { passed, notes }),
+      advance: (applicationId, note) => http.post(`/admin/applications/${id(applicationId)}/advance`, { note }),
+      approve: (applicationId, reason) => http.post(`/admin/applications/${id(applicationId)}/approve`, { reason }),
+      reject: (applicationId, reason) => http.post(`/admin/applications/${id(applicationId)}/reject`, { reason }),
+    },
+
+    fleets: {
+      list: (filters = {}) => http.get("/admin/fleets", filters),
+      get: (fleetId) => http.get(`/admin/fleets/${id(fleetId)}`),
+      create: (input) => http.post("/admin/fleets", input),
+      addDriver: (fleetId, providerId) => http.post(`/admin/fleets/${id(fleetId)}/drivers`, { providerId }),
+      removeDriver: (fleetId, providerId, reason) => http.post(`/admin/fleets/${id(fleetId)}/drivers/${id(providerId)}/remove`, { reason }),
+      setStatus: (fleetId, status, reason) => http.post(`/admin/fleets/${id(fleetId)}/${status === "suspended" ? "suspend" : "reactivate"}`, { reason }),
+    },
+
+    quality: {
+      scores: (filters = {}) => http.get("/admin/quality", filters),
+      provider: (providerId) => http.get(`/admin/quality/${id(providerId)}`),
+      penalties: (filters = {}) => http.get("/admin/penalties", filters),
+      penalize: (providerId, input) => http.post(`/admin/providers/${id(providerId)}/penalties`, input),
+      revoke: (penaltyId, reason) => http.post(`/admin/penalties/${id(penaltyId)}/revoke`, { reason }),
+    },
+
     disputes: {
       list: (filters = {}) => http.get("/admin/disputes", filters),
       summary: () => http.get("/admin/disputes/summary"),

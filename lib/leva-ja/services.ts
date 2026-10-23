@@ -128,6 +128,7 @@ export const TRANSACTION_KIND_LABELS: Record<Transaction["kind"], string> = {
   fee: "Comissão",
   withdrawal: "Levantamento",
   refund: "Reembolso",
+  penalty: "Multa",
 };
 
 export const TRANSACTION_STATUS_LABELS: Record<Transaction["status"], string> = {

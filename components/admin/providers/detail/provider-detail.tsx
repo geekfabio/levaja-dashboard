@@ -20,7 +20,7 @@ import { useClock } from "@/hooks/admin/use-clock";
 import { formatDateNumeric, formatDecimal, formatKz, formatNumber, luandaDay } from "@/lib/format";
 import { eligibilityIssues, ELIGIBILITY_ISSUE_LABELS } from "@/lib/leva-ja/eligibility";
 import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
-import { hasPermission } from "@/lib/leva-ja/permissions";
+import { canAccessSection, hasPermission } from "@/lib/leva-ja/permissions";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
@@ -28,6 +28,7 @@ import ProviderStatusDialog, { type ProviderStatusAction } from "../dialogs/prov
 import ProviderCoverage from "./provider-coverage";
 import ProviderDocuments from "./provider-documents";
 import ProviderWallet from "./provider-wallet";
+import ProviderQuality from "../quality/provider-quality";
 import ReviewList from "@/components/admin/shared/review-list";
 
 const TABS = [
@@ -35,6 +36,7 @@ const TABS = [
   { value: "documentos", label: "Documentos" },
   { value: "cobertura", label: "Cobertura" },
   { value: "carteira", label: "Carteira" },
+  { value: "qualidade", label: "Qualidade" },
   { value: "avaliacoes", label: "Avaliações" },
   { value: "historico", label: "Histórico" },
 ];
@@ -144,6 +146,16 @@ export default function ProviderDetail({ id }: { id: string }) {
               )}
             </div>
 
+            {provider.fleetId && (
+              <p className="caption-style text-soft">
+                Pertence a uma frota.{" "}
+                {canAccessSection(role, "fleets") && (
+                  <Button variant="link" size="none" href={SECTION_ROUTES.fleets} className="caption-style">
+                    Ver frotas
+                  </Button>
+                )}
+              </p>
+            )}
             {provider.accountStatus === "suspended" && provider.suspensionReason && (
               <div role="status" className="flex flex-col gap-1 rounded-xl border border-(--tag-red-border) bg-(--tag-red-bg) p-4 text-(--tag-red-text)">
                 <span className="lead-style font-medium">Conta suspensa</span>
@@ -221,6 +233,9 @@ export default function ProviderDetail({ id }: { id: string }) {
               </TabsContent>
               <TabsContent value="carteira" className="pt-4">
                 <ProviderWallet provider={provider} />
+              </TabsContent>
+              <TabsContent value="qualidade" className="pt-4">
+                <ProviderQuality provider={provider} canPenalize={hasPermission(role, "providers.penalize")} />
               </TabsContent>
               <TabsContent value="avaliacoes" className="pt-4">
                 <ProviderReviews id={provider.id} />

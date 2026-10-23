@@ -1,4 +1,5 @@
 import type { Repositories } from "../repositories";
+import { createMockApplications } from "./applications";
 import { createMockAudit } from "./audit";
 import { createMockAuth } from "./auth";
 import { createMockBilling } from "./billing";
@@ -8,9 +9,11 @@ import type { MockDatabaseOptions } from "./database";
 import { createMockDisputes } from "./disputes";
 import { createMockDocuments } from "./documents";
 import { createMockFinance } from "./finance";
+import { createMockFleets } from "./fleets";
 import { createMockMetrics } from "./metrics";
 import { createMockPricing } from "./pricing";
 import { createMockProviders } from "./providers";
+import { createMockQuality } from "./quality";
 import { createMockRefunds } from "./refunds";
 import { createMockRequests } from "./requests";
 import { createOsrmRouting } from "../http/routing";
@@ -35,6 +38,9 @@ export function createMockRepositories(options: MockRepositoriesOptions = {}): M
     disputes: createMockDisputes(database),
     refunds: createMockRefunds(database),
     providers: createMockProviders(database),
+    applications: createMockApplications(database),
+    fleets: createMockFleets(database),
+    quality: createMockQuality(database),
     documents: createMockDocuments(database),
     clients: createMockClients(database),
     finance: createMockFinance(database),

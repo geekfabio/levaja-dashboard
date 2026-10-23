@@ -3,11 +3,14 @@ import type {
   AdminUser,
   AuditLogEntry,
   CashDeposit,
+  Fleet,
   ClientAccount,
   PlatformSettings,
   RolePermissions,
   PricingConfig,
   PayoutBatch,
+  Penalty,
+  ProviderApplication,
   ProviderAccount,
   Refund,
   ServiceRequest,
@@ -19,7 +22,7 @@ import type {
 } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 
-export const MOCK_STATE_VERSION = 4;
+export const MOCK_STATE_VERSION = 5;
 
 export type StoredSettlement = Omit<Settlement, "expected" | "count" | "status">;
 
@@ -42,6 +45,9 @@ export type MockState = {
   settlements: StoredSettlement[];
   cashDeposits: CashDeposit[];
   payoutBatches: PayoutBatch[];
+  applications: ProviderApplication[];
+  fleets: Fleet[];
+  penalties: Penalty[];
   tickets: Ticket[];
   sos: SosAlert[];
   reviewNotes: Record<string, string>;

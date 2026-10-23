@@ -58,18 +58,15 @@ Mapa de Angola com tiles do OpenStreetMap, zoom e arrastar (rato, teclado e bot�
 
 `/admin/facturacao` com facturas-recibo e notas de crédito (IVA incluído, numeração por série), reconciliação diária de cartão e Multicaixa e numerário em dívida dos prestadores; lotes de pagamento em Finanças com ficheiro de transferências.
 
+## Fase 13 — Candidaturas, frotas, qualidade e penalizações ✅
+
+`/admin/candidaturas` com funil e etapas (documentos, entrevista, vistoria, aprovação que cria o prestador); `/admin/frotas` com motoristas e estatísticas; qualidade dos prestadores com pontuação e alertas; advertências, multas e suspensões temporárias com anulação.
+
 ---
 
 ## Por fazer
 
 As rotas, os nomes e as permissões destas secções já existem em `lib/leva-ja/navigation.ts` e `lib/leva-ja/permissions.ts`; falta implementá-las e acrescentá-las a `NAV_GROUPS`. Cada fase mantém as regras de sempre: dados mock em `data/leva-ja/mock/`, contrato e implementação HTTP, hooks em `hooks/admin/`, regras em `lib/leva-ja/`, auditoria das acções críticas e testes de contrato.
-
-### Fase 13 — Candidaturas, frotas, qualidade e penalizações
-
-- `/admin/candidaturas`: funil de novos prestadores (registo, documentos, entrevista, vistoria da viatura, aprovação), com motivo de recusa (`applications.manage`).
-- `/admin/frotas`: empresas com várias viaturas e motoristas, viaturas por estado e documentos da viatura (`fleets.view`, `fleets.manage`).
-- Qualidade do prestador: taxa de aceitação e de cancelamento, atrasos, avaliação, com alertas por limite.
-- Penalizações: advertência, suspensão temporária e multa, com histórico e motivo (`providers.penalize`); ligação a `cancellation.providerCancelLimit` e `providerAutoSuspend`.
 
 ### Fase 14 — Agendados, prazos, mapa de calor, fotografias e sinistros
 

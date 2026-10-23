@@ -18,7 +18,11 @@ import type {
   PricingConfig,
   ProviderAccount,
   ProviderDocument,
+  ApplicationStage,
   CashDeposit,
+  Fleet,
+  Penalty,
+  ProviderApplication,
   PayoutBatch,
   Refund,
   SettlementMethod,
@@ -34,6 +38,7 @@ import type {
   Zone,
 } from "@/types/leva-ja";
 import { cashCharges, expectedSettlements, settlementId } from "./billing";
+import { syncPenaltyTransaction } from "./quality";
 import { createRandom } from "./random";
 import type { Random } from "./random";
 import {
@@ -758,6 +763,125 @@ function buildPayoutBatches(ctx: Context, state: MockState): PayoutBatch[] {
   });
 }
 
+function buildFleets(ctx: Context, state: MockState): Fleet[] {
+  const fleets: Fleet[] = [
+    { id: "flt-01", name: "Kianda Transportes", nif: "5417203398", contactName: "Paulo Kianda", phone: "+244 923 410 552", email: "geral@kiandatransportes.ao", status: "active", createdAt: isoAt(ctx.now - 210 * DAY) },
+    { id: "flt-02", name: "Mudanças Rápidas Talatona", nif: "5000874412", contactName: "Isabel Nzinga", phone: "+244 912 778 031", email: "operacoes@mudancasrapidas.ao", status: "active", createdAt: isoAt(ctx.now - 140 * DAY) },
+    {
+      id: "flt-03",
+      name: "Reboques Cacuaco",
+      nif: "5419981207",
+      contactName: "Mateus Bento",
+      phone: "+244 935 002 418",
+      email: "reboques.cacuaco@gmail.com",
+      status: "suspended",
+      suspensionReason: "Seguro de responsabilidade civil da frota expirado.",
+      createdAt: isoAt(ctx.now - 320 * DAY),
+    },
+  ];
+  const plan: [string, number[]][] = [
+    ["flt-01", [1, 5, 9, 13]],
+    ["flt-02", [2, 6, 10]],
+    ["flt-03", [0, 20]],
+  ];
+  for (const [fleetId, indexes] of plan) {
+    for (const index of indexes) {
+      const provider = state.providers[index];
+      if (provider) provider.fleetId = fleetId;
+    }
+  }
+  return fleets;
+}
+
+function buildApplications(ctx: Context, state: MockState): ProviderApplication[] {
+  const { rng } = ctx;
+  const operations = state.adminUsers.find((user) => user.role === "operations")?.name ?? "Operações";
+  const stages: ApplicationStage[] = [
+    "submitted", "submitted", "submitted",
+    "documents", "documents", "documents",
+    "interview", "interview",
+    "inspection", "inspection",
+    "approved", "approved", "approved",
+    "rejected", "rejected",
+  ];
+  const classes: VehicleClass[] = ["pickup", "van", "truck", "tow_truck"];
+  return stages.map((stage, index) => {
+    const vehicleClass = classes[index % classes.length];
+    const [brand, model] = rng.pick(VEHICLE_MODELS[vehicleClass]);
+    const name = personName(rng, rng.pick(CLIENT_FIRST_NAMES));
+    const daysAgo = stage === "approved" || stage === "rejected" ? rng.int(8, 40) : stage === "submitted" ? rng.int(0, 2) : rng.int(2, 12);
+    const submitted = ctx.now - daysAgo * DAY - rng.int(1, 10) * HOUR;
+    const flow: ApplicationStage[] = ["submitted", "documents", "interview", "inspection"];
+    const reached = stage === "approved" ? 4 : stage === "rejected" ? rng.int(1, 3) : flow.indexOf(stage) + 1;
+    const step = Math.max(HOUR, ((ctx.now - submitted) / (reached + 1)) * 0.8);
+    const history: ProviderApplication["history"] = flow.slice(0, reached).map((item, position) => ({
+      stage: item,
+      at: isoAt(submitted + position * step),
+      by: position === 0 ? name : operations,
+    }));
+    if (stage === "approved" || stage === "rejected") history.push({ stage, at: isoAt(submitted + reached * step), by: operations });
+    const zone = state.zones[index % state.zones.length];
+    const documentsReceived: ProviderApplication["documentsReceived"] =
+      stage === "submitted" ? [] : stage === "documents" ? (index % 2 === 0 ? ["id", "license"] : ["id", "license", "vehicle", "insurance"]) : ["id", "license", "vehicle", "insurance"];
+    const interviewAt =
+      stage === "interview" ? isoAt(index % 2 === 0 ? ctx.now + rng.int(4, 48) * HOUR : ctx.now - rng.int(2, 20) * HOUR) : reached >= 3 ? history[2]?.at : undefined;
+    const inspected = stage === "approved" || (stage === "inspection" && index % 2 === 0);
+    return {
+      id: `app-${pad(index + 1)}`,
+      code: `CA-${1001 + index}`,
+      name,
+      phone: phone(rng),
+      email: `${slugify(name)}@gmail.com`,
+      vehicleClass,
+      vehicleLabel: `${brand} ${model}`,
+      plate: plate(rng),
+      zoneId: zone.id,
+      services: [...VEHICLE_SERVICES[vehicleClass]],
+      fleetId: index === 4 || index === 9 ? "flt-01" : undefined,
+      source: index === 4 || index === 9 ? "fleet" : rng.pick(["app", "app", "site", "referral"] as const),
+      submittedAt: isoAt(submitted),
+      stage,
+      history,
+      documentsReceived,
+      interviewAt,
+      inspection: inspected ? { passed: true, notes: "Viatura em bom estado; pneus e luzes conformes.", at: isoAt(ctx.now - rng.int(2, 30) * HOUR), by: operations } : undefined,
+      rejectionReason: stage === "rejected" ? rng.pick(["Carta de condução com menos de dois anos.", "Viatura reprovada na vistoria: travões gastos.", "Não compareceu à entrevista."]) : undefined,
+    };
+  });
+}
+
+function buildPenalties(ctx: Context, state: MockState): Penalty[] {
+  const operations = state.adminUsers.find((user) => user.role === "operations")?.name ?? "Operações";
+  const at = (days: number) => isoAt(ctx.now - days * DAY);
+  const provider = (index: number) => state.providers[index];
+  const penalties: Penalty[] = [];
+  const add = (index: number, penalty: Omit<Penalty, "id" | "providerId" | "providerName">) => {
+    const target = provider(index);
+    if (!target) return;
+    penalties.push({ id: `pen-${pad(penalties.length + 1)}`, providerId: target.id, providerName: target.name, ...penalty });
+  };
+  add(7, { kind: "warning", reason: "Atraso de 40 minutos na recolha sem aviso ao cliente.", createdAt: at(6), createdBy: operations });
+  add(11, { kind: "fine", amount: 5000, reason: "Cobrança de taxa de espera não prevista.", createdAt: at(9), createdBy: operations });
+  add(15, {
+    kind: "fine",
+    amount: 3000,
+    reason: "Cancelamento depois de chegar ao local.",
+    createdAt: at(20),
+    createdBy: operations,
+    revokedAt: at(18),
+    revokedBy: "Armando Silva",
+    revokeReason: "O cliente confirmou que pediu o cancelamento.",
+  });
+  const suspended = provider(21);
+  if (suspended && suspended.accountStatus === "suspended") {
+    const until = isoAt(ctx.now + 5 * DAY);
+    add(21, { kind: "suspension", days: 7, until, reason: "Cancelamentos repetidos depois de aceitar pedidos.", createdAt: at(2), createdBy: operations });
+    suspended.suspendedUntil = until;
+  }
+  for (const penalty of penalties) syncPenaltyTransaction(state, penalty);
+  return penalties;
+}
+
 function buildWithdrawals(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const providers = state.providers
@@ -974,6 +1098,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     settlements: [],
     cashDeposits: [],
     payoutBatches: [],
+    applications: [],
+    fleets: [],
+    penalties: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -989,6 +1116,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   state.settlements = buildSettlements(ctx, state);
   state.cashDeposits = buildCashDeposits(ctx, state);
   state.payoutBatches = buildPayoutBatches(ctx, state);
+  state.fleets = buildFleets(ctx, state);
+  state.applications = buildApplications(ctx, state);
+  state.penalties = buildPenalties(ctx, state);
   state.tickets = buildTickets(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);

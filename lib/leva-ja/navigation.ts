@@ -41,7 +41,7 @@ export const SECTION_LABELS: Record<AdminSection, string> = {
   map: "Mapa operacional",
   applications: "Candidaturas",
   providers: "Prestadores",
-  fleets: "Frotas e empresas",
+  fleets: "Frotas",
   documents: "Validação de documentos",
   clients: "Clientes",
   business: "Contas empresariais",
@@ -93,7 +93,7 @@ export type NavGroup = { title?: string; sections: AdminSection[] };
 
 export const NAV_GROUPS: NavGroup[] = [
   { sections: ["overview", "requests", "disputes", "map"] },
-  { title: "Rede", sections: ["providers", "documents", "clients"] },
+  { title: "Rede", sections: ["applications", "providers", "fleets", "documents", "clients"] },
   { title: "Negócio", sections: ["finance", "billing", "refunds", "pricing"] },
   { title: "Apoio", sections: ["support"] },
 ];

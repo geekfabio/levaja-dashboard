@@ -31,6 +31,7 @@ export function createMockProviders(db: MockDatabase): ProvidersRepository {
       provider.suspensionReason = reason;
     } else {
       provider.suspensionReason = undefined;
+      provider.suspendedUntil = undefined;
     }
     db.audit(ctx, action, { kind: "provider", id: provider.id, label: provider.name }, reason, [
       { field: "Estado da conta", from: ACCOUNT_LABELS[from], to: ACCOUNT_LABELS[next] },

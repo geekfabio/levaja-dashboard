@@ -143,7 +143,7 @@ export type ServiceRequest = {
 
 export type Transaction = {
   id: string;
-  kind: "earning" | "withdrawal" | "fee" | "refund";
+  kind: "earning" | "withdrawal" | "fee" | "refund" | "penalty";
   title: string;
   amount: number;
   at: string;
@@ -247,6 +247,88 @@ export type ProviderAccount = Provider & {
   totalEarnings: number;
   completedCount: number;
   joinedAt: string;
+  fleetId?: string;
+  suspendedUntil?: string;
+};
+
+export type ApplicationStage = "submitted" | "documents" | "interview" | "inspection" | "approved" | "rejected";
+
+export type ApplicationEvent = { stage: ApplicationStage; at: string; by: string; note?: string };
+
+export type ProviderApplication = {
+  id: string;
+  code: string;
+  name: string;
+  phone: string;
+  email: string;
+  vehicleClass: VehicleClass;
+  vehicleLabel: string;
+  plate: string;
+  zoneId: string;
+  services: ServiceKind[];
+  fleetId?: string;
+  source: "app" | "site" | "referral" | "fleet";
+  submittedAt: string;
+  stage: ApplicationStage;
+  history: ApplicationEvent[];
+  documentsReceived: ProviderDocument["icon"][];
+  interviewAt?: string;
+  inspection?: { passed: boolean; notes: string; at: string; by: string };
+  rejectionReason?: string;
+  providerId?: string;
+};
+
+export type FleetStatus = "active" | "suspended";
+
+export type Fleet = {
+  id: string;
+  name: string;
+  nif: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  status: FleetStatus;
+  suspensionReason?: string;
+  createdAt: string;
+};
+
+export type PenaltyKind = "warning" | "fine" | "suspension";
+
+export type Penalty = {
+  id: string;
+  providerId: string;
+  providerName: string;
+  kind: PenaltyKind;
+  reason: string;
+  amount?: number;
+  days?: number;
+  until?: string;
+  createdAt: string;
+  createdBy: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokeReason?: string;
+};
+
+export type QualityFlag = "low_rating" | "cancellations" | "late_arrivals" | "disputes" | "inactive";
+
+export type ProviderQuality = {
+  providerId: string;
+  providerName: string;
+  accountStatus: ProviderAccountStatus;
+  fleetId?: string;
+  completed: number;
+  cancelled: number;
+  cancellationRate: number;
+  lateArrivals: number;
+  lateRate: number;
+  averageArrivalMinutes: number | null;
+  rating: number | null;
+  lowRatings: number;
+  disputes: number;
+  score: number;
+  flags: QualityFlag[];
+  activePenalties: number;
 };
 
 export type ClientPaymentMethod = { id: string; kind: PaymentMethodKind; label: string; isDefault: boolean };
@@ -437,6 +519,9 @@ export type AuditEntityKind =
   | "settlement"
   | "cash"
   | "batch"
+  | "application"
+  | "fleet"
+  | "penalty"
   | "pricing"
   | "zone"
   | "ticket"
@@ -465,6 +550,18 @@ export type AuditAction =
   | "batch.send"
   | "batch.paid"
   | "batch.cancel"
+  | "application.advance"
+  | "application.interview"
+  | "application.inspection"
+  | "application.approve"
+  | "application.reject"
+  | "fleet.create"
+  | "fleet.driver_add"
+  | "fleet.driver_remove"
+  | "fleet.suspend"
+  | "fleet.reactivate"
+  | "penalty.issue"
+  | "penalty.revoke"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"
