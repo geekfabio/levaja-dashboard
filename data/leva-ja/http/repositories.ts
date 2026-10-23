@@ -139,6 +139,24 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       markWithdrawalPaid: (withdrawalId, paymentReference) => http.post(`/admin/withdrawals/${id(withdrawalId)}/paid`, { paymentReference }),
       transactions: (filters = {}) => http.get("/admin/transactions", filters),
       exportTransactions: (filters = {}) => http.get("/admin/transactions/export", filters),
+      batches: (filters = {}) => http.get("/admin/payout-batches", filters),
+      batch: (batchId) => http.get(`/admin/payout-batches/${id(batchId)}`),
+      createBatch: (withdrawalIds) => http.post("/admin/payout-batches", { withdrawalIds }),
+      sendBatch: (batchId) => http.post(`/admin/payout-batches/${id(batchId)}/send`),
+      markBatchPaid: (batchId, bankReference) => http.post(`/admin/payout-batches/${id(batchId)}/paid`, { bankReference }),
+      cancelBatch: (batchId, reason) => http.post(`/admin/payout-batches/${id(batchId)}/cancel`, { reason }),
+    },
+
+    billing: {
+      invoices: (filters = {}) => http.get("/admin/invoices", filters),
+      exportInvoices: (filters = {}) => http.get("/admin/invoices/export", filters),
+      invoice: (invoiceId) => http.get(`/admin/invoices/${id(invoiceId)}`),
+      settlements: (filters) => http.get("/admin/settlements", filters),
+      registerSettlement: (settlementId, amount, reference) => http.post(`/admin/settlements/${id(settlementId)}/received`, { amount, reference }),
+      resolveSettlement: (settlementId, resolution) => http.post(`/admin/settlements/${id(settlementId)}/resolve`, { resolution }),
+      cashDebts: (filters = {}) => http.get("/admin/cash-debts", filters),
+      cashDeposits: (providerId) => http.get(`/admin/cash-debts/${id(providerId)}/deposits`),
+      registerCashDeposit: (providerId, amount, reference) => http.post(`/admin/cash-debts/${id(providerId)}/deposits`, { amount, reference }),
     },
 
     pricing: {

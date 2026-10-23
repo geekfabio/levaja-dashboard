@@ -38,7 +38,7 @@ Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as
 | `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel e auditoria |
 | `operacoes@levaja.ao` | Operações | Pedidos, mapa, prestadores, documentos, clientes, zonas e SOS |
 | `suporte@levaja.ao` | Suporte | Ocorrências, SOS, avaliações baixas e clientes |
-| `financas@levaja.ao` | Finanças | Receita, reembolsos, levantamentos e transacções |
+| `financas@levaja.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
 
 Os dados de demonstração são gerados com uma semente fixa (os mesmos a cada arranque), ficam guardados no navegador e podem ser repostos em **Definições → Repor dados de demonstração**. Nas mesmas definições pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro.
 
@@ -79,6 +79,8 @@ Endpoints usados (os da app móvel mantêm os nomes):
 | Finanças | `GET /admin/revenue`, `GET /admin/withdrawals`, `POST /admin/withdrawals/:id/approve\|reject\|paid`, `GET /admin/transactions` |
 | Preços e zonas | `GET\|PUT /admin/pricing`, `GET\|POST /admin/zones`, `PUT\|DELETE /admin/zones/:id` |
 | Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low` |
+| Facturação | `GET /admin/invoices`, `GET /admin/invoices/export`, `GET /admin/invoices/:id`, `GET /admin/settlements?from=&to=`, `POST /admin/settlements/:id/received\|resolve`, `GET /admin/cash-debts`, `GET\|POST /admin/cash-debts/:providerId/deposits` |
+| Lotes de pagamento | `GET\|POST /admin/payout-batches`, `GET /admin/payout-batches/:id`, `POST /admin/payout-batches/:id/send\|paid\|cancel` |
 | Disputas | `GET /admin/disputes?state=&category=&q=&page=`, `GET /admin/disputes/summary`, `POST /admin/disputes/:id/notes\|resolve`, `PUT /admin/disputes/:id/category` |
 | Reembolsos | `GET /admin/refunds?status=&source=&q=&page=`, `GET /admin/refunds/summary`, `GET /admin/requests/:id/refunds`, `POST /admin/refunds`, `POST /admin/refunds/:id/approve\|reject\|paid` |
 | Métricas e auditoria | `GET /admin/metrics?from=&to=`, `GET /admin/metrics/attention`, `GET /admin/audit` |

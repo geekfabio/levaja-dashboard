@@ -94,7 +94,7 @@ export type NavGroup = { title?: string; sections: AdminSection[] };
 export const NAV_GROUPS: NavGroup[] = [
   { sections: ["overview", "requests", "disputes", "map"] },
   { title: "Rede", sections: ["providers", "documents", "clients"] },
-  { title: "Negócio", sections: ["finance", "refunds", "pricing"] },
+  { title: "Negócio", sections: ["finance", "billing", "refunds", "pricing"] },
   { title: "Apoio", sections: ["support"] },
 ];
 

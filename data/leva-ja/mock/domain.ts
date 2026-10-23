@@ -1,7 +1,7 @@
 import { documentsVerified } from "@/lib/leva-ja/eligibility";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { luandaDay, shiftDay } from "@/lib/format";
-import type { Client, ClientAccount, Provider, ProviderAccount, Refund, Review, ServiceRequest } from "@/types/leva-ja";
+import type { Client, ClientAccount, Provider, ProviderAccount, Refund, Review, ServiceRequest, Withdrawal } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 import type { MockState, StoredRequest } from "./state";
 
@@ -192,5 +192,22 @@ export function syncRefundTransaction(state: MockState, refund: Refund) {
     providerId: refund.providerId,
     providerName: refund.providerName ?? "",
     requestId: refund.requestId,
+  });
+}
+
+export function payWithdrawal(state: MockState, withdrawal: Withdrawal, reference: string, at: string) {
+  withdrawal.status = "paid";
+  withdrawal.paidAt = at;
+  withdrawal.paymentReference = reference;
+  state.transactions = state.transactions.filter((transaction) => transaction.id !== `tx-${withdrawal.id}`);
+  state.transactions.push({
+    id: `tx-${withdrawal.id}`,
+    kind: "withdrawal",
+    title: `Levantamento para IBAN …${withdrawal.iban.replace(/\s/g, "").slice(-5)}`,
+    amount: -withdrawal.amount,
+    at,
+    status: "completed",
+    providerId: withdrawal.providerId,
+    providerName: withdrawal.providerName,
   });
 }

@@ -18,7 +18,10 @@ import type {
   PricingConfig,
   ProviderAccount,
   ProviderDocument,
+  CashDeposit,
+  PayoutBatch,
   Refund,
+  SettlementMethod,
   ServiceDetails,
   ServiceKind,
   ServiceStatus,
@@ -30,6 +33,7 @@ import type {
   Withdrawal,
   Zone,
 } from "@/types/leva-ja";
+import { cashCharges, expectedSettlements, settlementId } from "./billing";
 import { createRandom } from "./random";
 import type { Random } from "./random";
 import {
@@ -53,7 +57,7 @@ import {
 } from "./fixtures";
 import { DAY, HOUR, MINUTE, addDays, eventAt, isoAt, luandaMidnight, providerBalance, syncRefundTransaction, syncRequestTransactions } from "./domain";
 import { MOCK_STATE_VERSION } from "./state";
-import type { MockState, StoredRequest } from "./state";
+import type { MockState, StoredSettlement, StoredRequest } from "./state";
 
 export const DEFAULT_SEED = 20_250_611;
 
@@ -660,6 +664,100 @@ function buildRefunds(ctx: Context, state: MockState): Refund[] {
   });
 }
 
+function buildSettlements(ctx: Context, state: MockState): StoredSettlement[] {
+  const { rng } = ctx;
+  const from = addDays(ctx.today, -21);
+  const to = addDays(ctx.today, -1);
+  const expected = expectedSettlements(state, from, to);
+  const finance = state.adminUsers.find((user) => user.role === "finance");
+  const keys = [...expected.keys()].sort();
+  const mismatches = new Set(rng.sample(keys.slice(0, -2), 3));
+  const resolved = [...mismatches][0];
+  const pending = keys.filter((key) => key.startsWith(to));
+  return keys.flatMap((key) => {
+    const [day, method] = key.split(":") as [string, SettlementMethod];
+    if (pending.includes(key)) return [];
+    const total = expected.get(key)?.expected ?? 0;
+    const difference = mismatches.has(key) ? rng.pick([-3500, -1200, 2500]) : 0;
+    const receivedAt = isoAt(new Date(`${addDays(day, 1)}T09:00:00+01:00`).getTime() + rng.int(0, 120) * MINUTE);
+    return [
+      {
+        id: settlementId(day, method),
+        day,
+        method,
+        received: total + difference,
+        reference: `${method === "card" ? "GW" : "EMIS"}-${day.replace(/-/g, "")}-${rng.int(100, 999)}`,
+        receivedAt,
+        resolution: key === resolved ? "Comissão da gateway descontada no extracto; confirmada com o banco." : undefined,
+        resolvedBy: key === resolved ? finance?.name : undefined,
+        resolvedAt: key === resolved ? isoAt(new Date(receivedAt).getTime() + 5 * HOUR) : undefined,
+      },
+    ];
+  });
+}
+
+function buildCashDeposits(ctx: Context, state: MockState): CashDeposit[] {
+  const { rng } = ctx;
+  const finance = state.adminUsers.find((user) => user.role === "finance");
+  const deposits: CashDeposit[] = [];
+  const providers = state.providers.filter((provider) => cashCharges(state, provider.id).length > 0);
+  providers.forEach((provider, index) => {
+    const charges = cashCharges(state, provider.id).sort((a, b) => (a.at < b.at ? -1 : 1));
+    const cutoffDays = index % 4 === 0 ? 12 : rng.int(1, 5);
+    const cutoff = isoAt(ctx.now - cutoffDays * DAY);
+    const covered = charges.filter((charge) => charge.at < cutoff);
+    let pending = covered.reduce((sum, charge) => sum + charge.amount, 0);
+    let at = covered.length ? new Date(covered[0].at).getTime() + 2 * DAY : 0;
+    let count = 0;
+    while (pending > 0 && count < 4) {
+      const amount = count === 3 ? pending : Math.min(pending, Math.ceil((pending * rng.float(0.4, 0.7)) / 100) * 100);
+      deposits.push({
+        id: `cd-${pad(deposits.length + 1)}`,
+        providerId: provider.id,
+        providerName: provider.name,
+        amount,
+        reference: `DEP${rng.int(100000, 999999)}`,
+        at: isoAt(Math.min(at, ctx.now - cutoffDays * DAY + HOUR)),
+        recordedBy: finance?.name ?? "Finanças",
+      });
+      pending -= amount;
+      at += rng.int(2, 5) * DAY;
+      count += 1;
+    }
+  });
+  return deposits;
+}
+
+function buildPayoutBatches(ctx: Context, state: MockState): PayoutBatch[] {
+  const finance = state.adminUsers.find((user) => user.role === "finance");
+  const paid = state.withdrawals
+    .filter((withdrawal) => withdrawal.status === "paid" && withdrawal.paidAt)
+    .sort((a, b) => ((a.paidAt ?? "") < (b.paidAt ?? "") ? -1 : 1));
+  const groups = [paid.slice(0, 4), paid.slice(4, 8)].filter((group) => group.length > 0);
+  return groups.map((group, index) => {
+    const id = `lp-${pad(index + 1)}`;
+    const paidAt = group[group.length - 1].paidAt ?? isoAt(ctx.now);
+    const bankReference = `BAI${ctx.rng.int(100000, 999999)}`;
+    group.forEach((withdrawal, position) => {
+      withdrawal.batchId = id;
+      withdrawal.paymentReference = `${bankReference}/${position + 1}`;
+    });
+    return {
+      id,
+      code: `LP-${String(index + 1).padStart(4, "0")}`,
+      status: "paid",
+      withdrawalIds: group.map((withdrawal) => withdrawal.id),
+      total: group.reduce((sum, withdrawal) => sum + withdrawal.amount, 0),
+      count: group.length,
+      createdAt: isoAt(new Date(group[0].decidedAt ?? group[0].requestedAt).getTime()),
+      createdBy: finance?.name ?? "Finanças",
+      sentAt: isoAt(new Date(paidAt).getTime() - 3 * HOUR),
+      paidAt,
+      bankReference,
+    };
+  });
+}
+
 function buildWithdrawals(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const providers = state.providers
@@ -873,6 +971,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     transactions: [],
     withdrawals: [],
     refunds: [],
+    settlements: [],
+    cashDeposits: [],
+    payoutBatches: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -885,6 +986,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   state.withdrawals = buildWithdrawals(ctx, state);
   state.refunds = buildRefunds(ctx, state);
   for (const refund of state.refunds) syncRefundTransaction(state, refund);
+  state.settlements = buildSettlements(ctx, state);
+  state.cashDeposits = buildCashDeposits(ctx, state);
+  state.payoutBatches = buildPayoutBatches(ctx, state);
   state.tickets = buildTickets(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);

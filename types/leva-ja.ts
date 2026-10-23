@@ -328,6 +328,89 @@ export type Withdrawal = {
   paymentReference?: string;
   reason?: string;
   decidedBy?: string;
+  batchId?: string;
+};
+
+export type InvoiceKind = "invoice" | "credit_note";
+export type InvoiceLine = { description: string; amount: number };
+
+export type Invoice = {
+  id: string;
+  number: string;
+  kind: InvoiceKind;
+  issuedAt: string;
+  requestId: string;
+  requestCode: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  providerName?: string;
+  paymentMethod: PaymentMethodKind;
+  lines: InvoiceLine[];
+  vatRate: number;
+  net: number;
+  vat: number;
+  total: number;
+  refundId?: string;
+  relatedNumber?: string;
+};
+
+export type SettlementMethod = "card" | "bank_reference";
+export type SettlementStatus = "pending" | "matched" | "mismatch" | "resolved";
+
+export type Settlement = {
+  id: string;
+  day: string;
+  method: SettlementMethod;
+  expected: number;
+  received: number | null;
+  count: number;
+  reference?: string;
+  receivedAt?: string;
+  status: SettlementStatus;
+  resolution?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+};
+
+export type CashDeposit = {
+  id: string;
+  providerId: string;
+  providerName: string;
+  amount: number;
+  reference: string;
+  at: string;
+  recordedBy: string;
+};
+
+export type CashDebt = {
+  providerId: string;
+  providerName: string;
+  providerPhone: string;
+  owed: number;
+  deposited: number;
+  balance: number;
+  cashRequests: number;
+  oldestUnsettledAt?: string;
+  overdue: boolean;
+  lastDepositAt?: string;
+};
+
+export type PayoutBatchStatus = "draft" | "sent" | "paid" | "cancelled";
+
+export type PayoutBatch = {
+  id: string;
+  code: string;
+  status: PayoutBatchStatus;
+  withdrawalIds: string[];
+  total: number;
+  count: number;
+  createdAt: string;
+  createdBy: string;
+  sentAt?: string;
+  paidAt?: string;
+  bankReference?: string;
+  cancelReason?: string;
 };
 
 export type PricingRule = { kind: ServiceKind; base: number; perKm: number };
@@ -351,6 +434,9 @@ export type AuditEntityKind =
   | "client"
   | "withdrawal"
   | "refund"
+  | "settlement"
+  | "cash"
+  | "batch"
   | "pricing"
   | "zone"
   | "ticket"
@@ -372,6 +458,13 @@ export type AuditAction =
   | "refund.approve"
   | "refund.reject"
   | "refund.paid"
+  | "settlement.register"
+  | "settlement.resolve"
+  | "cash.deposit"
+  | "batch.create"
+  | "batch.send"
+  | "batch.paid"
+  | "batch.cancel"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"

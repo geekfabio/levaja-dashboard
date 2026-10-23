@@ -1,6 +1,7 @@
 import type { Repositories } from "../repositories";
 import { createMockAudit } from "./audit";
 import { createMockAuth } from "./auth";
+import { createMockBilling } from "./billing";
 import { createMockClients } from "./clients";
 import { MockDatabase } from "./database";
 import type { MockDatabaseOptions } from "./database";
@@ -37,6 +38,7 @@ export function createMockRepositories(options: MockRepositoriesOptions = {}): M
     documents: createMockDocuments(database),
     clients: createMockClients(database),
     finance: createMockFinance(database),
+    billing: createMockBilling(database),
     pricing: createMockPricing(database),
     zones: createMockZones(database),
     support: createMockSupport(database),

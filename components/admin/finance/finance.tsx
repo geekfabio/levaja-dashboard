@@ -8,6 +8,7 @@ import { useClock } from "@/hooks/admin/use-clock";
 import { luandaDay } from "@/lib/format";
 import { hasPermission } from "@/lib/leva-ja/permissions";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
+import BatchesPanel from "./batches/batches-panel";
 import RevenuePanel from "./revenue/revenue-panel";
 import TransactionsPanel from "./transactions/transactions-panel";
 import WithdrawalsPanel from "./withdrawals/withdrawals-panel";
@@ -15,6 +16,7 @@ import WithdrawalsPanel from "./withdrawals/withdrawals-panel";
 const TABS = [
   { value: "receita", label: "Receita" },
   { value: "levantamentos", label: "Levantamentos" },
+  { value: "lotes", label: "Lotes de pagamento" },
   { value: "transaccoes", label: "Transacções" },
 ];
 
@@ -43,6 +45,9 @@ export default function Finance() {
             </TabsContent>
             <TabsContent value="levantamentos">
               <WithdrawalsPanel canDecide={hasPermission(role, "finance.withdrawals")} />
+            </TabsContent>
+            <TabsContent value="lotes">
+              <BatchesPanel canManage={hasPermission(role, "finance.withdrawals")} />
             </TabsContent>
             <TabsContent value="transaccoes">
               <TransactionsPanel today={today} />

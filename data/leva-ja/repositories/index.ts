@@ -1,5 +1,6 @@
 import type { AdminAuthRepository } from "./admin-auth";
 import type { AuditRepository } from "./audit";
+import type { BillingRepository } from "./billing";
 import type { ClientsRepository } from "./clients";
 import type { DemoControls } from "./demo";
 import type { DisputesRepository } from "./disputes";
@@ -27,6 +28,7 @@ export type Repositories = {
   documents: DocumentsRepository;
   clients: ClientsRepository;
   finance: FinanceRepository;
+  billing: BillingRepository;
   pricing: PricingRepository;
   zones: ZonesRepository;
   support: SupportRepository;
@@ -39,6 +41,7 @@ export type Repositories = {
 
 export type * from "./admin-auth";
 export type * from "./audit";
+export type * from "./billing";
 export type * from "./clients";
 export type * from "./common";
 export type * from "./demo";

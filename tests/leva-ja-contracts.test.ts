@@ -189,7 +189,8 @@ test("contrato: falhas de rede simuladas chegam como network", async () => {
 test("contrato: ocorrências atribuídas, respondidas e resolvidas ficam na auditoria", async () => {
   const repos = await setup("suporte@levaja.ao");
   const ticket = (await repos.support.tickets({ status: ["open"], pageSize: 1 })).items[0];
-  const [assignee] = await repos.support.assignees();
+  const assignee = (await repos.support.assignees()).find((user) => user.id !== ticket.assigneeId);
+  assert.ok(assignee);
   const assigned = await repos.support.assignTicket(ticket.id, assignee.id);
   assert.equal(assigned.status, "in_progress");
   await rejectsWith(repos.support.replyTicket(ticket.id, ""), "validation");
