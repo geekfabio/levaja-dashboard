@@ -2,6 +2,8 @@ import type {
   AdminSession,
   AdminUser,
   AuditLogEntry,
+  Broadcast,
+  BusinessAccount,
   CashDeposit,
   Claim,
   Fleet,
@@ -10,6 +12,7 @@ import type {
   RolePermissions,
   PricingConfig,
   PayoutBatch,
+  Promotion,
   Penalty,
   ProviderApplication,
   ProviderAccount,
@@ -23,7 +26,7 @@ import type {
 } from "@/types/leva-ja";
 import type { TransactionRecord } from "../repositories/finance";
 
-export const MOCK_STATE_VERSION = 6;
+export const MOCK_STATE_VERSION = 7;
 
 export type StoredSettlement = Omit<Settlement, "expected" | "count" | "status">;
 
@@ -50,6 +53,9 @@ export type MockState = {
   fleets: Fleet[];
   penalties: Penalty[];
   claims: Claim[];
+  businessAccounts: BusinessAccount[];
+  promotions: Promotion[];
+  broadcasts: Broadcast[];
   tickets: Ticket[];
   sos: SosAlert[];
   reviewNotes: Record<string, string>;

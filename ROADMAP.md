@@ -66,18 +66,15 @@ Mapa de Angola com tiles do OpenStreetMap, zoom e arrastar (rato, teclado e bot�
 
 `/admin/agendados` com antecedência configurável e risco; separador Prazos em Pedidos; mapa de calor da procura e da oferta no mapa operacional; fotografias no detalhe do pedido; `/admin/sinistros` com análise, aprovação e pagamento.
 
+## Fase 15 — Contas empresariais, promoções, comunicações e relatórios ✅
+
+`/admin/empresas` com contrato, utilizadores e extractos; `/admin/promocoes` com regras e orçamento; `/admin/comunicacoes` só com envio simulado; `/admin/relatorios` com exportação CSV.
+
 ---
 
 ## Por fazer
 
 As rotas, os nomes e as permissões destas secções já existem em `lib/leva-ja/navigation.ts` e `lib/leva-ja/permissions.ts`; falta implementá-las e acrescentá-las a `NAV_GROUPS`. Cada fase mantém as regras de sempre: dados mock em `data/leva-ja/mock/`, contrato e implementação HTTP, hooks em `hooks/admin/`, regras em `lib/leva-ja/`, auditoria das acções críticas e testes de contrato.
-
-### Fase 15 — Contas empresariais, promoções, comunicações e relatórios
-
-- `/admin/empresas`: clientes empresariais com contrato, preços acordados, limite de crédito e facturação mensal (`business.view`, `business.manage`).
-- `/admin/promocoes`: códigos de desconto e campanhas, com regras, orçamento e uso (`promotions.view`, `promotions.manage`).
-- `/admin/comunicacoes`: avisos por push, SMS e e-mail para clientes e prestadores, só em modo de demonstração; nenhum envio real sem `MESSAGING_LIVE=true` e pedido explícito (`communications.send`).
-- `/admin/relatorios`: relatórios por período (operação, finanças, prestadores, zonas) com exportação CSV (`reports.view`).
 
 ### Fase 16 — Suporte avançado, segurança, protecção de dados e integrações
 

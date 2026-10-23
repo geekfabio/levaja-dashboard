@@ -79,6 +79,10 @@ Endpoints usados (os da app móvel mantêm os nomes):
 | Finanças | `GET /admin/revenue`, `GET /admin/withdrawals`, `POST /admin/withdrawals/:id/approve\|reject\|paid`, `GET /admin/transactions` |
 | Preços e zonas | `GET\|PUT /admin/pricing`, `GET\|POST /admin/zones`, `PUT\|DELETE /admin/zones/:id` |
 | Suporte | `GET /admin/tickets`, `POST /admin/tickets/:id/assign\|reply\|resolve`, `GET /admin/sos`, `POST /admin/sos/:id/acknowledge\|resolve`, `GET /admin/reviews/low` |
+| Contas empresariais | `GET\|POST /admin/business-accounts`, `GET /admin/business-accounts/candidates`, `GET /admin/business-accounts/:id`, `PUT /admin/business-accounts/:id/contract`, `POST /admin/business-accounts/:id/members`, `POST /admin/business-accounts/:id/members/:clientId/remove`, `POST /admin/business-accounts/:id/statements/:month/paid`, `POST /admin/business-accounts/:id/suspend\|reactivate` |
+| Promoções | `GET\|POST /admin/promotions`, `GET /admin/promotions/:id`, `POST /admin/promotions/:id/pause\|resume\|end` |
+| Comunicações | `GET\|POST /admin/broadcasts`, `POST /admin/broadcasts/estimate`, `POST /admin/broadcasts/:id/schedule\|send\|cancel` |
+| Relatórios | `GET /admin/reports/:kind?from=&to=` (`operations`, `finance`, `providers`, `zones`, `business`) |
 | Operação | `GET /admin/requests/scheduled?state=&days=&zone=`, `GET /admin/metrics/sla?from=&to=`, `GET /admin/metrics/heatmap?kind=&days=&hour=` |
 | Sinistros | `GET\|POST /admin/claims`, `GET /admin/claims/summary`, `GET /admin/claims/:id`, `GET /admin/requests/:id/claims`, `POST /admin/claims/:id/review\|notes\|approve\|reject\|paid` |
 | Candidaturas | `GET /admin/applications`, `GET /admin/applications/summary`, `GET /admin/applications/:id`, `POST /admin/applications/:id/documents\|interview\|inspection\|advance\|approve\|reject` |

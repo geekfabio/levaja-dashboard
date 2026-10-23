@@ -82,6 +82,40 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       subscribe: (listener) => subscribe("requests", listener),
     },
 
+    business: {
+      list: (filters = {}) => http.get("/admin/business-accounts", filters),
+      get: (accountId) => http.get(`/admin/business-accounts/${id(accountId)}`),
+      candidates: () => http.get("/admin/business-accounts/candidates"),
+      create: (input) => http.post("/admin/business-accounts", input),
+      updateContract: (accountId, contract, reason) => http.put(`/admin/business-accounts/${id(accountId)}/contract`, { contract, reason }),
+      addMember: (accountId, clientId) => http.post(`/admin/business-accounts/${id(accountId)}/members`, { clientId }),
+      removeMember: (accountId, clientId, reason) => http.post(`/admin/business-accounts/${id(accountId)}/members/${id(clientId)}/remove`, { reason }),
+      markStatementPaid: (accountId, month, reference) => http.post(`/admin/business-accounts/${id(accountId)}/statements/${id(month)}/paid`, { reference }),
+      setStatus: (accountId, status, reason) => http.post(`/admin/business-accounts/${id(accountId)}/${status === "suspended" ? "suspend" : "reactivate"}`, { reason }),
+    },
+
+    promotions: {
+      list: (filters = {}) => http.get("/admin/promotions", filters),
+      get: (promotionId) => http.get(`/admin/promotions/${id(promotionId)}`),
+      create: (input) => http.post("/admin/promotions", input),
+      pause: (promotionId, reason) => http.post(`/admin/promotions/${id(promotionId)}/pause`, { reason }),
+      resume: (promotionId) => http.post(`/admin/promotions/${id(promotionId)}/resume`),
+      end: (promotionId, reason) => http.post(`/admin/promotions/${id(promotionId)}/end`, { reason }),
+    },
+
+    communications: {
+      list: (filters = {}) => http.get("/admin/broadcasts", filters),
+      estimate: (audience) => http.post("/admin/broadcasts/estimate", audience),
+      create: (input) => http.post("/admin/broadcasts", input),
+      schedule: (broadcastId, at) => http.post(`/admin/broadcasts/${id(broadcastId)}/schedule`, { at }),
+      send: (broadcastId) => http.post(`/admin/broadcasts/${id(broadcastId)}/send`),
+      cancel: (broadcastId, reason) => http.post(`/admin/broadcasts/${id(broadcastId)}/cancel`, { reason }),
+    },
+
+    reports: {
+      run: (kind, range) => http.get(`/admin/reports/${id(kind)}`, range),
+    },
+
     operations: {
       scheduled: (filters = {}) => http.get("/admin/requests/scheduled", filters),
       sla: (range) => http.get("/admin/metrics/sla", range),

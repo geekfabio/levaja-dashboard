@@ -146,6 +146,76 @@ export type ServiceRequest = {
   photos?: RequestPhoto[];
 };
 
+export type BusinessContract = { startsAt: string; endsAt: string; discountRate: number; paymentTermsDays: number; creditLimit: number };
+
+export type BusinessStatement = { month: string; paidAt?: string; reference?: string };
+
+export type BusinessAccount = {
+  id: string;
+  name: string;
+  nif: string;
+  sector: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  status: "active" | "suspended";
+  suspensionReason?: string;
+  contract: BusinessContract;
+  clientIds: string[];
+  statements: BusinessStatement[];
+  createdAt: string;
+};
+
+export type PromotionKind = "percent" | "fixed";
+export type PromotionStatus = "scheduled" | "active" | "paused" | "ended" | "exhausted";
+
+export type PromotionUse = { requestId: string; clientId: string; discount: number; at: string };
+
+export type Promotion = {
+  id: string;
+  code: string;
+  name: string;
+  kind: PromotionKind;
+  value: number;
+  maxDiscount?: number;
+  minOrder: number;
+  services: ServiceKind[];
+  zoneIds: string[];
+  startsAt: string;
+  endsAt: string;
+  budget: number;
+  perClientLimit: number;
+  firstOrderOnly: boolean;
+  paused: boolean;
+  endedAt?: string;
+  createdAt: string;
+  createdBy: string;
+  uses: PromotionUse[];
+};
+
+export type BroadcastChannel = "push" | "sms" | "email";
+export type BroadcastAudienceKind = "clients" | "providers";
+export type BroadcastSegment = "all" | "inactive_30" | "new_30" | "online" | "business";
+export type BroadcastStatus = "draft" | "scheduled" | "sent" | "cancelled";
+
+export type Broadcast = {
+  id: string;
+  title: string;
+  channel: BroadcastChannel;
+  audience: { kind: BroadcastAudienceKind; segment: BroadcastSegment; zoneIds: string[] };
+  subject?: string;
+  message: string;
+  status: BroadcastStatus;
+  scheduledFor?: string;
+  sentAt?: string;
+  recipients?: number;
+  delivered?: number;
+  failed?: number;
+  createdAt: string;
+  createdBy: string;
+  cancelReason?: string;
+};
+
 export type ClaimKind = "cargo_damage" | "vehicle_damage" | "accident" | "theft" | "injury";
 export type ClaimStatus = "reported" | "under_review" | "approved" | "rejected" | "paid";
 
@@ -561,6 +631,9 @@ export type AuditEntityKind =
   | "fleet"
   | "penalty"
   | "claim"
+  | "business"
+  | "promotion"
+  | "broadcast"
   | "pricing"
   | "zone"
   | "ticket"
@@ -607,6 +680,21 @@ export type AuditAction =
   | "claim.approve"
   | "claim.reject"
   | "claim.paid"
+  | "business.create"
+  | "business.contract"
+  | "business.member_add"
+  | "business.member_remove"
+  | "business.statement_paid"
+  | "business.suspend"
+  | "business.reactivate"
+  | "promotion.create"
+  | "promotion.pause"
+  | "promotion.resume"
+  | "promotion.end"
+  | "broadcast.create"
+  | "broadcast.schedule"
+  | "broadcast.send"
+  | "broadcast.cancel"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"

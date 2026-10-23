@@ -19,6 +19,9 @@ import type {
   ProviderAccount,
   ProviderDocument,
   ApplicationStage,
+  Broadcast,
+  BusinessAccount,
+  Promotion,
   Claim,
   CashDeposit,
   Fleet,
@@ -1009,6 +1012,158 @@ function buildClaims(ctx: Context, state: MockState): Claim[] {
   });
 }
 
+function buildBusinessAccounts(ctx: Context, state: MockState): BusinessAccount[] {
+  const start = isoAt(ctx.now - 150 * DAY);
+  const end = isoAt(ctx.now + 215 * DAY);
+  const accounts: BusinessAccount[] = [
+    {
+      id: "emp-01",
+      name: "Sonangol Logística",
+      nif: "5410002871",
+      sector: "Energia",
+      contactName: "Marta Gaspar",
+      phone: "+244 923 118 940",
+      email: "compras@sonangol-logistica.ao",
+      status: "active",
+      contract: { startsAt: start, endsAt: end, discountRate: 0.1, paymentTermsDays: 30, creditLimit: 400_000 },
+      clientIds: state.clients.slice(0, 4).map((client) => client.id),
+      statements: [],
+      createdAt: start,
+    },
+    {
+      id: "emp-02",
+      name: "Shoprite Angola",
+      nif: "5403318820",
+      sector: "Retalho",
+      contactName: "Daniel Fortunato",
+      phone: "+244 912 440 207",
+      email: "frota@shoprite.co.ao",
+      status: "active",
+      contract: { startsAt: start, endsAt: end, discountRate: 0.07, paymentTermsDays: 15, creditLimit: 150_000 },
+      clientIds: state.clients.slice(4, 7).map((client) => client.id),
+      statements: [],
+      createdAt: isoAt(ctx.now - 120 * DAY),
+    },
+    {
+      id: "emp-03",
+      name: "Clínica Girassol",
+      nif: "5417790012",
+      sector: "Saúde",
+      contactName: "Rosa Tchivinda",
+      phone: "+244 934 880 115",
+      email: "administracao@clinicagirassol.ao",
+      status: "suspended",
+      suspensionReason: "Dois extractos em atraso.",
+      contract: { startsAt: start, endsAt: end, discountRate: 0.05, paymentTermsDays: 30, creditLimit: 80_000 },
+      clientIds: state.clients.slice(7, 9).map((client) => client.id),
+      statements: [],
+      createdAt: isoAt(ctx.now - 140 * DAY),
+    },
+  ];
+  const currentMonth = luandaDay(new Date(ctx.now)).slice(0, 7);
+  for (const account of accounts) {
+    const months = new Set(
+      state.requests
+        .filter((request) => account.clientIds.includes(request.clientId) && (request.status === "paid" || request.status === "rated"))
+        .map((request) => luandaDay(eventAt(request, "paid") ?? request.createdAt).slice(0, 7)),
+    );
+    const closed = [...months].filter((month) => month < currentMonth).sort();
+    const unpaid = account.status === "suspended" ? 2 : account.id === "emp-02" ? 1 : 1;
+    account.statements = closed.slice(0, Math.max(0, closed.length - unpaid)).map((month, index) => ({
+      month,
+      paidAt: isoAt(new Date(`${month}-01T12:00:00Z`).getTime() + 40 * DAY),
+      reference: `EMP${account.id.slice(-2)}${String(index + 1).padStart(3, "0")}`,
+    }));
+  }
+  return accounts;
+}
+
+function buildPromotions(ctx: Context, state: MockState): Promotion[] {
+  const operations = state.adminUsers.find((user) => user.role === "finance")?.name ?? "Finanças";
+  const at = (days: number) => isoAt(ctx.now + days * DAY);
+  const base = { maxDiscount: undefined, zoneIds: [] as string[], paused: false, createdBy: operations };
+  const promotions: Promotion[] = ([
+    { ...base, id: "promo-01", code: "LEVAJA10", name: "10 % em qualquer serviço", kind: "percent", value: 10, maxDiscount: 3000, minOrder: 5000, services: [], startsAt: at(-25), endsAt: at(20), budget: 150_000, perClientLimit: 3, firstOrderOnly: false, createdAt: at(-26) },
+    { ...base, id: "promo-02", code: "MUDA2000", name: "2 000 Kz nas mudanças", kind: "fixed", value: 2000, minOrder: 10_000, services: ["small_move", "house_move"], startsAt: at(-18), endsAt: at(12), budget: 60_000, perClientLimit: 1, firstOrderOnly: false, createdAt: at(-19) },
+    { ...base, id: "promo-03", code: "BEMVINDO", name: "Primeiro pedido com 15 %", kind: "percent", value: 15, maxDiscount: 2500, minOrder: 0, services: [], startsAt: at(-60), endsAt: at(-5), budget: 80_000, perClientLimit: 1, firstOrderOnly: true, createdAt: at(-61), endedAt: at(-5) },
+    { ...base, id: "promo-04", code: "REBOQUE500", name: "500 Kz nos reboques", kind: "fixed", value: 500, minOrder: 0, services: ["tow"], startsAt: at(-10), endsAt: at(30), budget: 20_000, perClientLimit: 2, firstOrderOnly: false, paused: true, createdAt: at(-11) },
+    { ...base, id: "promo-05", code: "NATAL15", name: "Natal com 15 %", kind: "percent", value: 15, maxDiscount: 4000, minOrder: 8000, services: [], startsAt: at(55), endsAt: at(70), budget: 200_000, perClientLimit: 2, firstOrderOnly: false, createdAt: at(-2) },
+  ] as Omit<Promotion, "uses">[]).map((promotion) => ({ ...promotion, uses: [] }));
+  const settled = state.requests.filter((request) => request.status === "paid" || request.status === "rated").sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+  const firstByClient = new Map<string, string>();
+  for (const request of settled) if (!firstByClient.has(request.clientId)) firstByClient.set(request.clientId, request.id);
+  settled.forEach((request, index) => {
+    const promotion = promotions[index % 4];
+    if (index % 3 !== 0) return;
+    if (request.createdAt < promotion.startsAt || request.createdAt > (promotion.endedAt ?? promotion.endsAt)) return;
+    if (promotion.services.length && !promotion.services.includes(request.kind)) return;
+    if (request.price.total < promotion.minOrder) return;
+    if (promotion.firstOrderOnly && firstByClient.get(request.clientId) !== request.id) return;
+    if (promotion.uses.filter((use) => use.clientId === request.clientId).length >= promotion.perClientLimit) return;
+    const raw = promotion.kind === "percent" ? Math.round((request.price.total * promotion.value) / 100) : promotion.value;
+    const discount = Math.min(raw, promotion.maxDiscount ?? raw, request.price.total);
+    if (promotion.uses.reduce((sum, use) => sum + use.discount, 0) + discount > promotion.budget) return;
+    promotion.uses.push({ requestId: request.id, clientId: request.clientId, discount, at: request.createdAt });
+  });
+  return promotions;
+}
+
+function buildBroadcasts(ctx: Context, state: MockState): Broadcast[] {
+  const support = state.adminUsers.find((user) => user.role === "support")?.name ?? "Suporte";
+  return [
+    {
+      id: "com-01",
+      title: "Lançamento das mudanças de casa",
+      channel: "push",
+      audience: { kind: "clients", segment: "all", zoneIds: [] },
+      message: "Olá {nome}! Já pode pedir mudanças de casa completas na Leva Já, com ajudantes incluídos.",
+      status: "sent",
+      sentAt: isoAt(ctx.now - 9 * DAY),
+      recipients: 38,
+      delivered: 37,
+      failed: 1,
+      createdAt: isoAt(ctx.now - 10 * DAY),
+      createdBy: support,
+    },
+    {
+      id: "com-02",
+      title: "Documentos a expirar",
+      channel: "sms",
+      audience: { kind: "providers", segment: "all", zoneIds: [] },
+      message: "Leva Já: {nome}, confirme na app que os seus documentos estão válidos para continuar a receber pedidos.",
+      status: "sent",
+      sentAt: isoAt(ctx.now - 4 * DAY),
+      recipients: 22,
+      delivered: 21,
+      failed: 1,
+      createdAt: isoAt(ctx.now - 4 * DAY - 2 * HOUR),
+      createdBy: support,
+    },
+    {
+      id: "com-03",
+      title: "Promoção de Natal",
+      channel: "email",
+      audience: { kind: "clients", segment: "inactive_30", zoneIds: [] },
+      subject: "15 % de desconto no Natal",
+      message: "Olá {nome}, neste Natal use o código NATAL15 e tenha 15 % de desconto no próximo serviço.",
+      status: "scheduled",
+      scheduledFor: isoAt(ctx.now + 55 * DAY),
+      createdAt: isoAt(ctx.now - DAY),
+      createdBy: support,
+    },
+    {
+      id: "com-04",
+      title: "Aviso de chuva em Luanda",
+      channel: "push",
+      audience: { kind: "providers", segment: "online", zoneIds: [] },
+      message: "Atenção {nome}: chuva forte prevista para hoje à tarde. Conduza com cuidado e avise o cliente de atrasos.",
+      status: "draft",
+      createdAt: isoAt(ctx.now - 3 * HOUR),
+      createdBy: support,
+    },
+  ];
+}
+
 function buildWithdrawals(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const providers = state.providers
@@ -1229,6 +1384,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     fleets: [],
     penalties: [],
     claims: [],
+    businessAccounts: [],
+    promotions: [],
+    broadcasts: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -1250,6 +1408,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   state.requests.push(...buildScheduled(ctx, state));
   addPhotos(ctx, state);
   state.claims = buildClaims(ctx, state);
+  state.businessAccounts = buildBusinessAccounts(ctx, state);
+  state.promotions = buildPromotions(ctx, state);
+  state.broadcasts = buildBroadcasts(ctx, state);
   state.tickets = buildTickets(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);
