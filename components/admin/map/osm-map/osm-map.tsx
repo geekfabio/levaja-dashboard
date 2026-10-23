@@ -35,6 +35,8 @@ export type MapRoute = { id: string; points: Coordinates[]; tone?: MapRouteTone;
 
 export type MapZone = { id: string; name: string; coords: Coordinates; radiusKm: number };
 
+export type MapHeat = { points: (Coordinates & { weight: number })[]; max: number; tone: "demand" | "supply" };
+
 type View = { center: LatLng; zoom: number };
 type Size = { width: number; height: number };
 
@@ -50,6 +52,7 @@ type OsmMapProps = {
   onSelect?: (id: string) => void;
   className?: string;
   compact?: boolean;
+  heat?: MapHeat | null;
   children?: ReactNode;
 };
 
@@ -130,6 +133,27 @@ function TileLayer({ view, size }: { view: View; size: Size }) {
         />
       ))}
     </div>
+  );
+}
+
+function HeatLayer({ view, size, heat, gradientId }: { view: View; size: Size; heat: MapHeat; gradientId: string }) {
+  const color = heat.tone === "demand" ? "var(--danger)" : "var(--info)";
+  return (
+    <svg aria-hidden width={size.width} height={size.height} className="pointer-events-none absolute inset-0">
+      <defs>
+        <radialGradient id={gradientId}>
+          <stop offset="0%" stopColor={color} stopOpacity={0.9} />
+          <stop offset="50%" stopColor={color} stopOpacity={0.5} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </radialGradient>
+      </defs>
+      {heat.points.map((point) => {
+        const center = toScreen(point, view.center, view.zoom, size);
+        const intensity = heat.max ? point.weight / heat.max : 0;
+        const radius = Math.max(18, 1400 / metersPerPixel(point.latitude, view.zoom)) * (0.9 + intensity * 0.8);
+        return <circle key={`${point.latitude}:${point.longitude}`} cx={center.x} cy={center.y} r={radius} fill={`url(#${gradientId})`} opacity={0.5 + intensity * 0.5} />;
+      })}
+    </svg>
   );
 }
 
@@ -268,9 +292,11 @@ export default function OsmMap({
   onSelect,
   className,
   compact = false,
+  heat = null,
   children,
 }: OsmMapProps) {
   const hintId = useId();
+  const gradientId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointerId: number; x: number; y: number; origin: Point; zoom: number; moved: boolean } | null>(null);
   const [size, setSize] = useState<Size | null>(null);
@@ -426,6 +452,7 @@ export default function OsmMap({
       {view && size && (
         <>
           <TileLayer view={view} size={size} />
+          {heat && heat.points.length > 0 && <HeatLayer view={view} size={size} heat={heat} gradientId={gradientId} />}
           <OverlayLayer view={view} size={size} routes={routes} zones={zones} />
           <MarkerLayer view={view} size={size} markers={markers} selectedId={selectedId} onSelect={onSelect} onZoomTo={(point, delta) => zoomBy(delta, point)} />
           <ScaleBar view={view} />

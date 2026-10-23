@@ -41,6 +41,7 @@ function entityHref(entry: AuditLogEntry) {
   if (kind === "application") return SECTION_ROUTES.applications;
   if (kind === "fleet") return SECTION_ROUTES.fleets;
   if (kind === "penalty") return SECTION_ROUTES.providers;
+  if (kind === "claim") return SECTION_ROUTES.claims;
   if (kind === "pricing" || kind === "zone") return SECTION_ROUTES.pricing;
   if (kind === "ticket" || kind === "sos" || kind === "review") return SECTION_ROUTES.support;
   if (kind === "admin_user") return SECTION_ROUTES.users;

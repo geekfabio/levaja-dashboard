@@ -1,5 +1,6 @@
 import { estimatePrice } from "@/lib/leva-ja/pricing";
 import { distanceKm, isEligible, zoneFor } from "@/lib/leva-ja/eligibility";
+import { dispatchStartsAt, isUpcoming } from "@/lib/leva-ja/scheduling";
 import { ACTIVE_STATUSES, nextStatus } from "@/lib/leva-ja/status";
 import type { Coordinates, ServiceKind } from "@/types/leva-ja";
 import type { MockDatabase } from "./database";
@@ -85,8 +86,9 @@ function advance(db: MockDatabase, request: StoredRequest) {
   const today = db.today();
   const now = db.now();
   if (request.dispute && !request.dispute.resolvedAt) return false;
+  if (isUpcoming(request, now.getTime(), state.settings.dispatch.scheduleLeadMinutes)) return false;
   if (request.status === "searching") {
-    if (now.getTime() - Date.parse(request.createdAt) > state.settings.dispatch.stalledAfterMinutes * MINUTE) return false;
+    if (now.getTime() - dispatchStartsAt(request, state.settings.dispatch.scheduleLeadMinutes) > state.settings.dispatch.stalledAfterMinutes * MINUTE) return false;
     const busy = new Set(
       state.requests.filter((item) => item.providerId && ACTIVE_STATUSES.includes(item.status)).map((item) => item.providerId),
     );
@@ -129,7 +131,9 @@ export function tick(db: MockDatabase) {
       provider.suspensionReason = undefined;
     }
     if (provider.availability !== "online" || provider.accountStatus !== "active") continue;
-    const active = state.requests.find((request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status));
+    const active = state.requests.find(
+      (request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status) && !isUpcoming(request, nowMs, state.settings.dispatch.scheduleLeadMinutes),
+    );
     if (!active) provider.coords = jitter(provider.coords, random);
     else if (active.status === "assigned" || active.status === "en_route") provider.coords = towards(provider.coords, active.origin.coords, 0.2);
     else if (active.status === "in_transit") provider.coords = towards(provider.coords, active.destination.coords, 0.15);

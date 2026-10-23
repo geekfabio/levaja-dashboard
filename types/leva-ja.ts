@@ -66,6 +66,10 @@ export type ServiceDetails =
 
 export type DeliveryProof = { receivedBy: string; at: string; photoLabel: string };
 
+export type PhotoStage = "pickup" | "delivery" | "damage";
+
+export type RequestPhoto = { id: string; stage: PhotoStage; label: string; at: string; by: "provider" | "client" };
+
 export type DisputeCategory = "damage" | "payment" | "price" | "no_show" | "delay" | "conduct" | "other";
 export type DisputeOutcome = "no_refund" | "refund_full" | "refund_partial";
 export type DisputeNote = { id: string; author: string; text: string; at: string };
@@ -139,6 +143,40 @@ export type ServiceRequest = {
   details: ServiceDetails;
   proof?: DeliveryProof;
   dispute?: Dispute;
+  photos?: RequestPhoto[];
+};
+
+export type ClaimKind = "cargo_damage" | "vehicle_damage" | "accident" | "theft" | "injury";
+export type ClaimStatus = "reported" | "under_review" | "approved" | "rejected" | "paid";
+
+export type ClaimNote = { id: string; author: string; text: string; at: string };
+
+export type Claim = {
+  id: string;
+  code: string;
+  requestId: string;
+  requestCode: string;
+  clientId: string;
+  clientName: string;
+  providerId?: string;
+  providerName?: string;
+  kind: ClaimKind;
+  description: string;
+  occurredAt: string;
+  reportedAt: string;
+  reportedBy: string;
+  estimatedAmount: number;
+  status: ClaimStatus;
+  insurer?: string;
+  policyNumber?: string;
+  approvedAmount?: number;
+  decisionReason?: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  paidAt?: string;
+  paymentReference?: string;
+  notes: ClaimNote[];
+  photoIds: string[];
 };
 
 export type Transaction = {
@@ -522,6 +560,7 @@ export type AuditEntityKind =
   | "application"
   | "fleet"
   | "penalty"
+  | "claim"
   | "pricing"
   | "zone"
   | "ticket"
@@ -562,6 +601,12 @@ export type AuditAction =
   | "fleet.reactivate"
   | "penalty.issue"
   | "penalty.revoke"
+  | "claim.report"
+  | "claim.review"
+  | "claim.note"
+  | "claim.approve"
+  | "claim.reject"
+  | "claim.paid"
   | "provider.approve"
   | "provider.suspend"
   | "provider.reactivate"
@@ -640,6 +685,7 @@ export type DispatchSettings = {
   stalledAfterMinutes: number;
   assignTargetMinutes: number;
   arrivalTargetMinutes: number;
+  scheduleLeadMinutes: number;
   distanceWeight: number;
   fallback: "manual" | "cancel";
 };

@@ -1,3 +1,4 @@
+import { isUpcoming } from "@/lib/leva-ja/scheduling";
 import { distanceKm, eligibilityIssues } from "@/lib/leva-ja/eligibility";
 import {
   ACTIVE_STATUSES,
@@ -175,7 +176,7 @@ export function createMockRequests(db: MockDatabase): RequestsRepository {
     active: () =>
       db.run({ permission: "requests.view" }, (ctx) =>
         ctx.state.requests
-          .filter((request) => ACTIVE_STATUSES.includes(request.status))
+          .filter((request) => ACTIVE_STATUSES.includes(request.status) && !isUpcoming(request, ctx.now.getTime(), ctx.state.settings.dispatch.scheduleLeadMinutes))
           .sort(byNewest((request) => request.createdAt))
           .map((request) => hydrate(ctx, request)),
       ),

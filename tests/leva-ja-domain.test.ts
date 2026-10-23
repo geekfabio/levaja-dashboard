@@ -60,7 +60,8 @@ test("permissões: cada papel só vê as suas secções", () => {
 test("gerador: semente fixa, volumes e coerência", () => {
   const seed = generateSeed(NOW);
   assert.equal(JSON.stringify(seed), JSON.stringify(generateSeed(NOW)));
-  assert.equal(seed.requests.length, 300);
+  assert.equal(seed.requests.filter((request) => !request.scheduledFor).length, 300);
+  assert.equal(seed.requests.filter((request) => request.scheduledFor && Date.parse(request.scheduledFor) > NOW.getTime()).length, 12);
   assert.equal(seed.clients.length, 40);
   assert.equal(seed.providers.length, 25);
   assert.equal(seed.sos.filter((alert) => alert.status === "open").length, 2);

@@ -1,5 +1,5 @@
 import { formatKz, luandaDay } from "@/lib/format";
-import { CANCELLABLE_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
+import { ACTIVE_STATUSES, CANCELLABLE_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
 import { defaultPricingConfig, estimatePrice, priceWithProposal } from "@/lib/leva-ja/pricing";
 import { normalizeRolePermissions } from "@/lib/leva-ja/permissions";
 import { defaultPlatformSettings } from "@/lib/leva-ja/settings";
@@ -19,6 +19,7 @@ import type {
   ProviderAccount,
   ProviderDocument,
   ApplicationStage,
+  Claim,
   CashDeposit,
   Fleet,
   Penalty,
@@ -882,6 +883,132 @@ function buildPenalties(ctx: Context, state: MockState): Penalty[] {
   return penalties;
 }
 
+function buildScheduled(ctx: Context, state: MockState): StoredRequest[] {
+  const { rng } = ctx;
+  const templates = state.requests.filter((request) => request.status === "rated" && !request.dispute && request.stops.length === 0);
+  const busy = new Set(state.requests.filter((request) => request.providerId && ACTIVE_STATUSES.includes(request.status)).map((request) => request.providerId));
+  const free = state.providers.filter((provider) => eligibleNow(provider, ctx.today) && !busy.has(provider.id));
+  const plan: { hours: number; assigned: boolean }[] = [
+    { hours: 1.5, assigned: false },
+    { hours: 2.5, assigned: false },
+    { hours: 5, assigned: true },
+    { hours: 9, assigned: false },
+    { hours: 20, assigned: true },
+    { hours: 26, assigned: false },
+    { hours: 30, assigned: true },
+    { hours: 50, assigned: false },
+    { hours: 75, assigned: true },
+    { hours: 98, assigned: false },
+    { hours: 140, assigned: false },
+    { hours: 190, assigned: true },
+  ];
+  const lastCode = state.requests.reduce((max, request) => Math.max(max, Number(request.code.replace(/\D/g, "")) || 0), 0);
+  return plan.flatMap((step, index) => {
+    const template = templates[(index * 7) % Math.max(1, templates.length)];
+    if (!template) return [];
+    const scheduled = Math.round((ctx.now + step.hours * HOUR) / (15 * MINUTE)) * 15 * MINUTE;
+    const created = ctx.now - rng.int(2, 60) * HOUR;
+    const provider = step.assigned ? free.find((item) => item.services.includes(template.kind) && item.zoneIds.includes(template.zoneId)) ?? free[index % Math.max(1, free.length)] : undefined;
+    const timeline: StoredRequest["timeline"] = [{ status: "searching", at: isoAt(created) }];
+    if (provider) timeline.push({ status: "assigned", at: isoAt(created + rng.int(10, 90) * MINUTE) });
+    return [
+      {
+        ...template,
+        id: `req-sch-${pad(index + 1, 2)}`,
+        code: `LJ-${lastCode + index + 1}`,
+        status: provider ? "assigned" : "searching",
+        providerId: provider?.id,
+        createdAt: isoAt(created),
+        scheduledFor: isoAt(scheduled),
+        timeline,
+        rating: undefined,
+        review: undefined,
+        proof: undefined,
+        dispute: undefined,
+        paymentMethod: template.paymentMethod,
+        photos: undefined,
+      },
+    ];
+  });
+}
+
+const PICKUP_PHOTOS = ["Carga embalada antes da recolha", "Viatura carregada no local de recolha", "Estado da viatura rebocada na recolha"];
+const DELIVERY_PHOTOS = ["Carga descarregada no destino", "Entrega confirmada à porta", "Viatura entregue na oficina"];
+
+function addPhotos(ctx: Context, state: MockState) {
+  const since = isoAt(ctx.now - 21 * DAY);
+  state.requests.forEach((request, index) => {
+    const picked = eventAt(request, "pickup_confirmed");
+    const delivered = eventAt(request, "delivered");
+    if (!picked || request.createdAt < since) return;
+    const photos: NonNullable<StoredRequest["photos"]> = [
+      { id: `ph-${request.id}-1`, stage: "pickup", label: PICKUP_PHOTOS[index % PICKUP_PHOTOS.length], at: picked, by: "provider" },
+    ];
+    if (index % 3 === 0) photos.push({ id: `ph-${request.id}-2`, stage: "pickup", label: "Pormenor da carga", at: picked, by: "provider" });
+    if (delivered) photos.push({ id: `ph-${request.id}-3`, stage: "delivery", label: DELIVERY_PHOTOS[index % DELIVERY_PHOTOS.length], at: delivered, by: "provider" });
+    if (request.dispute?.category === "damage" && delivered) {
+      photos.push(
+        { id: `ph-${request.id}-4`, stage: "damage", label: "Risco na porta do armário", at: delivered, by: "client" },
+        { id: `ph-${request.id}-5`, stage: "damage", label: "Canto da mesa partido", at: delivered, by: "client" },
+      );
+    }
+    request.photos = photos;
+  });
+}
+
+function buildClaims(ctx: Context, state: MockState): Claim[] {
+  const support = state.adminUsers.find((user) => user.role === "support")?.name ?? "Suporte";
+  const finance = state.adminUsers.find((user) => user.role === "finance")?.name ?? "Finanças";
+  const damaged = state.requests.find((request) => request.dispute?.category === "damage" && !request.dispute.resolvedAt);
+  const settled = state.requests.filter((request) => (request.status === "rated" || request.status === "paid") && !request.dispute && request.createdAt > isoAt(ctx.now - 40 * DAY));
+  const sources = [damaged, settled[2], settled[9], settled[15], settled[21], settled[30]].filter((request): request is StoredRequest => Boolean(request));
+  const plan: { kind: Claim["kind"]; status: Claim["status"]; amount: number; description: string }[] = [
+    { kind: "cargo_damage", status: "reported", amount: 45_000, description: "Armário e mesa danificados durante a descarga, segundo o cliente." },
+    { kind: "vehicle_damage", status: "under_review", amount: 120_000, description: "Pára-choques da viatura rebocada riscado durante o carregamento." },
+    { kind: "accident", status: "under_review", amount: 350_000, description: "Colisão ligeira na Via Expressa com a carga a bordo; sem feridos." },
+    { kind: "cargo_damage", status: "approved", amount: 28_000, description: "Televisor com o ecrã partido depois do transporte." },
+    { kind: "theft", status: "rejected", amount: 60_000, description: "Cliente diz que faltava uma caixa na entrega." },
+    { kind: "cargo_damage", status: "paid", amount: 15_000, description: "Cadeiras riscadas na mudança." },
+  ];
+  return sources.map((request, index) => {
+    const step = plan[index];
+    const client = state.clients.find((item) => item.id === request.clientId);
+    const provider = state.providers.find((item) => item.id === request.providerId);
+    const occurred = Date.parse(eventAt(request, "delivered") ?? request.createdAt);
+    const reported = Math.min(occurred + (index + 2) * HOUR, ctx.now - HOUR);
+    const decided = Math.min(reported + 2 * DAY, ctx.now - 30 * MINUTE);
+    const reviewed = step.status !== "reported";
+    const decidedStatus = step.status === "approved" || step.status === "rejected" || step.status === "paid";
+    return {
+      id: `sn-${pad(index + 1)}`,
+      code: `SN-${1001 + index}`,
+      requestId: request.id,
+      requestCode: request.code,
+      clientId: request.clientId,
+      clientName: client?.name ?? "Cliente",
+      providerId: provider?.id,
+      providerName: provider?.name,
+      kind: step.kind,
+      description: step.description,
+      occurredAt: isoAt(occurred),
+      reportedAt: isoAt(reported),
+      reportedBy: support,
+      estimatedAmount: step.amount,
+      status: step.status,
+      insurer: reviewed ? (index % 2 ? "ENSA Seguros" : "Fidelidade Angola") : undefined,
+      policyNumber: reviewed ? `AP-${2026}-${String(40_000 + index * 137).padStart(6, "0")}` : undefined,
+      approvedAmount: step.status === "approved" || step.status === "paid" ? Math.round(step.amount * 0.8) : undefined,
+      decisionReason: step.status === "rejected" ? "A guia de entrega assinada pelo cliente indica todas as caixas." : decidedStatus ? "Dano confirmado pelas fotografias da entrega." : undefined,
+      decidedAt: decidedStatus ? isoAt(decided) : undefined,
+      decidedBy: decidedStatus ? finance : undefined,
+      paidAt: step.status === "paid" ? isoAt(Math.min(decided + DAY, ctx.now - 10 * MINUTE)) : undefined,
+      paymentReference: step.status === "paid" ? `IND${700_100 + index}` : undefined,
+      notes: reviewed ? [{ id: `sno-${index + 1}`, author: support, text: "Pedidas fotografias e guia de entrega ao prestador.", at: isoAt(reported + 3 * HOUR) }] : [],
+      photoIds: (request.photos ?? []).filter((photo) => photo.stage === "damage").map((photo) => photo.id),
+    };
+  });
+}
+
 function buildWithdrawals(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const providers = state.providers
@@ -1101,6 +1228,7 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     applications: [],
     fleets: [],
     penalties: [],
+    claims: [],
     tickets: [],
     sos: [],
     reviewNotes: {},
@@ -1119,6 +1247,9 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
   state.fleets = buildFleets(ctx, state);
   state.applications = buildApplications(ctx, state);
   state.penalties = buildPenalties(ctx, state);
+  state.requests.push(...buildScheduled(ctx, state));
+  addPhotos(ctx, state);
+  state.claims = buildClaims(ctx, state);
   state.tickets = buildTickets(ctx, state);
   state.sos = buildSos(ctx, state);
   const lowRated = requests.filter((request) => request.rating !== undefined && request.rating <= 2);

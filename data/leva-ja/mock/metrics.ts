@@ -1,4 +1,5 @@
 import { isDisputeOverdue } from "@/lib/leva-ja/refunds";
+import { dispatchStartsAt } from "@/lib/leva-ja/scheduling";
 import { luandaDay } from "@/lib/format";
 import { SERVICE_KINDS } from "@/lib/leva-ja/services";
 import { ACTIVE_STATUSES, COMPLETED_STATUSES, STATUS_FLOW } from "@/lib/leva-ja/status";
@@ -88,7 +89,7 @@ export function createMockMetrics(db: MockDatabase): MetricsRepository {
         const refunds = state.refunds.filter((refund) => refund.status === "pending").sort((a, b) => (a.requestedAt < b.requestedAt ? -1 : 1));
         return {
           stalledSearching: state.requests
-            .filter((request) => request.status === "searching" && Date.parse(request.createdAt) <= threshold)
+            .filter((request) => request.status === "searching" && dispatchStartsAt(request, state.settings.dispatch.scheduleLeadMinutes) <= threshold)
             .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
             .map((request) => hydrateRequest(state, request, today)),
           openSos: state.sos.filter((alert) => alert.status !== "resolved").sort(byNewest((alert) => alert.createdAt)),

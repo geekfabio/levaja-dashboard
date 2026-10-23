@@ -241,3 +241,7 @@ export function parseKz(raw: string) {
   const clean = raw.replace(/kz/i, "").replace(/[\s  .]/g, "").replace(",", ".");
   return clean === "" ? Number.NaN : Number(clean);
 }
+
+export function formatClock(iso: string) {
+  return TIME_FORMATTER.format(new Date(iso));
+}

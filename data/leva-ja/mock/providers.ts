@@ -1,3 +1,4 @@
+import { isInProgress, isUpcoming } from "@/lib/leva-ja/scheduling";
 import { documentsVerified, providerDisplayStatus } from "@/lib/leva-ja/eligibility";
 import { ACTIVE_STATUSES } from "@/lib/leva-ja/status";
 import type { ProviderAccount, Review } from "@/types/leva-ja";
@@ -78,9 +79,7 @@ export function createMockProviders(db: MockDatabase): ProvidersRepository {
           throw new RepositoryError("invalid_transition", "O prestador já está suspenso.");
         }
         const why = requireReason(reason, "o motivo da suspensão");
-        const busy = ctx.state.requests.some(
-          (request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status),
-        );
+        const busy = ctx.state.requests.some((request) => request.providerId === provider.id && isInProgress(request, ctx.now.getTime(), ctx.state.settings.dispatch.scheduleLeadMinutes));
         if (busy) {
           throw new RepositoryError("validation", "O prestador tem um pedido em curso. Reatribua-o antes de suspender.");
         }
@@ -148,7 +147,10 @@ export function createMockProviders(db: MockDatabase): ProvidersRepository {
             vehicleLabel: `${provider.vehicle.brand} ${provider.vehicle.model} · ${provider.vehicle.plate}`,
             vehicleClass: provider.vehicle.vehicleClass,
             activeRequestId: ctx.state.requests.find(
-              (request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status),
+              (request) =>
+                request.providerId === provider.id &&
+                ACTIVE_STATUSES.includes(request.status) &&
+                !isUpcoming(request, ctx.now.getTime(), ctx.state.settings.dispatch.scheduleLeadMinutes),
             )?.id,
           })),
       ),

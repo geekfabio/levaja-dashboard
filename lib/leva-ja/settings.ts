@@ -66,6 +66,7 @@ export function defaultPlatformSettings(updatedAt: string, updatedBy = "Sistema"
       offerTimeoutSeconds: 45,
       maxAttempts: 5,
       stalledAfterMinutes: 10,
+      scheduleLeadMinutes: 60,
       assignTargetMinutes: 8,
       arrivalTargetMinutes: 30,
       distanceWeight: 70,
@@ -158,6 +159,7 @@ export function validateSettingsSection<K extends SettingsSection>(section: K, v
     need(finite(dispatch.offerTimeoutSeconds) && dispatch.offerTimeoutSeconds >= 15 && dispatch.offerTimeoutSeconds <= 300, "offerTimeoutSeconds", "O tempo para aceitar tem de estar entre 15 e 300 segundos.");
     need(Number.isInteger(dispatch.maxAttempts) && dispatch.maxAttempts >= 1 && dispatch.maxAttempts <= 20, "maxAttempts", "As tentativas têm de estar entre 1 e 20.");
     need(finite(dispatch.stalledAfterMinutes) && dispatch.stalledAfterMinutes >= 1, "stalledAfterMinutes", "Indique ao fim de quantos minutos um pedido fica parado.");
+    need(Number.isInteger(dispatch.scheduleLeadMinutes) && dispatch.scheduleLeadMinutes >= 15 && dispatch.scheduleLeadMinutes <= 1440, "scheduleLeadMinutes", "A antecedência tem de estar entre 15 minutos e 24 horas.");
     need(finite(dispatch.assignTargetMinutes) && dispatch.assignTargetMinutes >= 1, "assignTargetMinutes", "Indique o prazo de atribuição.");
     need(finite(dispatch.arrivalTargetMinutes) && dispatch.arrivalTargetMinutes >= 5, "arrivalTargetMinutes", "O prazo de chegada tem de ser pelo menos 5 minutos.");
     need(finite(dispatch.distanceWeight) && dispatch.distanceWeight >= 0 && dispatch.distanceWeight <= 100, "distanceWeight", "O peso da distância tem de estar entre 0 e 100.");
@@ -245,6 +247,7 @@ const FIELD_LABELS: Record<string, [string, Formatter]> = {
   "dispatch.offerTimeoutSeconds": ["Tempo para aceitar", (value) => `${value} s`],
   "dispatch.maxAttempts": ["Tentativas", plain],
   "dispatch.stalledAfterMinutes": ["Pedido parado ao fim de", minutes],
+  "dispatch.scheduleLeadMinutes": ["Antecedência para atribuir agendados", minutes],
   "dispatch.assignTargetMinutes": ["Prazo de atribuição", minutes],
   "dispatch.arrivalTargetMinutes": ["Prazo de chegada", minutes],
   "dispatch.distanceWeight": ["Peso da distância", (value) => `${value} %`],

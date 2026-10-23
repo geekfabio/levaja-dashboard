@@ -62,19 +62,15 @@ Mapa de Angola com tiles do OpenStreetMap, zoom e arrastar (rato, teclado e bot�
 
 `/admin/candidaturas` com funil e etapas (documentos, entrevista, vistoria, aprovação que cria o prestador); `/admin/frotas` com motoristas e estatísticas; qualidade dos prestadores com pontuação e alertas; advertências, multas e suspensões temporárias com anulação.
 
+## Fase 14 — Agendados, prazos, mapa de calor, fotografias e sinistros ✅
+
+`/admin/agendados` com antecedência configurável e risco; separador Prazos em Pedidos; mapa de calor da procura e da oferta no mapa operacional; fotografias no detalhe do pedido; `/admin/sinistros` com análise, aprovação e pagamento.
+
 ---
 
 ## Por fazer
 
 As rotas, os nomes e as permissões destas secções já existem em `lib/leva-ja/navigation.ts` e `lib/leva-ja/permissions.ts`; falta implementá-las e acrescentá-las a `NAV_GROUPS`. Cada fase mantém as regras de sempre: dados mock em `data/leva-ja/mock/`, contrato e implementação HTTP, hooks em `hooks/admin/`, regras em `lib/leva-ja/`, auditoria das acções críticas e testes de contrato.
-
-### Fase 14 — Agendados, prazos, mapa de calor, fotografias e sinistros
-
-- `/admin/agendados`: pedidos marcados para mais tarde, com antecedência para atribuir e alerta quando ninguém aceita.
-- Prazos (SLA) de atribuição e chegada (`dispatch.assignTargetMinutes`, `arrivalTargetMinutes`) com indicadores e pedidos fora do prazo.
-- Mapa de calor da procura e da oferta no mapa OpenStreetMap, por zona e por hora.
-- Fotografias da carga na recolha e na entrega, no detalhe do pedido.
-- `/admin/sinistros`: danos e acidentes, com seguradora, valor, estado e anexos (`claims.view`, `claims.manage`).
 
 ### Fase 15 — Contas empresariais, promoções, comunicações e relatórios
 

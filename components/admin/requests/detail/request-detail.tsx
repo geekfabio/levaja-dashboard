@@ -20,6 +20,8 @@ import { useAdminSessionStore } from "@/stores/admin-session-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 import Stars from "@/components/admin/shared/stars";
 import RequestRefunds from "@/components/admin/refunds/request/request-refunds";
+import RequestClaims from "@/components/admin/claims/detail/request-claims";
+import RequestPhotos from "./request-photos";
 import { DISPUTE_CATEGORY_LABELS, DISPUTE_OUTCOME_LABELS } from "@/lib/leva-ja/refunds";
 import RequestActions from "./request-actions";
 import RequestPrice from "./request-price";
@@ -133,6 +135,9 @@ export default function RequestDetail({ id }: { id: string }) {
                 <SettingsPanel title="Linha temporal" className="bg-card">
                   <RequestTimeline request={request} />
                 </SettingsPanel>
+                <SettingsPanel title="Fotografias" className="bg-card">
+                  <RequestPhotos photos={request.photos ?? []} />
+                </SettingsPanel>
               </div>
 
               <div className="flex min-w-0 flex-col gap-4">
@@ -165,6 +170,11 @@ export default function RequestDetail({ id }: { id: string }) {
                 {(hasPermission(role, "refunds.request") || hasPermission(role, "refunds.decide")) && (
                   <SettingsPanel title="Reembolsos" className="bg-card">
                     <RequestRefunds request={request} canRequest={hasPermission(role, "refunds.request")} canOpenRefunds={canAccessSection(role, "refunds")} />
+                  </SettingsPanel>
+                )}
+                {hasPermission(role, "claims.view") && (
+                  <SettingsPanel title="Sinistros" className="bg-card">
+                    <RequestClaims request={request} canOpenClaims={canAccessSection(role, "claims")} />
                   </SettingsPanel>
                 )}
                 <SettingsPanel title="Comprovativo e avaliação" className="bg-card">

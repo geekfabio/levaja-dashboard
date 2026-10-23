@@ -1,6 +1,7 @@
+import { isInProgress } from "@/lib/leva-ja/scheduling";
 import { formatDateNumeric, formatKz } from "@/lib/format";
 import { PENALTY_KIND_LABELS, isPenaltyActive, penaltyIssues, qualityScore } from "@/lib/leva-ja/quality";
-import { ACTIVE_STATUSES, COMPLETED_STATUSES } from "@/lib/leva-ja/status";
+import { COMPLETED_STATUSES } from "@/lib/leva-ja/status";
 import type { Penalty, ProviderAccount, ProviderQuality } from "@/types/leva-ja";
 import type { QualityRepository } from "../repositories/quality";
 import { RepositoryError } from "../repositories/errors";
@@ -130,7 +131,7 @@ export function createMockQuality(db: MockDatabase): QualityRepository {
         const changes = [];
         if (input.kind === "suspension") {
           if (provider.accountStatus === "suspended") throw new RepositoryError("invalid_transition", "O prestador já está suspenso.");
-          const busy = ctx.state.requests.some((request) => request.providerId === provider.id && ACTIVE_STATUSES.includes(request.status));
+          const busy = ctx.state.requests.some((request) => request.providerId === provider.id && isInProgress(request, ctx.now.getTime(), ctx.state.settings.dispatch.scheduleLeadMinutes));
           if (busy) throw new RepositoryError("validation", "O prestador tem um pedido em curso. Reatribua-o antes de suspender.");
           penalty.until = new Date(ctx.now.getTime() + (input.days ?? 1) * DAY).toISOString();
           provider.accountStatus = "suspended";

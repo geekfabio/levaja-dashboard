@@ -84,6 +84,14 @@ export function DispatchSection({ settings, canEdit }: Props) {
             <NumberField id="dispatch-weight" label="Peso da distância (%)" value={draft.distanceWeight} onChange={(distanceWeight) => update({ distanceWeight })} error={issueFor("distanceWeight")} hint="O resto do peso vai para a avaliação do prestador." />
             <NumberField id="dispatch-assign-target" label="Prazo de atribuição (min)" value={draft.assignTargetMinutes} onChange={(assignTargetMinutes) => update({ assignTargetMinutes })} error={issueFor("assignTargetMinutes")} />
             <NumberField id="dispatch-arrival-target" label="Prazo de chegada (min)" value={draft.arrivalTargetMinutes} onChange={(arrivalTargetMinutes) => update({ arrivalTargetMinutes })} error={issueFor("arrivalTargetMinutes")} />
+            <NumberField
+              id="dispatch-schedule-lead"
+              label="Antecedência para atribuir agendados (min)"
+              value={draft.scheduleLeadMinutes}
+              onChange={(scheduleLeadMinutes) => update({ scheduleLeadMinutes })}
+              error={issueFor("scheduleLeadMinutes")}
+              hint="Um pedido agendado só entra na atribuição e no mapa a esta distância da hora marcada."
+            />
           </FieldGrid>
           <Field label="Quando nenhum prestador aceita" htmlFor="dispatch-fallback">
             <Select value={draft.fallback} onValueChange={(value) => update({ fallback: value as typeof draft.fallback })}>

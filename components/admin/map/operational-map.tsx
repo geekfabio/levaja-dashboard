@@ -12,8 +12,10 @@ import { errorMessage } from "@/data/leva-ja";
 import { useProviderPositions } from "@/hooks/admin/use-providers";
 import { useActiveRequests } from "@/hooks/admin/use-requests";
 import { useZones } from "@/hooks/admin/use-zones";
+import { useHeatmap } from "@/hooks/admin/use-operations";
+import FilterMenu from "@/components/_common/filter-menu";
 import { useClock } from "@/hooks/admin/use-clock";
-import { formatElapsed, formatNumber } from "@/lib/format";
+import { formatDecimal, formatElapsed, formatNumber } from "@/lib/format";
 import { SECTION_ROUTES } from "@/lib/leva-ja/navigation";
 import { SERVICE_SHORT_LABELS } from "@/lib/leva-ja/services";
 import { STATUS_LABELS, STATUS_TONES } from "@/lib/leva-ja/status";
@@ -31,6 +33,14 @@ const LEGEND = [
   { label: "À procura de prestador", className: "bg-warning" },
   { label: "Pedido em curso", className: "bg-info" },
 ];
+
+const HEAT_OPTIONS = [
+  { value: "off", label: "Desligado" },
+  { value: "demand", label: "Procura (7 dias)" },
+  { value: "supply", label: "Oferta (agora)" },
+];
+
+const HOUR_OPTIONS = [{ value: "all", label: "Todas" }, ...Array.from({ length: 24 }, (_, hour) => ({ value: String(hour), label: `${String(hour).padStart(2, "0")}:00` }))];
 
 const VEHICLE_CLASS_LABELS: Record<VehicleClass, string> = {
   tow_truck: "Reboque",
@@ -54,6 +64,9 @@ export default function OperationalMap() {
   const [showRequests, setShowRequests] = useState(true);
   const [onlyFree, setOnlyFree] = useState(false);
   const [focus, setFocus] = useState<string>("initial");
+  const [heatKind, setHeatKind] = useState<"off" | "demand" | "supply">("off");
+  const [heatHour, setHeatHour] = useState("all");
+  const heatmap = useHeatmap({ kind: heatKind === "supply" ? "supply" : "demand", days: 7, hour: heatHour === "all" ? null : Number(heatHour) }, heatKind !== "off");
 
   const active = requests.data ?? [];
   const providers = positions.data ?? [];
@@ -131,6 +144,8 @@ export default function OperationalMap() {
                 <Checkbox checked={showRequests} onCheckedChange={(value) => setShowRequests(value === true)} />
                 Pedidos ({formatNumber(active.length)})
               </label>
+              <FilterMenu label="Mapa de calor" value={heatKind} options={HEAT_OPTIONS} onChange={(value) => setHeatKind(value as typeof heatKind)} />
+              {heatKind === "demand" && <FilterMenu label="Hora" value={heatHour} options={HOUR_OPTIONS} onChange={setHeatHour} />}
             </div>
           </div>
           <div className="border-border relative min-h-0 flex-1 overflow-hidden rounded-xl border">
@@ -154,6 +169,7 @@ export default function OperationalMap() {
                 ariaLabel="Mapa de Angola com as viaturas disponíveis e os pedidos activos. Use Tab para percorrer os marcadores."
                 selectedId={selectedId}
                 onSelect={select}
+                heat={heatKind !== "off" && heatmap.data ? { ...heatmap.data, tone: heatKind } : null}
                 className="absolute inset-0"
               />
             )}
@@ -197,6 +213,24 @@ export default function OperationalMap() {
                   )}
                 </>
               ) : null}
+            </div>
+          )}
+          {heatKind !== "off" && heatmap.data && (
+            <div className="border-border flex flex-col gap-2 border-b p-4" aria-live="polite">
+              <h2 className="eyebrow-style text-faint font-normal">
+                {heatKind === "demand" ? `Procura por prestador · 7 dias${heatHour === "all" ? "" : ` · ${heatHour}h`}` : "Oferta agora"}
+              </h2>
+              <ul className="flex flex-col gap-1">
+                {heatmap.data.zones.slice(0, 5).map((zone) => (
+                  <li key={zone.zoneId} className="caption-style flex justify-between gap-2 tabular-nums">
+                    <span className="text-soft">{zone.zoneName}</span>
+                    <span>
+                      {formatNumber(zone.demand)} pedidos · {formatNumber(zone.supply)} prestadores
+                      {zone.ratio === null ? " · sem cobertura" : ` · ${formatDecimal(zone.ratio, 1)} por prestador`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           <h2 className="eyebrow-style text-faint px-4 pt-4 pb-2 font-normal">Pedidos activos</h2>

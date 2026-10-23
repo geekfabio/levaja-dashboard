@@ -82,6 +82,25 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       subscribe: (listener) => subscribe("requests", listener),
     },
 
+    operations: {
+      scheduled: (filters = {}) => http.get("/admin/requests/scheduled", filters),
+      sla: (range) => http.get("/admin/metrics/sla", range),
+      heatmap: (query) => http.get("/admin/metrics/heatmap", query),
+    },
+
+    claims: {
+      list: (filters = {}) => http.get("/admin/claims", filters),
+      summary: () => http.get("/admin/claims/summary"),
+      get: (claimId) => http.get(`/admin/claims/${id(claimId)}`),
+      forRequest: (requestId) => http.get(`/admin/requests/${id(requestId)}/claims`),
+      report: (input) => http.post("/admin/claims", input),
+      startReview: (claimId, insurer, policyNumber) => http.post(`/admin/claims/${id(claimId)}/review`, { insurer, policyNumber }),
+      addNote: (claimId, text) => http.post(`/admin/claims/${id(claimId)}/notes`, { text }),
+      approve: (claimId, amount, reason) => http.post(`/admin/claims/${id(claimId)}/approve`, { amount, reason }),
+      reject: (claimId, reason) => http.post(`/admin/claims/${id(claimId)}/reject`, { reason }),
+      markPaid: (claimId, paymentReference) => http.post(`/admin/claims/${id(claimId)}/paid`, { paymentReference }),
+    },
+
     applications: {
       list: (filters = {}) => http.get("/admin/applications", filters),
       get: (applicationId) => http.get(`/admin/applications/${id(applicationId)}`),
