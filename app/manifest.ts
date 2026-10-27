@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Leva Já CRM",
-    short_name: "Leva Já CRM",
-    description: "Carteira de clientes, follow-up, campanhas e rota do dia do Leva Já.",
+    name: "AngoLeva CRM",
+    short_name: "AngoLeva CRM",
+    description: "Carteira de clientes, follow-up, campanhas e rota do dia do AngoLeva.",
     lang: "pt-AO",
     start_url: "/atividades",
     display: "standalone",

@@ -7,7 +7,7 @@ import { batchIssues, buildInvoices, cashPosition, documentNumber, settlementSta
 
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 
-async function setup(email = "financas@levaja.ao") {
+async function setup(email = "financas@angoleva.ao") {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await repos.auth.login(email, "123456");
   return repos;
@@ -75,7 +75,7 @@ test("facturação: facturas e notas de crédito vêm dos pedidos e reembolsos p
   const one = await repos.billing.invoice(page.items[0].id);
   assert.equal(one.number, page.items[0].number);
   await rejectsWith(repos.billing.invoice("ft-inexistente"), "not_found");
-  const support = await setup("suporte@levaja.ao");
+  const support = await setup("suporte@angoleva.ao");
   await rejectsWith(support.billing.invoices(), "forbidden");
 });
 
@@ -94,7 +94,7 @@ test("facturação: reconciliação regista recebimento e justifica diferença",
   assert.equal(registered.status, "matched");
   await rejectsWith(repos.billing.registerSettlement(pending.id, 1, "EMIS-124"), "invalid_transition");
   await repos.auth.logout();
-  await repos.auth.login("admin@levaja.ao", "123456");
+  await repos.auth.login("admin@angoleva.ao", "123456");
   const audit = await repos.audit.list({ action: ["settlement.register"], pageSize: 1 });
   assert.equal(audit.items[0].entity.id, pending.id);
 });

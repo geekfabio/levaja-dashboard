@@ -85,7 +85,7 @@ export default function LoginForm() {
             setEmail(event.target.value);
             if (error) setError(null);
           }}
-          placeholder="nome@levaja.ao"
+          placeholder="nome@angoleva.ao"
           autoFocus
         />
       </Field>

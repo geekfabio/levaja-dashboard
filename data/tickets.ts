@@ -256,7 +256,7 @@ export const TICKETS: Ticket[] = [
   {
     id: "tk-7",
     subject: "Avaria no equipamento de refrigeração emprestado",
-    description: "A arca frigorífica cedida pelo Leva Já deixou de arrefecer corretamente.",
+    description: "A arca frigorífica cedida pelo AngoLeva deixou de arrefecer corretamente.",
     companyId: "marisqueira-ilha",
     companyName: "Marisqueira da Ilha",
     contactName: "Agostinho Zola",

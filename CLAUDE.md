@@ -1,13 +1,13 @@
 @AGENTS.md
 
-# Leva Já — CRM e painel de administração
+# AngoLeva — CRM e painel de administração
 
-Repositório web do **Leva Já**, a app móvel de Luanda que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. Tem duas áreas:
+Repositório web do **AngoLeva**, a app móvel de Luanda que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. Tem duas áreas:
 
 | Área | Rotas | O que é |
 | --- | --- | --- |
 | **Painel de administração** | `/admin/*` | Operação da plataforma: pedidos, mapa, prestadores, documentos, clientes, finanças, preços e zonas, suporte, utilizadores e auditoria. Especificação completa em `LEVA_JA_ADMIN.md`. |
-| **CRM** | `/`, `/oportunidades`, `/campanhas`… | CRM comercial herdado do template `kargul-starter`, já com a marca Leva Já: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações, tickets, auditoria e definições. |
+| **CRM** | `/`, `/oportunidades`, `/campanhas`… | CRM comercial herdado do template `kargul-starter`, já com a marca AngoLeva: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações, tickets, auditoria e definições. |
 
 Antes de escrever código, lê também:
 

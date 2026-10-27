@@ -70,7 +70,7 @@ export default function SidebarContent() {
         <Asset
           type="image"
           src="/assets/images/_common/brand/leva-ja-mark.svg"
-          alt="Leva Já"
+          alt="AngoLeva"
           width={40}
           height={40}
           fit="contain"
@@ -78,7 +78,7 @@ export default function SidebarContent() {
         />
         <div className="flex min-w-0 flex-col gap-1">
           <span className="lead-style block truncate font-medium tracking-[-0.01em]">
-            Leva Já CRM
+            AngoLeva CRM
           </span>
           <span className="caption-style text-subtle block truncate">
             Carteira de clientes

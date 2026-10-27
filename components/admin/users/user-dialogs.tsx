@@ -56,7 +56,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
         <Input id="user-name" value={name} onChange={(event) => setName(event.target.value)} autoFocus />
       </Field>
       <Field label="E-mail" htmlFor="user-email" required error={issueFor("email")}>
-        <Input id="user-email" type="email" value={email} placeholder="nome@levaja.ao" onChange={(event) => setEmail(event.target.value)} />
+        <Input id="user-email" type="email" value={email} placeholder="nome@angoleva.ao" onChange={(event) => setEmail(event.target.value)} />
       </Field>
       <RoleSelect id="user-role" value={role} onChange={setRole} />
     </ConfirmDialog>

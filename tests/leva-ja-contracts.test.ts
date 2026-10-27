@@ -10,7 +10,7 @@ import { STATUS_FLOW } from "@/lib/leva-ja/status";
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 const TODAY = "2026-10-22";
 
-async function setup(email = "admin@levaja.ao") {
+async function setup(email = "admin@angoleva.ao") {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await repos.auth.login(email, "123456");
   return repos;
@@ -52,7 +52,7 @@ test("contrato: cancelamento sem motivo é recusado", async () => {
 });
 
 test("contrato: aprovar o último documento torna o prestador elegível", async () => {
-  const repos = await setup("operacoes@levaja.ao");
+  const repos = await setup("operacoes@angoleva.ao");
   const before = await repos.providers.get(SEED_ELIGIBLE_AFTER_APPROVAL);
   const coverage = { kind: before.services[0], zoneId: before.zoneIds[0] };
   assert.equal(before.availability, "online");
@@ -70,7 +70,7 @@ test("contrato: aprovar o último documento torna o prestador elegível", async 
 });
 
 test("contrato: levantamento acima do saldo é recusado", async () => {
-  const repos = await setup("financas@levaja.ao");
+  const repos = await setup("financas@angoleva.ao");
   const provider = (await repos.providers.list({ pageSize: 50 })).items.find((item) => item.balance > 10_000);
   assert.ok(provider);
   const pending = await repos.finance.withdrawals({ status: ["pending", "approved"], pageSize: 100 });
@@ -84,7 +84,7 @@ test("contrato: levantamento acima do saldo é recusado", async () => {
 });
 
 test("contrato: pagar um levantamento desconta o saldo e cria transacção", async () => {
-  const repos = await setup("financas@levaja.ao");
+  const repos = await setup("financas@angoleva.ao");
   const withdrawal = (await repos.finance.withdrawals({ status: ["pending"], pageSize: 1 })).items[0];
   const before = await repos.providers.get(withdrawal.providerId);
   await rejectsWith(repos.finance.markWithdrawalPaid(withdrawal.id, "TRF1"), "invalid_transition");
@@ -113,7 +113,7 @@ test("contrato: forçar a conclusão percorre os estados um a um", async () => {
 });
 
 test("contrato: reatribuição exige prestador elegível e volta a «atribuído»", async () => {
-  const repos = await setup("operacoes@levaja.ao");
+  const repos = await setup("operacoes@angoleva.ao");
   const request = (await repos.requests.list({ status: ["en_route"], pageSize: 1 })).items[0];
   const candidates = await repos.requests.reassignCandidates(request.id);
   const ineligible = candidates.find((candidate) => candidate.issues.length > 0);
@@ -132,12 +132,12 @@ test("contrato: reatribuição exige prestador elegível e volta a «atribuído�
 test("contrato: sem sessão devolve unauthorized e o papel limita as acções", async () => {
   const anonymous = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await rejectsWith(anonymous.requests.list(), "unauthorized");
-  await rejectsWith(anonymous.auth.login("admin@levaja.ao", "000000"), "unauthorized");
-  const finance = await setup("financas@levaja.ao");
+  await rejectsWith(anonymous.auth.login("admin@angoleva.ao", "000000"), "unauthorized");
+  const finance = await setup("financas@angoleva.ao");
   const request = (await finance.requests.list({ status: ["searching"], pageSize: 1 })).items[0];
   await rejectsWith(finance.requests.cancel(request.id, "Sem permissão"), "forbidden");
   await rejectsWith(finance.audit.list(), "forbidden");
-  const support = await setup("suporte@levaja.ao");
+  const support = await setup("suporte@angoleva.ao");
   await rejectsWith(support.finance.withdrawals(), "forbidden");
   await rejectsWith(support.pricing.update((await setup()).database.state.pricing, "Teste"), "forbidden");
 });
@@ -157,7 +157,7 @@ test("contrato: preços validados, com motivo e registados na auditoria", async 
 });
 
 test("contrato: zona com prestadores não pode ser removida", async () => {
-  const repos = await setup("operacoes@levaja.ao");
+  const repos = await setup("operacoes@angoleva.ao");
   const zones = await repos.zones.list();
   const busy = zones.find((zone) => zone.providersCount > 0);
   assert.ok(busy);
@@ -187,7 +187,7 @@ test("contrato: falhas de rede simuladas chegam como network", async () => {
 });
 
 test("contrato: ocorrências atribuídas, respondidas e resolvidas ficam na auditoria", async () => {
-  const repos = await setup("suporte@levaja.ao");
+  const repos = await setup("suporte@angoleva.ao");
   const ticket = (await repos.support.tickets({ status: ["open"], pageSize: 1 })).items[0];
   const assignee = (await repos.support.assignees()).find((user) => user.id !== ticket.assigneeId);
   assert.ok(assignee);
@@ -201,7 +201,7 @@ test("contrato: ocorrências atribuídas, respondidas e resolvidas ficam na audi
   assert.equal(resolved.status, "resolved");
   await rejectsWith(repos.support.replyTicket(ticket.id, "Mais uma"), "invalid_transition");
   await repos.auth.logout();
-  await repos.auth.login("admin@levaja.ao", "123456");
+  await repos.auth.login("admin@angoleva.ao", "123456");
   const audit = await repos.audit.list({ entityId: ticket.id });
   assert.deepEqual(
     audit.items.map((entry) => entry.action),
@@ -210,7 +210,7 @@ test("contrato: ocorrências atribuídas, respondidas e resolvidas ficam na audi
 });
 
 test("contrato: SOS acompanhado e resolvido com resolução obrigatória", async () => {
-  const repos = await setup("operacoes@levaja.ao");
+  const repos = await setup("operacoes@angoleva.ao");
   const [alert] = await repos.support.sosAlerts(["open"]);
   const acknowledged = await repos.support.acknowledgeSos(alert.id);
   assert.equal(acknowledged.status, "acknowledged");
@@ -222,7 +222,7 @@ test("contrato: SOS acompanhado e resolvido com resolução obrigatória", async
 });
 
 test("contrato: avaliação baixa revista com nota e utilizadores do painel", async () => {
-  const support = await setup("suporte@levaja.ao");
+  const support = await setup("suporte@angoleva.ao");
   const pending = (await support.support.lowRatings({ handled: false, pageSize: 1 })).items[0];
   assert.ok(pending.rating <= 2);
   const handled = await support.support.markReviewHandled(pending.id, "Prestador advertido.");
@@ -230,19 +230,19 @@ test("contrato: avaliação baixa revista com nota e utilizadores do painel", as
   await rejectsWith(support.support.markReviewHandled(pending.id, "De novo"), "invalid_transition");
   await rejectsWith(support.auth.listUsers(), "forbidden");
   const admin = await setup();
-  await rejectsWith(admin.auth.createUser({ name: "Ana", email: "admin@levaja.ao", role: "support" }, "Teste"), "validation");
-  const created = await admin.auth.createUser({ name: "Délcio Mateus", email: "delcio.mateus@levaja.ao", role: "finance" }, "Reforço da equipa");
-  const self = (await admin.auth.listUsers()).find((user) => user.email === "admin@levaja.ao");
+  await rejectsWith(admin.auth.createUser({ name: "Ana", email: "admin@angoleva.ao", role: "support" }, "Teste"), "validation");
+  const created = await admin.auth.createUser({ name: "Délcio Mateus", email: "delcio.mateus@angoleva.ao", role: "finance" }, "Reforço da equipa");
+  const self = (await admin.auth.listUsers()).find((user) => user.email === "admin@angoleva.ao");
   assert.ok(self);
   await rejectsWith(admin.auth.changeRole(self.id, "support", "Teste"), "validation");
   const changed = await admin.auth.changeRole(created.id, "operations", "Mudou de equipa");
   assert.equal(changed.role, "operations");
   await admin.auth.setActive(created.id, false, "Saiu da empresa");
-  await rejectsWith(admin.auth.login("delcio.mateus@levaja.ao", "123456"), "unauthorized");
+  await rejectsWith(admin.auth.login("delcio.mateus@angoleva.ao", "123456"), "unauthorized");
 });
 
 test("contrato: definições validadas, com permissão por secção e efeito nas regras", async () => {
-  const repos = await setup("operacoes@levaja.ao");
+  const repos = await setup("operacoes@angoleva.ao");
   const settings = await repos.settings.get();
   await rejectsWith(repos.settings.update("tax", { ...settings.tax, vatRate: 0.2 }, "Teste"), "forbidden");
   await rejectsWith(repos.settings.update("dispatch", { ...settings.dispatch, maxRadiusKm: 2 }, "Teste"), "validation");
@@ -261,14 +261,14 @@ test("contrato: definições validadas, com permissão por secção e efeito nas
   );
   await rejectsWith(repos.documents.approve(pending.document.id, "2027-01-15"), "validation");
   await repos.auth.logout();
-  await repos.auth.login("admin@levaja.ao", "123456");
+  await repos.auth.login("admin@angoleva.ao", "123456");
   const audit = await repos.audit.list({ action: ["settings.update"] });
   assert.equal(audit.items.length, 2);
   assert.equal(audit.items[1].changes?.[0].field, "Pedido parado ao fim de");
 });
 
 test("contrato: levantamento abaixo do mínimo é recusado", async () => {
-  const repos = await setup("financas@levaja.ao");
+  const repos = await setup("financas@angoleva.ao");
   const provider = (await repos.providers.list({ pageSize: 50 })).items.find((item) => item.balance > 50_000);
   assert.ok(provider);
   await rejectsWith(repos.finance.requestWithdrawal(provider.id, 1000), "validation");
@@ -276,7 +276,7 @@ test("contrato: levantamento abaixo do mínimo é recusado", async () => {
 
 test("contrato: a matriz de permissões aplica-se a seguir à alteração", async () => {
   const repos = await setup();
-  await rejectsWith((await setup("operacoes@levaja.ao")).settings.rolePermissions(), "forbidden");
+  await rejectsWith((await setup("operacoes@angoleva.ao")).settings.rolePermissions(), "forbidden");
   const matrix = await repos.settings.rolePermissions();
   await repos.settings.updateRolePermissions(
     { ...matrix, operations: matrix.operations.filter((permission) => permission !== "requests.operate"), admin: [] },
@@ -285,7 +285,7 @@ test("contrato: a matriz de permissões aplica-se a seguir à alteração", asyn
   const saved = await repos.settings.rolePermissions();
   assert.ok(saved.admin.includes("users.manage"));
   await repos.auth.logout();
-  const session = await repos.auth.login("operacoes@levaja.ao", "123456");
+  const session = await repos.auth.login("operacoes@angoleva.ao", "123456");
   assert.equal(session.rolePermissions?.operations.includes("requests.operate"), false);
   const searching = (await repos.requests.list({ status: ["searching"], pageSize: 1 })).items[0];
   await rejectsWith(repos.requests.cancel(searching.id, "Sem permissão"), "forbidden");

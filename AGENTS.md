@@ -1,4 +1,4 @@
-# Agentes — Leva Já
+# Agentes — AngoLeva
 
 Regras de execução para qualquer agente (Claude Code, Codex, Cursor) que trabalhe neste repositório. O contexto do produto está em `CLAUDE.md`, a especificação do painel em `LEVA_JA_ADMIN.md`, os módulos em `FEATURES.md` e a ordem de trabalho em `ROADMAP.md`.
 

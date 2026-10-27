@@ -78,14 +78,14 @@ export default function AdminSidebar() {
         <Asset
           type="image"
           src="/assets/images/_common/brand/leva-ja-mark.svg"
-          alt="Leva Já"
+          alt="AngoLeva"
           width={40}
           height={40}
           fit="contain"
           className="size-8 shrink-0"
         />
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="lead-style block truncate font-medium tracking-[-0.01em]">Leva Já</span>
+          <span className="lead-style block truncate font-medium tracking-[-0.01em]">AngoLeva</span>
           <span className="caption-style text-subtle block truncate">
             Painel de administração{role ? ` · ${ROLE_LABELS[role]}` : ""}
           </span>

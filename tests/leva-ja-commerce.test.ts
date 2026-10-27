@@ -8,7 +8,7 @@ import type { Promotion } from "@/types/leva-ja";
 
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 
-async function setup(email = "financas@levaja.ao") {
+async function setup(email = "financas@angoleva.ao") {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await repos.auth.login(email, "123456");
   return repos;
@@ -91,7 +91,7 @@ test("contas empresariais: extractos, membros, contrato e pagamento", async () =
   await rejectsWith(repos.business.updateContract(account.id, { ...detail.contract, discountRate: 0.5 }, "Renegociado"), "validation");
   const updated = await repos.business.updateContract(account.id, { ...detail.contract, discountRate: 0.12 }, "Renegociado");
   assert.equal(updated.contract.discountRate, 0.12);
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   assert.equal((await repos.business.list()).total, 3);
   await rejectsWith(repos.business.setStatus(account.id, "suspended", "Teste"), "forbidden");
 });
@@ -116,7 +116,7 @@ test("promoções: criar com validação, pausar, retomar e terminar", async () 
     perClientLimit: 1,
     firstOrderOnly: false,
   };
-  await rejectsWith(repos.promotions.create({ ...input, code: "LEVAJA10" }), "validation");
+  await rejectsWith(repos.promotions.create({ ...input, code: "ANGOLEVA10" }), "validation");
   await rejectsWith(repos.promotions.create({ ...input, value: 80 }), "validation");
   const created = await repos.promotions.create(input);
   assert.equal(created.code, "LEVA20");
@@ -125,23 +125,23 @@ test("promoções: criar com validação, pausar, retomar e terminar", async () 
   assert.equal((await repos.promotions.resume(created.id)).status, "active");
   assert.equal((await repos.promotions.end(created.id, "Fim antecipado")).status, "ended");
   await rejectsWith(repos.promotions.pause(created.id, "Outra"), "invalid_transition");
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   await rejectsWith(repos.promotions.create({ ...input, code: "OUTRA1" }), "forbidden");
 });
 
 test("comunicações: público, rascunho, agendamento e envio só simulado", async () => {
-  const repos = await setup("suporte@levaja.ao");
+  const repos = await setup("suporte@angoleva.ao");
   const estimate = await repos.communications.estimate({ kind: "providers", segment: "online", zoneIds: [] });
   assert.equal(estimate.recipients, (await repos.providers.positions()).length);
   await rejectsWith(repos.communications.create({ title: "Aviso", channel: "email", audience: { kind: "clients", segment: "all", zoneIds: [] }, message: "Mensagem de teste suficiente" }), "validation");
-  const draft = await repos.communications.create({ title: "Aviso", channel: "sms", audience: { kind: "clients", segment: "all", zoneIds: [] }, message: "Olá {nome}, temos novidades para si na Leva Já." });
+  const draft = await repos.communications.create({ title: "Aviso", channel: "sms", audience: { kind: "clients", segment: "all", zoneIds: [] }, message: "Olá {nome}, temos novidades para si na AngoLeva." });
   assert.equal(draft.status, "draft");
   await rejectsWith(repos.communications.schedule(draft.id, "2026-10-01T10:00:00.000Z"), "validation");
   const sent = await repos.communications.send(draft.id);
   assert.equal(sent.status, "sent");
   assert.equal((sent.delivered ?? 0) + (sent.failed ?? 0), sent.recipients);
   await rejectsWith(repos.communications.cancel(draft.id, "Tarde"), "invalid_transition");
-  await as(repos, "financas@levaja.ao");
+  await as(repos, "financas@angoleva.ao");
   await rejectsWith(repos.communications.list(), "forbidden");
 });
 
@@ -156,6 +156,6 @@ test("relatórios: cada tipo tem colunas, linhas coerentes e resumo", async () =
   const operations = await repos.reports.run("operations", { from: "2026-10-01", to: "2026-10-22" });
   assert.equal(operations.rows.length, 22);
   assert.equal(operations.rows.reduce((sum, row) => sum + Number(row[1]), 0), operations.summary[0].value);
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   await rejectsWith(repos.reports.run("finance", { from: "2026-10-01", to: "2026-10-22" }), "forbidden");
 });

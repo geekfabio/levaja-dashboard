@@ -117,7 +117,7 @@ export default function EmailPreview({
           <Asset
             type="image"
             src={BRAND_LOGO}
-            alt="Leva Já"
+            alt="AngoLeva"
             width={168}
             height={40}
             fit="contain"
@@ -145,7 +145,7 @@ export default function EmailPreview({
         <div className="bg-brand-ink/5 text-brand-ink/60 flex flex-col gap-1 px-6 py-5 text-center text-[12px] leading-[1.5]">
           <span>{footer}</span>
           <span>
-            Recebe este e-mail por ser cliente do Leva Já.{" "}
+            Recebe este e-mail por ser cliente do AngoLeva.{" "}
             <span className="underline">Remover subscrição</span>
           </span>
         </div>

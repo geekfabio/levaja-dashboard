@@ -1,4 +1,4 @@
-# Funcionalidades — Leva Já
+# Funcionalidades — AngoLeva
 
 O que cada módulo faz e o que conta como «pronto». A especificação detalhada do painel de administração, com as regras de negócio, está em `LEVA_JA_ADMIN.md`; a ordem de entrega em `ROADMAP.md`; as regras de implementação em `CLAUDE.md`.
 
@@ -59,7 +59,7 @@ Os estados, serviços e rótulos estão em `lib/leva-ja/status.ts` e `lib/leva-j
 
 ## CRM — `/`
 
-CRM comercial herdado do template, com a marca Leva Já e dados fictícios em memória (Zustand). Perdeu a cadeia Cash & Carry (vendas, cotações e encomendas, previsão, relatórios, catálogo, comissões e gatilhos de automação baseados em compras).
+CRM comercial herdado do template, com a marca AngoLeva e dados fictícios em memória (Zustand). Perdeu a cadeia Cash & Carry (vendas, cotações e encomendas, previsão, relatórios, catálogo, comissões e gatilhos de automação baseados em compras).
 
 | Módulo | Interface |
 | --- | --- |

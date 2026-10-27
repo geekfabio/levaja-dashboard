@@ -4,7 +4,7 @@ import { dataSource } from "@/data/leva-ja";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Inicie sessão no painel de administração do Leva Já.",
+  description: "Inicie sessão no painel de administração do AngoLeva.",
 };
 
 export default function AdminLoginPage() {

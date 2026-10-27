@@ -11,7 +11,7 @@ function create() {
   return createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
 }
 
-async function setup(email = "admin@levaja.ao") {
+async function setup(email = "admin@angoleva.ao") {
   const repos = create();
   await repos.auth.login(email, "123456");
   return repos;
@@ -45,7 +45,7 @@ test("confiança: prazos de resposta, satisfação, prazos legais e endereços d
 });
 
 test("suporte: resumo dos prazos de resposta e satisfação dos clientes", async () => {
-  const repos = await setup("suporte@levaja.ao");
+  const repos = await setup("suporte@angoleva.ao");
   const summary = await repos.support.responseSummary();
   assert.ok(summary.metRate === null || (summary.metRate >= 0 && summary.metRate <= 1));
   const satisfaction = await repos.support.satisfaction();
@@ -56,15 +56,15 @@ test("suporte: resumo dos prazos de resposta e satisfação dos clientes", async
 
 test("segurança: segundo factor, sessões terminadas à distância e registo de acessos", async () => {
   const repos = create();
-  await rejectsWith(repos.auth.login("nelson.cardoso@levaja.ao", "123456"), "unauthorized");
-  await rejectsWith(repos.auth.login("nelson.cardoso@levaja.ao", "123456", "000000"), "unauthorized");
-  const nelson = await repos.auth.login("nelson.cardoso@levaja.ao", "123456", "246810");
-  assert.equal(nelson.user.email, "nelson.cardoso@levaja.ao");
+  await rejectsWith(repos.auth.login("nelson.cardoso@angoleva.ao", "123456"), "unauthorized");
+  await rejectsWith(repos.auth.login("nelson.cardoso@angoleva.ao", "123456", "000000"), "unauthorized");
+  const nelson = await repos.auth.login("nelson.cardoso@angoleva.ao", "123456", "246810");
+  assert.equal(nelson.user.email, "nelson.cardoso@angoleva.ao");
   await repos.auth.logout();
-  await repos.auth.login("admin@levaja.ao", "123456");
+  await repos.auth.login("admin@angoleva.ao", "123456");
   const log = await repos.security.accessLog({ pageSize: 5 });
   assert.equal(log.items[0].result, "success");
-  assert.ok((await repos.security.accessLog({ result: ["two_factor_failed"], pageSize: 50 })).items.some((entry) => entry.email === "nelson.cardoso@levaja.ao"));
+  assert.ok((await repos.security.accessLog({ result: ["two_factor_failed"], pageSize: 50 })).items.some((entry) => entry.email === "nelson.cardoso@angoleva.ao"));
   const sessions = await repos.security.sessions();
   const own = sessions.find((session) => session.current);
   assert.ok(own);
@@ -74,18 +74,18 @@ test("segurança: segundo factor, sessões terminadas à distância e registo de
   const after = await repos.security.revokeSession(other.id, "Dispositivo perdido");
   assert.ok(after.every((session) => session.id !== other.id));
   const users = await repos.auth.listUsers();
-  const support = users.find((user) => user.email === "suporte@levaja.ao");
+  const support = users.find((user) => user.email === "suporte@angoleva.ao");
   assert.ok(support);
   const updated = await repos.security.setTwoFactor(support.id, true, "Política nova");
   assert.equal(updated.twoFactorEnabled, true);
   await repos.auth.logout();
-  await rejectsWith(repos.auth.login("suporte@levaja.ao", "123456"), "unauthorized");
-  await repos.auth.login("suporte@levaja.ao", "123456", "246810");
+  await rejectsWith(repos.auth.login("suporte@angoleva.ao", "123456"), "unauthorized");
+  await repos.auth.login("suporte@angoleva.ao", "123456", "246810");
   await rejectsWith(repos.security.sessions(), "forbidden");
 });
 
 test("protecção de dados: tratar, exportar, eliminar e recusar com prazos", async () => {
-  const repos = await setup("suporte@levaja.ao");
+  const repos = await setup("suporte@angoleva.ao");
   const summary = await repos.privacy.summary();
   assert.ok(summary.open >= 3 && summary.overdue >= 1);
   const list = await repos.privacy.list({ pageSize: 20 });
@@ -124,6 +124,6 @@ test("integrações: chaves de API, webhooks e teste só simulado", async () => 
   assert.equal(delivery.simulated, true);
   await repos.integrations.setWebhookActive(webhook.item.id, false);
   await rejectsWith(repos.integrations.testWebhook(webhook.item.id), "invalid_transition");
-  const support = await setup("suporte@levaja.ao");
+  const support = await setup("suporte@angoleva.ao");
   await rejectsWith(support.integrations.keys(), "forbidden");
 });

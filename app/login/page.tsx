@@ -3,8 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import Login from "@/components/login/login";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Entrar — Leva Já CRM",
-  description: "Inicie sessão no CRM do Leva Já.",
+  title: "Entrar — AngoLeva CRM",
+  description: "Inicie sessão no CRM do AngoLeva.",
   path: "/login",
 });
 

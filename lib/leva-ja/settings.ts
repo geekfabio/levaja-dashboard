@@ -46,14 +46,14 @@ export const DISPATCH_FALLBACK_LABELS = { manual: "Passar para atribuição manu
 export function defaultPlatformSettings(updatedAt: string, updatedBy = "Sistema"): PlatformSettings {
   return {
     general: {
-      tradeName: "Leva Já",
-      legalName: "Leva Já Tecnologias, Lda.",
+      tradeName: "AngoLeva",
+      legalName: "AngoLeva Tecnologias, Lda.",
       nif: "5000123456",
       supportPhone: "+244 923 000 111",
-      supportEmail: "apoio@levaja.ao",
+      supportEmail: "apoio@angoleva.ao",
       openingHours: "Todos os dias, 06:00–23:00",
-      termsUrl: "https://levaja.ao/termos",
-      privacyUrl: "https://levaja.ao/privacidade",
+      termsUrl: "https://angoleva.ao/termos",
+      privacyUrl: "https://angoleva.ao/privacidade",
     },
     services: (["tow", "cargo", "small_move", "house_move"] as const).map((kind) => ({
       kind,
@@ -104,7 +104,7 @@ export function defaultPlatformSettings(updatedAt: string, updatedBy = "Sistema"
         { event: "withdrawal.paid", channels: ["push", "sms"], body: "Transferimos {{valor}} para a sua conta. Referência {{referencia}}." },
         { event: "sos.raised", channels: ["sms", "email"], body: "SOS no pedido {{codigo}} em {{zona}}. Contacte {{telefone}}." },
       ],
-      sosEscalation: ["+244 923 000 911", "operacoes@levaja.ao"],
+      sosEscalation: ["+244 923 000 911", "operacoes@angoleva.ao"],
     },
     support: {
       firstResponseHours: { urgent: 1, high: 4, medium: 12, low: 24 },

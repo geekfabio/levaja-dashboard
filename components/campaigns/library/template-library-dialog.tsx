@@ -129,7 +129,7 @@ export default function TemplateLibraryDialog() {
         <DialogHeader>
           <DialogTitle>Biblioteca de modelos</DialogTitle>
           <DialogDescription>
-            Modelos com a marca Leva Já. Escolha um para abrir no editor
+            Modelos com a marca AngoLeva. Escolha um para abrir no editor
             como rascunho.
           </DialogDescription>
         </DialogHeader>

@@ -95,7 +95,7 @@ export function buildInvoices(
       paymentMethod: request.paymentMethod,
       lines: [
         { description: `${SERVICE_LABELS[request.kind]} — pedido ${request.code}`, amount: request.total - request.platformFee },
-        { description: "Taxa de serviço Leva Já", amount: request.platformFee },
+        { description: "Taxa de serviço AngoLeva", amount: request.platformFee },
       ],
       vatRate: tax.vatRate,
       net,
@@ -171,6 +171,6 @@ export function batchIssues(withdrawals: Pick<Withdrawal, "id" | "status" | "bat
 export function bankFileRows(withdrawals: Pick<Withdrawal, "providerName" | "iban" | "amount" | "id">[], batchCode: string): (string | number)[][] {
   return [
     ["Beneficiário", "IBAN", "Valor (Kz)", "Descritivo"],
-    ...withdrawals.map((withdrawal, index) => [withdrawal.providerName, withdrawal.iban.replace(/\s/g, ""), withdrawal.amount, `${batchCode}-${index + 1} Leva Já`]),
+    ...withdrawals.map((withdrawal, index) => [withdrawal.providerName, withdrawal.iban.replace(/\s/g, ""), withdrawal.amount, `${batchCode}-${index + 1} AngoLeva`]),
   ];
 }

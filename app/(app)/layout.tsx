@@ -24,7 +24,7 @@ export default function AppLayout({
       >
         Saltar para o conteúdo
       </a>
-      <Sidebar description="Secções do Leva Já CRM">
+      <Sidebar description="Secções do AngoLeva CRM">
         <SidebarContent />
       </Sidebar>
       <main id="conteudo" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 outline-none">

@@ -18,7 +18,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             >
               Saltar para o conteúdo
             </a>
-            <Sidebar description="Secções do painel de administração do Leva Já">
+            <Sidebar description="Secções do painel de administração do AngoLeva">
               <AdminSidebar />
             </Sidebar>
             <main id="conteudo" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 outline-none">

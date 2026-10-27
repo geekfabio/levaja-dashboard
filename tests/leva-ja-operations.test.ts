@@ -7,7 +7,7 @@ import { claimIssues, dispatchStartsAt, isUpcoming, percentile, scheduleRisk, sl
 
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 
-async function setup(email = "operacoes@levaja.ao") {
+async function setup(email = "operacoes@angoleva.ao") {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await repos.auth.login(email, "123456");
   return repos;
@@ -82,7 +82,7 @@ test("mapa de calor: procura por pedidos e oferta por prestadores online", async
 });
 
 test("sinistros: participar, analisar, aprovar e pagar com as permissões certas", async () => {
-  const repos = await setup("suporte@levaja.ao");
+  const repos = await setup("suporte@angoleva.ao");
   const seeded = await repos.claims.list({ pageSize: 20 });
   assert.equal(new Set(seeded.items.map((claim) => claim.status)).size, 5);
   const delivered = (await repos.requests.list({ status: ["rated"], pageSize: 5 })).items[0];
@@ -94,7 +94,7 @@ test("sinistros: participar, analisar, aprovar e pagar com as permissões certas
   assert.equal(claim.status, "reported");
   await repos.claims.addNote(claim.id, "Cliente enviou fotografias.");
   await rejectsWith(repos.claims.startReview(claim.id, "Kianda", "AP-1"), "forbidden");
-  await as(repos, "financas@levaja.ao");
+  await as(repos, "financas@angoleva.ao");
   await rejectsWith(repos.claims.approve(claim.id, 30_000, "Confirmado"), "invalid_transition");
   await repos.claims.startReview(claim.id, "Kianda Seguros", "AP-2026-1");
   await rejectsWith(repos.claims.approve(claim.id, 90_000, "Confirmado"), "validation");

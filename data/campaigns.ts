@@ -33,7 +33,7 @@ export const STATUS_TONES: Record<
 
 export const BRAND_LOGO = "/assets/images/_common/brand/leva-ja-logo.svg";
 
-export const SANDBOX_ADDRESS = "teste@levaja.ao";
+export const SANDBOX_ADDRESS = "teste@angoleva.ao";
 
 export const SANDBOX_PHONE = "+244 900 000 000";
 
@@ -147,7 +147,7 @@ export const TEMPLATES: CampaignTemplate[] = [
         type: "text",
         text: "Esta semana preparámos condições especiais para {{empresa}}. Os preços são válidos até domingo ou enquanto houver stock no armazém.",
       },
-      { type: "button", label: "Ver promoções", href: "https://levaja.ao/promocoes" },
+      { type: "button", label: "Ver promoções", href: "https://angoleva.ao/promocoes" },
       {
         type: "text",
         text: "Qualquer dúvida, fale com {{gestor}}.",
@@ -172,14 +172,14 @@ export const TEMPLATES: CampaignTemplate[] = [
         type: "text",
         text: "A nova tabela de preços para {{empresa}} já está disponível.\nSaldo atual da sua conta: {{saldo}}.",
       },
-      { type: "button", label: "Consultar lista de preços", href: "https://levaja.ao/precos" },
+      { type: "button", label: "Consultar lista de preços", href: "https://angoleva.ao/precos" },
     ],
   },
   {
     id: "novo-produto",
     name: "Novo produto",
     description: "Anúncio de uma referência nova no catálogo.",
-    subject: "Novidade no catálogo Leva Já",
+    subject: "Novidade no catálogo AngoLeva",
     preheader: "Uma nova referência já disponível no armazém.",
     blocks: [
       {
@@ -192,7 +192,7 @@ export const TEMPLATES: CampaignTemplate[] = [
         type: "text",
         text: "{{nome}}, acabámos de receber uma nova gama de massas importadas, com entrega em {{zona}} a partir desta semana.",
       },
-      { type: "button", label: "Encomendar", href: "https://levaja.ao/novidades" },
+      { type: "button", label: "Encomendar", href: "https://angoleva.ao/novidades" },
     ],
   },
   {
@@ -217,14 +217,14 @@ export const TEMPLATES: CampaignTemplate[] = [
         type: "text",
         text: "Até lá, {{gestor}} pode propor alternativas equivalentes para {{empresa}}.",
       },
-      { type: "button", label: "Falar com o gestor", href: "https://levaja.ao/contacto" },
+      { type: "button", label: "Falar com o gestor", href: "https://angoleva.ao/contacto" },
     ],
   },
   {
     id: "boas-vindas",
     name: "Boas-vindas",
     description: "Primeiro contacto com um cliente novo.",
-    subject: "Bem-vindo ao Leva Já, {{nome}}",
+    subject: "Bem-vindo ao AngoLeva, {{nome}}",
     preheader: "Conheça o catálogo e o seu gestor de conta.",
     blocks: [
       {
@@ -236,9 +236,9 @@ export const TEMPLATES: CampaignTemplate[] = [
       { type: "heading", text: "Olá, {{nome}}" },
       {
         type: "text",
-        text: "Obrigado por escolher o Leva Já. A partir de hoje, {{empresa}} conta com preços de grossista e entregas em {{zona}}.",
+        text: "Obrigado por escolher o AngoLeva. A partir de hoje, {{empresa}} conta com preços de grossista e entregas em {{zona}}.",
       },
-      { type: "button", label: "Conhecer o catálogo", href: "https://levaja.ao/catalogo" },
+      { type: "button", label: "Conhecer o catálogo", href: "https://angoleva.ao/catalogo" },
       { type: "divider" },
       {
         type: "text",
@@ -263,7 +263,7 @@ export const TEMPLATES: CampaignTemplate[] = [
         type: "text",
         text: "{{nome}}, obrigado por mais um ano de confiança. Para celebrar, a próxima encomenda tem uma oferta especial.",
       },
-      { type: "button", label: "Ver oferta", href: "https://levaja.ao/oferta" },
+      { type: "button", label: "Ver oferta", href: "https://angoleva.ao/oferta" },
     ],
   },
 ];
@@ -292,31 +292,31 @@ export const SMS_TEMPLATES: SmsTemplate[] = [
     id: "sms-promocao",
     name: "Promoção relâmpago",
     description: "Desconto curto, válido poucos dias.",
-    body: "Leva Já: {{nome}}, -15% em óleo e arroz esta semana em {{zona}}.",
+    body: "AngoLeva: {{nome}}, -15% em óleo e arroz esta semana em {{zona}}.",
   },
   {
     id: "sms-desconto",
     name: "Desconto de reativação",
     description: "Proposta de desconto a clientes sem compras.",
-    body: "Leva Já: {{nome}}, tem {{desconto}} de desconto na próxima compra até {{validade}}. Esperamos por si!",
+    body: "AngoLeva: {{nome}}, tem {{desconto}} de desconto na próxima compra até {{validade}}. Esperamos por si!",
   },
   {
     id: "sms-entrega",
     name: "Aviso de entrega",
     description: "Encomenda a caminho do cliente.",
-    body: "Leva Já: {{nome}}, a sua encomenda sai hoje para {{zona}}. Obrigado!",
+    body: "AngoLeva: {{nome}}, a sua encomenda sai hoje para {{zona}}. Obrigado!",
   },
   {
     id: "sms-pagamento",
     name: "Lembrete de pagamento",
     description: "Fatura a vencer, com o saldo em conta.",
-    body: "Leva Já: {{nome}}, a sua fatura vence esta semana. Saldo: {{saldo}}.",
+    body: "AngoLeva: {{nome}}, a sua fatura vence esta semana. Saldo: {{saldo}}.",
   },
   {
     id: "sms-rutura",
     name: "Aviso de rutura",
     description: "Produto sem stock e prazo de reposição.",
-    body: "Leva Já: óleo 5 L sem stock em {{zona}} até dia 20. Fale com {{gestor}}.",
+    body: "AngoLeva: óleo 5 L sem stock em {{zona}} até dia 20. Fale com {{gestor}}.",
   },
 ];
 
@@ -324,7 +324,7 @@ export const BLANK_SMS_TEMPLATE: SmsTemplate = {
   id: "sms-em-branco",
   name: "Em branco",
   description: "Começar com uma mensagem vazia.",
-  body: "Leva Já: ",
+  body: "AngoLeva: ",
 };
 
 export type CampaignLink = {

@@ -13,17 +13,17 @@ export type CompanyProfile = {
 };
 
 export const COMPANY_PROFILE: CompanyProfile = {
-  tradeName: "Leva Já",
-  legalName: "Leva Já, Lda.",
+  tradeName: "AngoLeva",
+  legalName: "AngoLeva, Lda.",
   nif: "5417000000",
   address: "Estrada de Catete, Km 12, Viana",
   city: "Luanda",
   phone: "+244 923 000 000",
-  email: "geral@levaja.ao",
-  website: "https://levaja.ao",
+  email: "geral@angoleva.ao",
+  website: "https://angoleva.ao",
 };
 
-export const COMPANY_EMAIL_DOMAIN = "levaja.ao";
+export const COMPANY_EMAIL_DOMAIN = "angoleva.ao";
 
 export type SenderSettings = {
   emailName: string;
@@ -35,7 +35,7 @@ export type SenderSettings = {
 };
 
 export const SENDER_SETTINGS: SenderSettings = {
-  emailName: "Leva Já",
+  emailName: "AngoLeva",
   emailAddress: `promocoes@${COMPANY_EMAIL_DOMAIN}`,
   replyTo: `comercial@${COMPANY_EMAIL_DOMAIN}`,
   smsSenderId: "ALIMENTA",
