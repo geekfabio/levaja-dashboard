@@ -13,7 +13,7 @@ import {
 import FormSection from "@/components/_common/form-section";
 import { OWNERS } from "@/data/companies";
 import type { Opportunity } from "@/data/opportunities";
-import type { OpportunityPatch } from "@/stores/opportunities-store";
+import type { OpportunityPatch } from "@/data/crm";
 
 export type OpportunityDraft = {
   contactName: string;

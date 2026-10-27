@@ -6,6 +6,7 @@ import KanbanColumn from "./kanban-column";
 import { OPPORTUNITY_STAGES, type Opportunity, type OpportunityStage } from "@/data/opportunities";
 import { groupByStage } from "@/lib/opportunities";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
+import { useMoveStage } from "@/hooks/crm/use-opportunities";
 
 type KanbanBoardProps = {
   opportunities: Opportunity[];
@@ -13,9 +14,8 @@ type KanbanBoardProps = {
 
 export default function KanbanBoard({ opportunities }: KanbanBoardProps) {
   const openDetail = useOpportunitiesStore((state) => state.openDetail);
-  const requestStageMove = useOpportunitiesStore(
-    (state) => state.requestStageMove,
-  );
+  const requestLossMove = useOpportunitiesStore((state) => state.requestLossMove);
+  const moveStage = useMoveStage();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<OpportunityStage | null>(
     null,
@@ -34,7 +34,10 @@ export default function KanbanBoard({ opportunities }: KanbanBoardProps) {
     const id = event.dataTransfer.getData("text/plain") || draggingId;
     setDragOverStage(null);
     setDraggingId(null);
-    if (id) requestStageMove(id, stage);
+    const previous = opportunities.find((item) => item.id === id);
+    if (!previous || previous.stage === stage) return;
+    if (stage === "Fechada - Perdida") requestLossMove(previous.id);
+    else moveStage.mutate({ id: previous.id, stage, previous });
   }
 
   return (

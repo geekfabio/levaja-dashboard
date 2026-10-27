@@ -29,10 +29,10 @@ import { COMPANIES, OWNERS } from "@/data/companies";
 import {
   OPPORTUNITY_STAGES,
   PRODUCT_CATEGORIES,
-  type Opportunity,
   type OpportunityStage,
 } from "@/data/opportunities";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
+import { useCreateOpportunity } from "@/hooks/crm/use-opportunities";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 
 function today() {
@@ -65,7 +65,7 @@ export default function NewOpportunityDialog() {
   const companies = useCompaniesStore((state) => state.companies);
   const open = useOpportunitiesStore((state) => state.newOpportunityOpen);
   const setOpen = useOpportunitiesStore((state) => state.setNewOpportunityOpen);
-  const addOpportunity = useOpportunitiesStore((state) => state.addOpportunity);
+  const createOpportunity = useCreateOpportunity();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [contactError, setContactError] = useState<string | null>(null);
   const contactRef = useRef<HTMLInputElement>(null);
@@ -95,23 +95,20 @@ export default function NewOpportunityDialog() {
     const company = companies.find((item) => item.id === form.companyId);
     if (!company) return;
 
-    const opportunity: Opportunity = {
-      id: `op-${Date.now()}`,
-      companyId: company.id,
-      companyName: company.name,
-      contactName,
-      value: Math.max(0, Math.round(Number(form.value) || 0)),
-      stage: form.stage,
-      probability: form.probability,
-      expectedCloseDate: form.expectedCloseDate || today(),
-      owner: form.owner,
-      products: form.products,
-      stageHistory: [
-        { stage: form.stage, date: today(), author: form.owner },
-      ],
-    };
-
-    addOpportunity(opportunity);
+    createOpportunity.mutate(
+      {
+        companyId: company.id,
+        companyName: company.name,
+        contactName,
+        value: Math.max(0, Math.round(Number(form.value) || 0)),
+        stage: form.stage,
+        probability: form.probability,
+        expectedCloseDate: form.expectedCloseDate || today(),
+        owner: form.owner,
+        products: form.products,
+      },
+      { onSuccess: () => setOpen(false) },
+    );
   }
 
   return (

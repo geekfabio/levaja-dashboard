@@ -34,23 +34,20 @@ import {
 } from "@/data/opportunities";
 import { formatDateLong, formatMoney } from "@/lib/format";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
+import { useMoveStage, useOpportunity, useUpdateOpportunity } from "@/hooks/crm/use-opportunities";
 import ClipboardIcon from "@/public/assets/images/companies/sidebar/clipboard.svg";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
 
 export default function OpportunityDetail() {
   const detailId = useOpportunitiesStore((state) => state.detailId);
   const detailOpen = useOpportunitiesStore((state) => state.detailOpen);
-  const opportunities = useOpportunitiesStore((state) => state.opportunities);
   const closeDetail = useOpportunitiesStore((state) => state.closeDetail);
-  const requestStageMove = useOpportunitiesStore(
-    (state) => state.requestStageMove,
-  );
-
-  const updateOpportunity = useOpportunitiesStore((state) => state.updateOpportunity);
+  const requestLossMove = useOpportunitiesStore((state) => state.requestLossMove);
+  const { data: opportunity } = useOpportunity(detailId);
+  const updateOpportunity = useUpdateOpportunity();
+  const moveStage = useMoveStage();
   const editable = useEditable<OpportunityDraft>();
   const [editingFor, setEditingFor] = useState<string | null>(null);
-
-  const opportunity = opportunities.find((item) => item.id === detailId);
   const editing = editable.editing && editingFor === opportunity?.id;
 
   function requestClose() {
@@ -109,7 +106,7 @@ export default function OpportunityDetail() {
                 onChange={editable.update}
                 onSubmit={() => {
                   if (!editable.draft) return;
-                  updateOpportunity(opportunity.id, opportunityDraftToPatch(editable.draft));
+                  updateOpportunity.mutate({ id: opportunity.id, patch: opportunityDraftToPatch(editable.draft), previous: opportunity });
                   editable.reset();
                 }}
               />
@@ -137,9 +134,12 @@ export default function OpportunityDetail() {
             <DetailSection title="Fase">
               <Select
                 value={opportunity.stage}
-                onValueChange={(value) =>
-                  requestStageMove(opportunity.id, value as OpportunityStage)
-                }
+                onValueChange={(value) => {
+                  const stage = value as OpportunityStage;
+                  if (stage === opportunity.stage) return;
+                  if (stage === "Fechada - Perdida") requestLossMove(opportunity.id);
+                  else moveStage.mutate({ id: opportunity.id, stage, previous: opportunity });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
