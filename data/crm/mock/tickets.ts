@@ -1,27 +1,17 @@
 import { CURRENT_USER } from "@/data/companies";
-import { CLOSED_STATUSES, TICKETS, type Ticket, type TicketStatus } from "@/data/tickets";
+import { CLOSED_STATUSES, type Ticket, type TicketStatus } from "@/data/tickets";
 import { nowLuandaLocal } from "@/lib/format";
 import { RepositoryError } from "../repositories/errors";
 import type { TicketDraft, TicketsRepository } from "../repositories/tickets";
-
-function clone<T>(value: T): T {
-  return structuredClone(value);
-}
+import type { CrmMockDatabase } from "./database";
 
 function newId(prefix: string) {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export function createMockTickets(latencyMs: number): TicketsRepository {
-  const state: Ticket[] = clone(TICKETS);
-
-  async function run<T>(fn: () => T): Promise<T> {
-    if (latencyMs > 0) await new Promise((resolve) => setTimeout(resolve, latencyMs));
-    return clone(fn());
-  }
-
+export function createMockTickets(db: CrmMockDatabase): TicketsRepository {
   function find(id: string) {
-    const ticket = state.find((item) => item.id === id);
+    const ticket = db.state.tickets.find((item) => item.id === id);
     if (!ticket) throw new RepositoryError("not_found", "O ticket não existe ou foi removido.");
     return ticket;
   }
@@ -31,12 +21,12 @@ export function createMockTickets(latencyMs: number): TicketsRepository {
   }
 
   return {
-    list: () => run(() => state),
+    list: () => db.run((state) => state.tickets),
 
-    get: (id) => run(() => find(id)),
+    get: (id) => db.run(() => find(id)),
 
     create: (draft: TicketDraft) =>
-      run(() => {
+      db.run((state) => {
         const subject = draft.subject.trim();
         if (!subject) throw new RepositoryError("validation", "Indique o assunto do ticket.", [{ field: "subject", message: "Indique o assunto do ticket." }]);
         const now = nowLuandaLocal();
@@ -65,12 +55,12 @@ export function createMockTickets(latencyMs: number): TicketsRepository {
             },
           ],
         };
-        state.unshift(ticket);
+        state.tickets.unshift(ticket);
         return ticket;
       }),
 
     addComment: (id, body) =>
-      run(() => {
+      db.run(() => {
         const ticket = find(id);
         const text = body.trim();
         if (!text) throw new RepositoryError("validation", "Escreva um comentário.");
@@ -84,7 +74,7 @@ export function createMockTickets(latencyMs: number): TicketsRepository {
       }),
 
     setStatus: (id, status: TicketStatus) =>
-      run(() => {
+      db.run(() => {
         const ticket = find(id);
         if (ticket.status === status) return ticket;
         const now = nowLuandaLocal();
@@ -98,7 +88,7 @@ export function createMockTickets(latencyMs: number): TicketsRepository {
       }),
 
     setPriority: (id, priority) =>
-      run(() => {
+      db.run(() => {
         const ticket = find(id);
         if (ticket.priority === priority) return ticket;
         ticket.priority = priority;
@@ -108,7 +98,7 @@ export function createMockTickets(latencyMs: number): TicketsRepository {
       }),
 
     setAssignee: (id, assignee, avatar) =>
-      run(() => {
+      db.run(() => {
         const ticket = find(id);
         if (ticket.assignee === assignee) return ticket;
         ticket.assignee = assignee;
