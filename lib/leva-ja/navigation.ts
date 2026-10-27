@@ -3,7 +3,7 @@ import { canAccessSection } from "./permissions";
 import type { AdminSection } from "./permissions";
 
 export const ADMIN_HOME = "/admin";
-export const ADMIN_LOGIN = "/admin/login";
+export const ADMIN_LOGIN = "/login";
 
 export const SECTION_ROUTES: Record<AdminSection, string> = {
   overview: "/admin",
