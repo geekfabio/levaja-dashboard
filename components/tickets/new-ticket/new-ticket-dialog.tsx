@@ -23,9 +23,9 @@ import {
   SelectValue,
 } from "@/components/_ui/select";
 import { COMPANIES, CURRENT_USER, OWNERS } from "@/data/companies";
-import { TICKET_PRIORITIES, type Ticket, type TicketPriority } from "@/data/tickets";
-import { nowLuandaLocal } from "@/lib/format";
+import { TICKET_PRIORITIES, type TicketPriority } from "@/data/tickets";
 import { useTicketsStore } from "@/stores/tickets-store";
+import { useCreateTicket } from "@/hooks/crm/use-tickets";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 
 const NO_COMPANY = "none";
@@ -51,7 +51,7 @@ const EMPTY_FORM: FormState = {
 export default function NewTicketDialog() {
   const open = useTicketsStore((state) => state.newTicketOpen);
   const setOpen = useTicketsStore((state) => state.setNewTicketOpen);
-  const addTicket = useTicketsStore((state) => state.addTicket);
+  const createTicket = useCreateTicket();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [subjectError, setSubjectError] = useState<string | null>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
@@ -73,27 +73,20 @@ export default function NewTicketDialog() {
     const assigneeOwner =
       OWNERS.find((owner) => owner.name === form.assignee) ?? CURRENT_USER;
 
-    const ticket: Ticket = {
-      id: `tk-${Date.now()}`,
-      subject,
-      description: form.description.trim(),
-      companyId: company?.id,
-      companyName: company?.name,
-      contactName: form.contactName.trim() || undefined,
-      status: "Aberto",
-      priority: form.priority,
-      origin: "Manual",
-      assignee: assigneeOwner.name,
-      assigneeAvatar: assigneeOwner.avatar,
-      createdAt: nowLuandaLocal(),
-      updatedAt: nowLuandaLocal(),
-      comments: [],
-      timeline: [
-        { id: "t1", label: "Ticket criado", date: nowLuandaLocal(), author: CURRENT_USER.name },
-      ],
-    };
-
-    addTicket(ticket);
+    createTicket.mutate(
+      {
+        subject,
+        description: form.description.trim(),
+        companyId: company?.id,
+        companyName: company?.name,
+        contactName: form.contactName.trim() || undefined,
+        priority: form.priority,
+        origin: "Manual",
+        assignee: assigneeOwner.name,
+        assigneeAvatar: assigneeOwner.avatar,
+      },
+      { onSuccess: () => setOpen(false) },
+    );
   }
 
   return (

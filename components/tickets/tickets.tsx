@@ -12,9 +12,10 @@ import { useNow } from "@/hooks/use-now";
 import { sortByUrgency } from "@/lib/sla";
 import { filterTickets } from "@/lib/tickets";
 import { useTicketsStore } from "@/stores/tickets-store";
+import { useTickets } from "@/hooks/crm/use-tickets";
 
 export default function Tickets() {
-  const tickets = useTicketsStore((state) => state.tickets);
+  const { data: tickets = [] } = useTickets();
   const status = useTicketsStore((state) => state.status);
   const priority = useTicketsStore((state) => state.priority);
   const assignee = useTicketsStore((state) => state.assignee);

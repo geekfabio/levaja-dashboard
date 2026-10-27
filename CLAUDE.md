@@ -40,7 +40,7 @@ data/leva-ja/
 
 - Páginas e componentes **nunca** importam `data/leva-ja/mock`. Usam os hooks de TanStack Query em `hooks/admin/`, que chamam `repositories()`.
 - Os erros chegam como `RepositoryError` com `code` (`network`, `not_found`, `invalid_transition`, `forbidden`, `validation`, `unauthorized`).
-- O CRM continua com dados fictícios em `data/*.ts` e stores Zustand em `stores/`.
+- O CRM está a migrar para o mesmo padrão Repository, em `data/crm/` (contratos + mock que simula a API + esqueleto HTTP, troca por `NEXT_PUBLIC_DATA_SOURCE=http`), consumido pelos hooks de TanStack Query em `hooks/crm/` sob o `CrmProviders`. Piloto já migrado: **tickets** (a store Zustand do módulo passou a guardar só estado de UI). As áreas ainda não migradas continuam com dados fictícios em `data/*.ts` e stores Zustand em `stores/`.
 
 ## Marca
 
