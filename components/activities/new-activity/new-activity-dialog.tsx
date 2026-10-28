@@ -27,6 +27,7 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { ACTIVITY_TYPES, type Activity, type ActivityType } from "@/data/activities";
 import { useActivitiesStore } from "@/stores/activities-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
 import { FOLLOW_UP_TYPES, type FollowUpType } from "@/data/follow-ups";
 import { formatDateShort } from "@/lib/format";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
@@ -102,7 +103,7 @@ export default function NewActivityDialog() {
       date: today(),
     });
   }
-  const scheduleFollowUp = useCompaniesStore((state) => state.scheduleFollowUp);
+  const scheduleFollowUp = useScheduleFollowUp();
   const zones = useSettingsStore((state) => state.zones);
   const companies = useCompaniesStore((state) => state.companies);
   const zone = form.zone || zones[0]?.name || "";
@@ -155,13 +156,14 @@ export default function NewActivityDialog() {
 
     addActivity(activity);
     if (form.nextDate) {
-      scheduleFollowUp(
-        company.id,
-        { date: form.nextDate, type: form.nextType, note: "", owner: form.owner },
-        { silent: true },
-      );
+      scheduleFollowUp.mutate({
+        id: company.id,
+        followUp: { date: form.nextDate, type: form.nextType, note: "", owner: form.owner },
+        previous: company.nextFollowUp,
+        silent: true,
+      });
     } else if (company.nextFollowUp && company.nextFollowUp.date <= activity.date) {
-      scheduleFollowUp(company.id, null, { silent: true });
+      scheduleFollowUp.mutate({ id: company.id, followUp: null, previous: company.nextFollowUp, silent: true });
     }
   }
 

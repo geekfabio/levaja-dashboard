@@ -12,6 +12,7 @@ import { formatDateShort, nowLuandaLocal, plural } from "@/lib/format";
 import { useActivitiesStore } from "./activities-store";
 import { recordEvent } from "./audit-store";
 import { useCompaniesStore } from "./companies-store";
+import { scheduleCompanyFollowUp } from "@/hooks/crm/use-companies";
 import { toast } from "./toast-store";
 
 export type CalendarConnection = {
@@ -239,7 +240,7 @@ export const useCalendarSyncStore = create<CalendarSyncState>((set, get) => ({
     const company = useCompaniesStore.getState().companies.find((item) => item.id === companyId);
     if (!company?.nextFollowUp) return;
     const date = addDays(event.date, 1 + Math.floor(Math.random() * 3));
-    useCompaniesStore.getState().scheduleFollowUp(companyId, { ...company.nextFollowUp, date }, { silent: true });
+    void scheduleCompanyFollowUp(companyId, { ...company.nextFollowUp, date }, company.nextFollowUp, true);
     const at = nowLuandaLocal();
     set((state) => ({
       synced: state.synced.map((item) => (item.uid === event.uid ? { ...item, date } : item)),

@@ -14,6 +14,7 @@ import { TODAY, companiesCsvRows } from "@/lib/companies";
 import { downloadCsv } from "@/lib/csv";
 import { ease } from "@/lib/easings";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useArchiveCompanies, useUpdateManyCompanies } from "@/hooks/crm/use-companies";
 import { useSettingsStore } from "@/stores/settings-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
@@ -21,8 +22,8 @@ import XIcon from "@/public/assets/images/companies/detail/x.svg";
 export default function BulkActions({ selected }: { selected: Company[] }) {
   const zones = useSettingsStore((state) => state.zones);
   const setSelected = useCompaniesStore((state) => state.setSelected);
-  const updateMany = useCompaniesStore((state) => state.updateMany);
-  const archiveCompanies = useCompaniesStore((state) => state.archiveCompanies);
+  const updateMany = useUpdateManyCompanies();
+  const archiveCompanies = useArchiveCompanies();
   const reduceMotion = useReducedMotion();
   const ids = selected.map((company) => company.id);
 
@@ -51,7 +52,7 @@ export default function BulkActions({ selected }: { selected: Company[] }) {
             <DropdownMenuContent align="start" className="max-h-[50dvh] overflow-y-auto">
               <DropdownMenuLabel>Gestor de conta</DropdownMenuLabel>
               {OWNERS.map((owner) => (
-                <DropdownMenuItem key={owner.name} onSelect={() => updateMany(ids, { owner: owner.name })}>
+                <DropdownMenuItem key={owner.name} onSelect={() => updateMany.mutate({ ids, patch: { owner: owner.name }, snapshot: selected })}>
                   {owner.name}
                 </DropdownMenuItem>
               ))}
@@ -67,7 +68,7 @@ export default function BulkActions({ selected }: { selected: Company[] }) {
             <DropdownMenuContent align="start">
               <DropdownMenuLabel>Zona</DropdownMenuLabel>
               {zones.map((zone) => (
-                <DropdownMenuItem key={zone.name} onSelect={() => updateMany(ids, { zone: zone.name })}>
+                <DropdownMenuItem key={zone.name} onSelect={() => updateMany.mutate({ ids, patch: { zone: zone.name }, snapshot: selected })}>
                   {zone.name}
                 </DropdownMenuItem>
               ))}
@@ -80,7 +81,7 @@ export default function BulkActions({ selected }: { selected: Company[] }) {
           >
             Exportar
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => archiveCompanies(ids)}>
+          <Button variant="secondary" size="sm" onClick={() => archiveCompanies.mutate({ ids, snapshot: selected })}>
             Arquivar
           </Button>
           <Button variant="ghost" size="icon-sm" aria-label="Limpar seleção" onClick={() => setSelected([])}>

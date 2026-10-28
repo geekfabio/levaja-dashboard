@@ -15,6 +15,7 @@ import { PAYMENT_TERMS, type Company, type CompanyProfile, type PaymentTerm } fr
 import { cleanProfile, profileErrors, type ProfileErrors } from "@/lib/company-profile";
 import { formatDateLong, formatMoney } from "@/lib/format";
 import { companyProfile, useCompaniesStore } from "@/stores/companies-store";
+import { useUpdateProfile } from "@/hooks/crm/use-companies";
 import CallButton from "@/components/_common/call-button";
 
 function Item({ label, value }: { label: string; value: string }) {
@@ -28,7 +29,7 @@ function Item({ label, value }: { label: string; value: string }) {
 
 export default function FiscalProfile({ company }: { company: Company }) {
   const companies = useCompaniesStore((state) => state.companies);
-  const updateProfile = useCompaniesStore((state) => state.updateProfile);
+  const updateProfile = useUpdateProfile();
   const profile = companyProfile(company);
   const [draft, setDraft] = useState<CompanyProfile | null>(null);
   const [errors, setErrors] = useState<ProfileErrors>({});
@@ -46,7 +47,7 @@ export default function FiscalProfile({ company }: { company: Company }) {
       setErrors(found);
       return;
     }
-    updateProfile(company.id, cleanProfile(draft));
+    updateProfile.mutate({ id: company.id, profile: cleanProfile(draft), previous: company });
     setDraft(null);
   }
 

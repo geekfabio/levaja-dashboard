@@ -37,6 +37,7 @@ import Asset from "@/components/_ui/asset";
 import { useRouter } from "next/navigation";
 import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
 import { useFollowUps } from "./use-follow-ups";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
@@ -80,17 +81,21 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
   const moveTaskStatus = useActivitiesStore((state) => state.moveTaskStatus);
   const postponeTask = useActivitiesStore((state) => state.postponeTask);
   const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
-  const scheduleFollowUp = useCompaniesStore((state) => state.scheduleFollowUp);
+  const scheduleFollowUp = useScheduleFollowUp();
   const company = useCompaniesStore((state) => state.companies.find((entry) => entry.id === item.companyId));
   const owner = profileByName(item.owner);
 
   function schedule(days: number) {
     if (!item.companyId) return;
-    scheduleFollowUp(item.companyId, {
-      date: addDays(today, days),
-      type: item.contactType ?? company?.nextFollowUp?.type ?? "Chamada",
-      note: company?.nextFollowUp?.note ?? item.detail,
-      owner: item.owner,
+    scheduleFollowUp.mutate({
+      id: item.companyId,
+      followUp: {
+        date: addDays(today, days),
+        type: item.contactType ?? company?.nextFollowUp?.type ?? "Chamada",
+        note: company?.nextFollowUp?.note ?? item.detail,
+        owner: item.owner,
+      },
+      previous: company?.nextFollowUp,
     });
   }
 

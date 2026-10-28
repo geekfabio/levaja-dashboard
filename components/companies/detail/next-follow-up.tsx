@@ -24,14 +24,14 @@ import { useToday } from "@/hooks/use-today";
 import { formatDateLong } from "@/lib/format";
 import { addDays, followUpDueLabel } from "@/lib/follow-up";
 import { useActivitiesStore } from "@/stores/activities-store";
-import { useCompaniesStore } from "@/stores/companies-store";
+import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
 import { useCalendarSyncStore } from "@/stores/calendar-sync-store";
 import { CALENDAR_PROVIDERS } from "@/data/calendar-sync";
 import Asset from "@/components/_ui/asset";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
 export default function NextFollowUp({ company }: { company: Company }) {
-  const scheduleFollowUp = useCompaniesStore((state) => state.scheduleFollowUp);
+  const scheduleFollowUp = useScheduleFollowUp();
   const startActivity = useActivitiesStore((state) => state.startActivity);
   const today = useToday();
   const [editing, setEditing] = useState(false);
@@ -59,11 +59,10 @@ export default function NextFollowUp({ company }: { company: Company }) {
       setError("Indique a data.");
       return;
     }
-    scheduleFollowUp(company.id, {
-      date,
-      type,
-      note: note.trim(),
-      owner: followUp?.owner ?? company.owner,
+    scheduleFollowUp.mutate({
+      id: company.id,
+      followUp: { date, type, note: note.trim(), owner: followUp?.owner ?? company.owner },
+      previous: followUp,
     });
     setEditing(false);
   }
@@ -185,7 +184,7 @@ export default function NextFollowUp({ company }: { company: Company }) {
             ].map((option) => (
               <DropdownMenuItem
                 key={option.days}
-                onSelect={() => scheduleFollowUp(company.id, { ...followUp, date: addDays(today, option.days) })}
+                onSelect={() => scheduleFollowUp.mutate({ id: company.id, followUp: { ...followUp!, date: addDays(today, option.days) }, previous: followUp })}
               >
                 {option.label}
               </DropdownMenuItem>
@@ -195,7 +194,7 @@ export default function NextFollowUp({ company }: { company: Company }) {
         <Button variant="ghost" size="sm" onClick={openForm}>
           Editar
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => scheduleFollowUp(company.id, null)}>
+        <Button variant="ghost" size="sm" onClick={() => scheduleFollowUp.mutate({ id: company.id, followUp: null, previous: followUp })}>
           Remover
         </Button>
       </div>

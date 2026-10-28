@@ -5,7 +5,7 @@ import { TASKS, type Task, type TaskStatus } from "@/data/tasks";
 import { DEFAULT_FILTERS } from "@/lib/activities";
 import { recordEvent } from "./audit-store";
 import { useFieldStore } from "./field-store";
-import { useCompaniesStore } from "./companies-store";
+import { registerCompanyContact } from "@/hooks/crm/use-companies";
 import { diffRecord } from "@/lib/audit";
 import { formatDateShort } from "@/lib/format";
 
@@ -207,7 +207,7 @@ export const useActivitiesStore = create<ActivitiesState>((set, get) => ({
       newActivityOpen: false,
       prefill: null,
     }));
-    useCompaniesStore.getState().registerContact(activity.companyId, activity.date, activity.type);
+    registerCompanyContact(activity.companyId, activity.date, activity.type);
     recordEvent({
       action: ACTIVITY_PHRASES[activity.type],
       target: { module: "Atividades", id: activity.id, label: activity.companyName },
