@@ -8,12 +8,13 @@ import Tag from "@/components/_ui/tag";
 import { DEFAULT_RETENTION_MONTHS, retentionCandidates } from "@/lib/privacy";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useContactsStore } from "@/stores/contacts-store";
+import { useAnonymizeContact } from "@/hooks/crm/use-contacts";
 import { exportContactData } from "@/components/contacts/detail/personal-data";
 import SettingsPanel from "../settings-panel";
 
 export default function PrivacyTab() {
   const contacts = useContactsStore((state) => state.contacts);
-  const anonymize = useContactsStore((state) => state.anonymize);
+  const anonymize = useAnonymizeContact();
   const companies = useCompaniesStore((state) => state.companies);
   const [months, setMonths] = useState(DEFAULT_RETENTION_MONTHS);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -82,7 +83,7 @@ export default function PrivacyTab() {
                         variant="primary"
                         size="sm"
                         onClick={() => {
-                          anonymize(contact.id);
+                          anonymize.mutate(contact.id);
                           setConfirmId(null);
                         }}
                       >

@@ -26,6 +26,7 @@ import {
 import { COMPANIES } from "@/data/companies";
 import { CONSENT_CHANNEL_LABELS, type Contact, type ConsentChannel } from "@/data/contacts";
 import { useContactsStore } from "@/stores/contacts-store";
+import { useCreateContact } from "@/hooks/crm/use-contacts";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 
 function today() {
@@ -58,7 +59,7 @@ export default function NewContactDialog() {
   const companies = useCompaniesStore((state) => state.companies);
   const open = useContactsStore((state) => state.newContactOpen);
   const setOpen = useContactsStore((state) => state.setNewContactOpen);
-  const addContact = useContactsStore((state) => state.addContact);
+  const createContact = useCreateContact();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [nameError, setNameError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -118,7 +119,7 @@ export default function NewContactDialog() {
       },
     };
 
-    addContact(contact);
+    createContact.mutate(contact, { onSuccess: () => setOpen(false) });
   }
 
   return (

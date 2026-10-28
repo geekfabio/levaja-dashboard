@@ -27,6 +27,7 @@ import { useActivitiesStore } from "@/stores/activities-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useContactsStore } from "@/stores/contacts-store";
 import { useConversationsStore } from "@/stores/conversations-store";
+import { useOpenConversation, useReplyConversation, useSimulateIncoming } from "@/hooks/crm/use-conversations";
 import { useSettingsStore } from "@/stores/settings-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
@@ -66,7 +67,7 @@ function ConversationItem({ conversation, active, onSelect }: { conversation: Co
 function Thread({ conversation, onBack }: { conversation: Conversation; onBack: () => void }) {
   const contact = useContactsStore((state) => state.contacts.find((item) => item.id === conversation.contactId));
   const company = useCompaniesStore((state) => state.companies.find((item) => item.id === contact?.companyId));
-  const reply = useConversationsStore((state) => state.reply);
+  const reply = useReplyConversation();
   const startActivity = useActivitiesStore((state) => state.startActivity);
   const smsTemplates = useSettingsStore((state) => state.smsTemplates);
   const openTarget = useOpenTarget();
@@ -92,7 +93,7 @@ function Thread({ conversation, onBack }: { conversation: Conversation; onBack: 
       body = renderTemplate(template.body, { nome: contact.name.split(" ")[0], zona: company?.zone ?? "", desconto: "", validade: "" });
     }
     if (!body.trim()) return;
-    reply(conversation.id, body);
+    reply.mutate({ id: conversation.id, body });
     setDraft("");
     setTemplateId("");
   }
@@ -229,8 +230,9 @@ function Thread({ conversation, onBack }: { conversation: Conversation; onBack: 
 export default function Conversations() {
   const conversations = useConversationsStore((state) => state.conversations);
   const activeId = useConversationsStore((state) => state.activeId);
-  const open = useConversationsStore((state) => state.open);
-  const simulateIncoming = useConversationsStore((state) => state.simulateIncoming);
+  const open = useOpenConversation();
+  const simulateIncomingMutation = useSimulateIncoming();
+  const simulateIncoming = () => simulateIncomingMutation.mutate();
   const [filter, setFilter] = useState<"todas" | "por-ler">("todas");
 
   const sorted = useMemo(

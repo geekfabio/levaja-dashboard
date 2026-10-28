@@ -1,6 +1,8 @@
 import type { Repositories } from "../repositories";
 import { createMockDatabase } from "./database";
 import { createMockCompanies } from "./companies";
+import { createMockContacts } from "./contacts";
+import { createMockConversations } from "./conversations";
 import { createMockDocuments } from "./documents";
 import { createMockOpportunities } from "./opportunities";
 import { createMockTickets } from "./tickets";
@@ -12,5 +14,7 @@ export function createMockRepositories(options: { latencyMs?: number } = {}): Re
     opportunities: createMockOpportunities(db),
     companies: createMockCompanies(options.latencyMs ?? 0),
     documents: createMockDocuments(options.latencyMs ?? 0),
+    contacts: createMockContacts(options.latencyMs ?? 0),
+    conversations: createMockConversations(options.latencyMs ?? 0),
   };
 }

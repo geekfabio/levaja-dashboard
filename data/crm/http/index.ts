@@ -1,6 +1,8 @@
 import type { Repositories } from "../repositories";
 import { createHttpClient } from "./client";
 import { createHttpCompanies } from "./companies";
+import { createHttpContacts } from "./contacts";
+import { createHttpConversations } from "./conversations";
 import { createHttpDocuments } from "./documents";
 import { createHttpOpportunities } from "./opportunities";
 import { createHttpTickets } from "./tickets";
@@ -12,5 +14,7 @@ export function createHttpRepositories(options: { baseUrl: string; fetch?: typeo
     opportunities: createHttpOpportunities(http),
     companies: createHttpCompanies(http),
     documents: createHttpDocuments(http),
+    contacts: createHttpContacts(http),
+    conversations: createHttpConversations(http),
   };
 }

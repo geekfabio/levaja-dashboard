@@ -15,7 +15,7 @@ import type { Contact } from "@/data/contacts";
 import { formatAngolanPhone, normalizeAngolanPhone } from "@/lib/phone";
 import { isEmail } from "@/lib/settings";
 import { useCompaniesStore } from "@/stores/companies-store";
-import type { ContactPatch } from "@/stores/contacts-store";
+import type { ContactPatch } from "@/data/crm";
 
 export type ContactDraft = {
   name: string;
