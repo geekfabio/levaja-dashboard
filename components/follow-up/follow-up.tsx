@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
+import { useMoveTaskStatus, usePostponeTask, useTasks } from "@/hooks/crm/use-activities";
 import { useFollowUps } from "./use-follow-ups";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
@@ -78,8 +79,10 @@ function ScheduleMenu({ label, onPick, variant = "ghost" }: { label: string; onP
 function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
   const openTarget = useOpenTarget();
   const startActivity = useActivitiesStore((state) => state.startActivity);
-  const moveTaskStatus = useActivitiesStore((state) => state.moveTaskStatus);
-  const postponeTask = useActivitiesStore((state) => state.postponeTask);
+  const moveTaskStatus = useMoveTaskStatus();
+  const postponeTask = usePostponeTask();
+  const { data: tasks = [] } = useTasks();
+  const task = tasks.find((entry) => entry.id === item.taskId);
   const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
   const scheduleFollowUp = useScheduleFollowUp();
   const company = useCompaniesStore((state) => state.companies.find((entry) => entry.id === item.companyId));
@@ -176,10 +179,17 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
           </>
         ) : item.taskId ? (
           <>
-            <Button variant="secondary" size="sm" onClick={() => moveTaskStatus(item.taskId!, "Feita")}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => task && moveTaskStatus.mutate({ id: task.id, status: "Feita", from: task.status, title: task.title })}
+            >
               Concluir
             </Button>
-            <ScheduleMenu label="Adiar" onPick={(days) => postponeTask(item.taskId!, addDays(today, days))} />
+            <ScheduleMenu
+              label="Adiar"
+              onPick={(days) => task && postponeTask.mutate({ id: task.id, dueDate: addDays(today, days), previousDueDate: task.dueDate, title: task.title })}
+            />
           </>
         ) : item.kind === "agendado" ? (
           <>

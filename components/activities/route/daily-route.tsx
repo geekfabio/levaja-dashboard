@@ -12,7 +12,7 @@ import { useSettingsStore } from "@/stores/settings-store";
 import type { Task } from "@/data/tasks";
 import { groupActivitiesByZone } from "@/lib/activities";
 import { formatDateLong, formatTime } from "@/lib/format";
-import { useActivitiesStore } from "@/stores/activities-store";
+import { useMoveTaskStatus } from "@/hooks/crm/use-activities";
 import { useToday } from "@/hooks/use-today";
 import { formatDistance } from "@/lib/geo";
 import PlannedVisits from "./planned-visits";
@@ -23,7 +23,7 @@ type DailyRouteProps = {
 };
 
 export default function DailyRoute({ activities, tasks }: DailyRouteProps) {
-  const moveTaskStatus = useActivitiesStore((state) => state.moveTaskStatus);
+  const moveTaskStatus = useMoveTaskStatus();
   const zones = useSettingsStore((state) => state.zones);
   const todayIso = useToday();
 
@@ -124,10 +124,12 @@ export default function DailyRoute({ activities, tasks }: DailyRouteProps) {
                   <Checkbox
                     checked={task.status === "Feita"}
                     onCheckedChange={() =>
-                      moveTaskStatus(
-                        task.id,
-                        task.status === "Feita" ? "Por Fazer" : "Feita",
-                      )
+                      moveTaskStatus.mutate({
+                        id: task.id,
+                        status: task.status === "Feita" ? "Por Fazer" : "Feita",
+                        from: task.status,
+                        title: task.title,
+                      })
                     }
                   />
                 </label>

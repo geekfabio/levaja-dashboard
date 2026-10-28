@@ -26,6 +26,7 @@ import {
 import { OWNERS } from "@/data/companies";
 import type { Task } from "@/data/tasks";
 import { useActivitiesStore } from "@/stores/activities-store";
+import { useCreateTask } from "@/hooks/crm/use-activities";
 import CheckSquareIcon from "@/public/assets/images/companies/table/check-square.svg";
 
 const NO_COMPANY = "none";
@@ -56,7 +57,7 @@ export default function NewTaskDialog() {
   const companies = useCompaniesStore((state) => state.companies);
   const open = useActivitiesStore((state) => state.newTaskOpen);
   const setOpen = useActivitiesStore((state) => state.setNewTaskOpen);
-  const addTask = useActivitiesStore((state) => state.addTask);
+  const addTask = useCreateTask();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [titleError, setTitleError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -88,7 +89,7 @@ export default function NewTaskDialog() {
       notes: form.notes.trim() || undefined,
     };
 
-    addTask(task);
+    addTask.mutate(task, { onSuccess: () => setOpen(false) });
   }
 
   return (

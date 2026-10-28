@@ -1,4 +1,5 @@
 import type { CompaniesRepository } from "./companies";
+import type { ActivitiesRepository } from "./activities";
 import type { ContactsRepository } from "./contacts";
 import type { ConversationsRepository } from "./conversations";
 import type { DocumentsRepository } from "./documents";
@@ -14,6 +15,7 @@ export interface Repositories {
   documents: DocumentsRepository;
   contacts: ContactsRepository;
   conversations: ConversationsRepository;
+  activities: ActivitiesRepository;
 }
 
 export * from "./errors";
@@ -23,3 +25,4 @@ export * from "./companies";
 export * from "./documents";
 export * from "./contacts";
 export * from "./conversations";
+export * from "./activities";
