@@ -1,9 +1,9 @@
-import type { Automation, AutomationStep } from "@/data/automations";
+import type { Automation, AutomationStep, DiscountScope } from "@/data/automations";
 import type { Company } from "@/data/companies";
 import { OPEN_OFFER_STATUSES, type DiscountOffer, type OfferStatus } from "@/data/discount-offers";
 import { matchesConditions, stepDays } from "./automations";
 import { addDays } from "./follow-up";
-import { formatDateShort } from "./format";
+import { formatDateShort, nowLuandaLocal } from "./format";
 import type { CampaignEvent } from "@/data/campaign-events";
 import type { Contact } from "@/data/contacts";
 import { abcByPipeline } from "./companies";
@@ -129,6 +129,42 @@ export function isOfferOpen(offer: DiscountOffer, today: string) {
 export function offerScopeLabel(offer: Pick<DiscountOffer, "scope" | "categories">) {
   if (offer.scope === "Toda a encomenda" || offer.categories.length === 0) return "em toda a encomenda";
   return `em ${offer.categories.join(", ")}`;
+}
+
+function newOfferId() {
+  return `of-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export function buildOffer(
+  company: Company,
+  percent: number,
+  scope: DiscountScope,
+  validDays: number,
+  today: string,
+  origin: string,
+  extra: Partial<DiscountOffer> = {},
+): DiscountOffer {
+  return {
+    id: newOfferId(),
+    companyId: company.id,
+    percent,
+    scope,
+    categories: [],
+    createdAt: nowLuandaLocal(),
+    validUntil: addDays(today, validDays),
+    status: "Por apresentar",
+    owner: company.owner,
+    origin,
+    ...extra,
+  };
+}
+
+export function supersede(offers: DiscountOffer[], companyId: string) {
+  return offers.map((offer) =>
+    offer.companyId === companyId && OPEN_OFFER_STATUSES.includes(offer.status)
+      ? { ...offer, status: "Substituída" as const }
+      : offer,
+  );
 }
 
 export function renderTemplate(body: string, values: Record<string, string>) {

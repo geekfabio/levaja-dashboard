@@ -4,6 +4,7 @@ import Button from "@/components/_ui/button";
 import { Input } from "@/components/_ui/input";
 import FilterMenu from "@/components/_common/filter-menu";
 import { ANY_CONDITION, AUTOMATION_STATUSES } from "@/data/automations";
+import { useCreateAutomation } from "@/hooks/crm/use-automations";
 import { useAutomationsStore } from "@/stores/automations-store";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 
@@ -19,7 +20,7 @@ export default function AutomationsToolbar() {
   const setStatusFilter = useAutomationsStore((state) => state.setStatusFilter);
   const setSearch = useAutomationsStore((state) => state.setSearch);
   const setWeeklyCap = useAutomationsStore((state) => state.setWeeklyCap);
-  const createAutomation = useAutomationsStore((state) => state.createAutomation);
+  const createAutomation = useCreateAutomation();
 
   return (
     <div className="flex shrink-0 flex-col gap-3 px-4 py-4">
@@ -41,7 +42,7 @@ export default function AutomationsToolbar() {
             onChange={setStatusFilter}
           />
         </div>
-        <Button variant="primary" size="sm" onClick={createAutomation}>
+        <Button variant="primary" size="sm" onClick={() => createAutomation.mutate()}>
           <PlusIcon aria-hidden className="size-3" />
           Nova Automação
         </Button>

@@ -44,6 +44,7 @@ import {
   stepSummary,
   triggerSummary,
 } from "@/lib/automations";
+import { useRemoveAutomation, useSetAutomationStatus } from "@/hooks/crm/use-automations";
 import { useAutomationsStore } from "@/stores/automations-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useToday } from "@/hooks/use-today";
@@ -117,8 +118,8 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
   const updateStep = useAutomationsStore((state) => state.updateStep);
   const removeStep = useAutomationsStore((state) => state.removeStep);
   const moveStep = useAutomationsStore((state) => state.moveStep);
-  const setAutomationStatus = useAutomationsStore((state) => state.setAutomationStatus);
-  const removeAutomation = useAutomationsStore((state) => state.removeAutomation);
+  const setAutomationStatus = useSetAutomationStatus();
+  const removeAutomation = useRemoveAutomation();
   const weeklyCap = useAutomationsStore((state) => state.weeklyCap);
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
   const companies = useCompaniesStore((state) => state.companies);
@@ -459,7 +460,9 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => setAutomationStatus(automation.id, "Pausada")}
+                    onClick={() =>
+                      setAutomationStatus.mutate({ id: automation.id, status: "Pausada", previousStatus: automation.status })
+                    }
                   >
                     Pausar
                   </Button>
@@ -468,7 +471,9 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
                     variant="primary"
                     size="sm"
                     disabled={issues.length > 0}
-                    onClick={() => setAutomationStatus(automation.id, "Ativa")}
+                    onClick={() =>
+                      setAutomationStatus.mutate({ id: automation.id, status: "Ativa", previousStatus: automation.status })
+                    }
                   >
                     Ativar automação
                   </Button>
@@ -477,7 +482,7 @@ export default function AutomationBuilder({ automation }: AutomationBuilderProps
                   <Button
                     variant="subtle"
                     size="sm"
-                    onClick={() => removeAutomation(automation.id)}
+                    onClick={() => removeAutomation.mutate(automation.id)}
                   >
                     Eliminar rascunho
                   </Button>

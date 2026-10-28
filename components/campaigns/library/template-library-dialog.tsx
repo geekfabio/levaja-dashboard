@@ -22,6 +22,7 @@ import {
 } from "@/data/campaigns";
 import { renderVariables } from "@/lib/campaigns";
 import { OPT_OUT_SUFFIX, analyzeSms } from "@/lib/sms";
+import { useCreateCampaignFromTemplate } from "@/hooks/crm/use-campaigns";
 import { useCampaignsStore } from "@/stores/campaigns-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { cn } from "@/lib/utils";
@@ -118,7 +119,7 @@ function TemplateCard({
 export default function TemplateLibraryDialog() {
   const open = useCampaignsStore((state) => state.libraryOpen);
   const setOpen = useCampaignsStore((state) => state.setLibraryOpen);
-  const createFromTemplate = useCampaignsStore((state) => state.createFromTemplate);
+  const createFromTemplate = useCreateCampaignFromTemplate();
   const [channel, setChannel] = useState<Channel>("Email");
   const emailTemplates = useSettingsStore((state) => state.emailTemplates);
   const smsTemplates = useSettingsStore((state) => state.smsTemplates);
@@ -157,7 +158,7 @@ export default function TemplateLibraryDialog() {
                     description={template.description}
                     primary={template.id !== BLANK_TEMPLATE.id}
                     thumb={<EmailThumb template={template} />}
-                    onUse={() => createFromTemplate("Email", template.id)}
+                    onUse={() => createFromTemplate.mutate({ channel: "Email", templateId: template.id })}
                   />
                 ))
               : [...smsTemplates, BLANK_SMS_TEMPLATE].map((template) => (
@@ -167,7 +168,7 @@ export default function TemplateLibraryDialog() {
                     description={template.description}
                     primary={template.id !== BLANK_SMS_TEMPLATE.id}
                     thumb={<SmsThumb template={template} />}
-                    onUse={() => createFromTemplate("SMS", template.id)}
+                    onUse={() => createFromTemplate.mutate({ channel: "SMS", templateId: template.id })}
                   />
                 ))}
           </div>

@@ -17,12 +17,13 @@ import { OFFER_STATUS_TONES } from "@/data/discount-offers";
 import { useToday } from "@/hooks/use-today";
 import { isOfferOpen, offerScopeLabel, offerStatus } from "@/lib/automation-engine";
 import { formatDateShort, formatMoney, formatPercent } from "@/lib/format";
+import { useCreateOffer, useSetOfferStatus } from "@/hooks/crm/use-offers";
 import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 
 export default function DiscountOffer({ companyId }: { companyId: string }) {
   const offers = useAutomationRunsStore((state) => state.offers);
-  const createOffer = useAutomationRunsStore((state) => state.createOffer);
-  const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
+  const createOffer = useCreateOffer();
+  const setOfferStatus = useSetOfferStatus();
   const today = useToday();
   const [editing, setEditing] = useState(false);
   const [percent, setPercent] = useState(5);
@@ -37,7 +38,7 @@ export default function DiscountOffer({ companyId }: { companyId: string }) {
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (percentError || validError) return;
-    createOffer({ companyId, percent, scope, validDays }, today);
+    createOffer.mutate({ input: { companyId, percent, scope, validDays }, today });
     setEditing(false);
   }
 
@@ -124,12 +125,20 @@ export default function DiscountOffer({ companyId }: { companyId: string }) {
       </span>
       <div className="flex flex-wrap gap-1">
         {open && latest.status === "Por apresentar" && (
-          <Button variant="secondary" size="sm" onClick={() => setOfferStatus(latest.id, "Apresentada")}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setOfferStatus.mutate({ id: latest.id, status: "Apresentada", previousStatus: latest.status })}
+          >
             Apresentada ao cliente
           </Button>
         )}
         {open && (
-          <Button variant="ghost" size="sm" onClick={() => setOfferStatus(latest.id, "Recusada")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setOfferStatus.mutate({ id: latest.id, status: "Recusada", previousStatus: latest.status })}
+          >
             Cliente recusou
           </Button>
         )}

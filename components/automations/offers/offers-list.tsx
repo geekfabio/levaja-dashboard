@@ -31,6 +31,7 @@ import {
   formatPercent,
   plural,
 } from "@/lib/format";
+import { useSetOfferStatus } from "@/hooks/crm/use-offers";
 import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
@@ -39,7 +40,7 @@ type Filter = "abertas" | "Aproveitada" | "fechadas" | null;
 
 export default function OffersList() {
   const offers = useAutomationRunsStore((state) => state.offers);
-  const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
+  const setOfferStatus = useSetOfferStatus();
   const companies = useCompaniesStore((state) => state.companies);
   const openTarget = useOpenTarget();
   const today = useToday();
@@ -190,11 +191,13 @@ export default function OffersList() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           disabled={offer.status === "Apresentada"}
-                          onSelect={() => setOfferStatus(offer.id, "Apresentada")}
+                          onSelect={() => setOfferStatus.mutate({ id: offer.id, status: "Apresentada", previousStatus: offer.status })}
                         >
                           Apresentada ao cliente
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setOfferStatus(offer.id, "Recusada")}>
+                        <DropdownMenuItem
+                          onSelect={() => setOfferStatus.mutate({ id: offer.id, status: "Recusada", previousStatus: offer.status })}
+                        >
                           Cliente recusou
                         </DropdownMenuItem>
                       </DropdownMenuContent>

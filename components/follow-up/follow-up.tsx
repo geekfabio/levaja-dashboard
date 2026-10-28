@@ -39,6 +39,7 @@ import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
 import { useMoveTaskStatus, usePostponeTask, useTasks } from "@/hooks/crm/use-activities";
+import { useSetOfferStatus } from "@/hooks/crm/use-offers";
 import { useFollowUps } from "./use-follow-ups";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
@@ -83,7 +84,9 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
   const postponeTask = usePostponeTask();
   const { data: tasks = [] } = useTasks();
   const task = tasks.find((entry) => entry.id === item.taskId);
-  const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
+  const offers = useAutomationRunsStore((state) => state.offers);
+  const offer = offers.find((entry) => entry.id === item.offerId);
+  const setOfferStatus = useSetOfferStatus();
   const scheduleFollowUp = useScheduleFollowUp();
   const company = useCompaniesStore((state) => state.companies.find((entry) => entry.id === item.companyId));
   const owner = profileByName(item.owner);
@@ -168,10 +171,18 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setOfferStatus(item.offerId!, "Apresentada")}>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    offer && setOfferStatus.mutate({ id: offer.id, status: "Apresentada", previousStatus: offer.status })
+                  }
+                >
                   Apresentada ao cliente
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setOfferStatus(item.offerId!, "Recusada")}>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    offer && setOfferStatus.mutate({ id: offer.id, status: "Recusada", previousStatus: offer.status })
+                  }
+                >
                   Cliente recusou
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -3,7 +3,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useActivitiesStore } from "@/stores/activities-store";
-import { useAutomationsStore } from "@/stores/automations-store";
+import { createAutomation } from "@/hooks/crm/use-automations";
 import { useCampaignsStore } from "@/stores/campaigns-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useContactsStore } from "@/stores/contacts-store";
@@ -131,7 +131,7 @@ export const CREATE_COMMANDS: CreateCommand[] = [
     icon: PlusIcon,
     href: "/automacoes",
     keywords: ["regra", "sequência"],
-    open: () => useAutomationsStore.getState().createAutomation(),
+    open: () => void createAutomation(),
   },
   {
     id: "mudar-tema",

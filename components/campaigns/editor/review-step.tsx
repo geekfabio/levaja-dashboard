@@ -24,7 +24,13 @@ import {
   luandaLocalToDate,
 } from "@/lib/format";
 import { SMS_MESSAGE_UNITS, SMS_PRICE, analyzeSms, isWithinWindow } from "@/lib/sms";
-import { useCampaignsStore } from "@/stores/campaigns-store";
+import {
+  useCampaignBackToDraft,
+  useCancelCampaignSchedule,
+  useRecordCampaignTest,
+  useScheduleCampaign,
+  useSubmitCampaignForReview,
+} from "@/hooks/crm/use-campaigns";
 import { useMessagingStore } from "@/stores/messaging-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useRouter } from "next/navigation";
@@ -40,11 +46,11 @@ type ReviewStepProps = {
 };
 
 export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
-  const submitForReview = useCampaignsStore((state) => state.submitForReview);
-  const backToDraft = useCampaignsStore((state) => state.backToDraft);
-  const recordTest = useCampaignsStore((state) => state.recordTest);
-  const schedule = useCampaignsStore((state) => state.schedule);
-  const cancelSchedule = useCampaignsStore((state) => state.cancelSchedule);
+  const submitForReview = useSubmitCampaignForReview();
+  const backToDraft = useCampaignBackToDraft();
+  const recordTest = useRecordCampaignTest();
+  const schedule = useScheduleCampaign();
+  const cancelSchedule = useCancelCampaignSchedule();
   const balance = useMessagingStore((state) => state.balance);
   const reservations = useMessagingStore((state) => state.reservations);
   const router = useRouter();
@@ -89,7 +95,7 @@ export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
       return;
     }
     setScheduleError(null);
-    schedule(campaign.id, scheduledAt, audience.eligible.length, cost?.cost);
+    schedule.mutate({ id: campaign.id, scheduledAt, recipients: audience.eligible.length, cost: cost?.cost });
   }
 
   return (
@@ -241,7 +247,7 @@ export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
               size="sm"
               className="self-start"
               disabled={!canSubmitForReview(checks)}
-              onClick={() => submitForReview(campaign.id)}
+              onClick={() => submitForReview.mutate(campaign.id)}
             >
               Submeter para revisão
             </Button>
@@ -267,7 +273,7 @@ export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
                 variant="secondary"
                 size="sm"
                 className="self-start"
-                onClick={() => recordTest(campaign.id)}
+                onClick={() => recordTest.mutate(campaign.id)}
               >
                 {campaign.testSentAt ? "Repetir teste" : "Registar envio de teste"}
               </Button>
@@ -305,7 +311,7 @@ export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
                 <Button
                   variant="subtle"
                   size="sm"
-                  onClick={() => backToDraft(campaign.id)}
+                  onClick={() => backToDraft.mutate(campaign.id)}
                 >
                   Voltar a rascunho
                 </Button>
@@ -327,7 +333,7 @@ export default function ReviewStep({ campaign, audience }: ReviewStepProps) {
               variant="secondary"
               size="sm"
               className="self-start"
-              onClick={() => cancelSchedule(campaign.id)}
+              onClick={() => cancelSchedule.mutate(campaign.id)}
             >
               Cancelar agendamento
             </Button>

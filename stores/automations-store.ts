@@ -1,20 +1,15 @@
 import { create } from "zustand";
 import {
   AUTOMATIONS,
-  DEFAULT_CONDITIONS,
-  DEFAULT_TRIGGER,
   DEFAULT_WEEKLY_CAP,
   blankStep,
   type ActionType,
   type Automation,
   type AutomationConditions,
-  type AutomationStatus,
   type AutomationStep,
   type Trigger,
 } from "@/data/automations";
-import { DEFAULT_AUTOMATION_FILTERS, automationIssues } from "@/lib/automations";
-import { nowLuandaLocal } from "@/lib/format";
-import { recordEvent } from "./audit-store";
+import { DEFAULT_AUTOMATION_FILTERS } from "@/lib/automations";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -39,8 +34,6 @@ type AutomationsState = {
   setWeeklyCap: (cap: number) => void;
   openEditor: (id: string) => void;
   closeEditor: () => void;
-  createAutomation: () => void;
-  removeAutomation: (id: string) => void;
   updateName: (id: string, name: string) => void;
   updateTrigger: (id: string, patch: Partial<Trigger>) => void;
   updateConditions: (id: string, patch: Partial<AutomationConditions>) => void;
@@ -48,10 +41,9 @@ type AutomationsState = {
   updateStep: (id: string, step: AutomationStep) => void;
   removeStep: (id: string, stepId: string) => void;
   moveStep: (id: string, stepId: string, delta: number) => void;
-  setAutomationStatus: (id: string, status: AutomationStatus) => void;
 };
 
-export const useAutomationsStore = create<AutomationsState>((set, get) => {
+export const useAutomationsStore = create<AutomationsState>((set) => {
   function edit(id: string, fn: (automation: Automation) => Partial<Automation>) {
     set((state) => ({
       automations: state.automations.map((automation) =>
@@ -75,33 +67,6 @@ export const useAutomationsStore = create<AutomationsState>((set, get) => {
     setWeeklyCap: (weeklyCap) => set({ weeklyCap: Math.max(1, Math.round(weeklyCap)) }),
     openEditor: (editorId) => set({ editorId }),
     closeEditor: () => set({ editorId: null }),
-
-    createAutomation: () => {
-      const id = newId("aut");
-      const automation: Automation = {
-        id,
-        name: "Nova automação",
-        status: "Rascunho",
-        trigger: { ...DEFAULT_TRIGGER },
-        conditions: { ...DEFAULT_CONDITIONS },
-        steps: [blankStep(newId("passo"))],
-        enrolled: 0,
-        completed: 0,
-        updatedAt: today(),
-      };
-      set((state) => ({
-        automations: [automation, ...state.automations],
-        editorId: id,
-      }));
-    },
-
-    removeAutomation: (id) =>
-      set((state) => ({
-        automations: state.automations.filter(
-          (automation) => automation.id !== id || automation.status !== "Rascunho",
-        ),
-        editorId: state.editorId === id ? null : state.editorId,
-      })),
 
     updateName: (id, name) => edit(id, () => ({ name })),
     updateTrigger: (id, patch) =>
@@ -133,35 +98,5 @@ export const useAutomationsStore = create<AutomationsState>((set, get) => {
         [steps[index], steps[target]] = [steps[target], steps[index]];
         return { steps };
       }),
-
-    setAutomationStatus: (id, status) => {
-      const automation = get().automations.find((item) => item.id === id);
-      if (!automation) return;
-      if (status === "Ativa" && automationIssues(automation).length > 0) return;
-      if (automation.status === status) return;
-      set((state) => ({
-        automations: state.automations.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                status,
-                updatedAt: today(),
-                activatedAt: status === "Ativa" ? nowLuandaLocal().slice(0, 10) : item.activatedAt,
-              }
-            : item,
-        ),
-      }));
-      recordEvent({
-        action: status === "Ativa" ? "ativou a automação" : "pausou a automação",
-        target: { module: "Automações", id, label: automation.name },
-        sensitive: status === "Ativa",
-        changes: [{ field: "Estado", from: automation.status, to: status }],
-        toast: {
-          title: status === "Ativa" ? "Automação ativada" : "Automação pausada",
-          description: automation.name,
-          tone: "success",
-        },
-      });
-    },
   };
 });

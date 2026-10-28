@@ -2,9 +2,12 @@ import type { Repositories } from "../repositories";
 import { createHttpClient } from "./client";
 import { createHttpCompanies } from "./companies";
 import { createHttpActivities } from "./activities";
+import { createHttpAutomations } from "./automations";
+import { createHttpCampaigns } from "./campaigns";
 import { createHttpContacts } from "./contacts";
 import { createHttpConversations } from "./conversations";
 import { createHttpDocuments } from "./documents";
+import { createHttpOffers } from "./offers";
 import { createHttpOpportunities } from "./opportunities";
 import { createHttpTickets } from "./tickets";
 
@@ -18,5 +21,8 @@ export function createHttpRepositories(options: { baseUrl: string; fetch?: typeo
     contacts: createHttpContacts(http),
     conversations: createHttpConversations(http),
     activities: createHttpActivities(http),
+    campaigns: createHttpCampaigns(http),
+    automations: createHttpAutomations(http),
+    offers: createHttpOffers(http),
   };
 }
