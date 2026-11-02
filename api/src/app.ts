@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import Fastify from "fastify";
 import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
+import { adminAuthRoutes } from "./routes/admin-auth";
 import { healthRoutes } from "./routes/health";
 
 export async function buildApp() {
@@ -15,6 +16,7 @@ export async function buildApp() {
   registerErrorHandler(app);
 
   await app.register(healthRoutes);
+  await app.register(adminAuthRoutes);
 
   return app;
 }
