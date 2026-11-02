@@ -6,6 +6,7 @@ import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { healthRoutes } from "./routes/health";
+import { requestRoutes } from "./routes/requests";
 
 export async function buildApp() {
   const env = loadEnv();
@@ -19,6 +20,7 @@ export async function buildApp() {
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
+  await app.register(requestRoutes);
 
   return app;
 }
