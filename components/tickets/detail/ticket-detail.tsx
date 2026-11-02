@@ -33,6 +33,13 @@ import { useNow } from "@/hooks/use-now";
 import SlaBadge from "../sla/sla-badge";
 import SlaSection from "../sla/sla-section";
 import { useTicketsStore } from "@/stores/tickets-store";
+import {
+  useTicket,
+  useAddTicketComment,
+  useSetTicketAssignee,
+  useSetTicketPriority,
+  useSetTicketStatus,
+} from "@/hooks/crm/use-tickets";
 import { CURRENT_USER, OWNERS, profileByName } from "@/data/companies";
 import MessageIcon from "@/public/assets/images/companies/sidebar/message-question.svg";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
@@ -40,23 +47,21 @@ import XIcon from "@/public/assets/images/companies/detail/x.svg";
 export default function TicketDetail() {
   const detailId = useTicketsStore((state) => state.detailId);
   const detailOpen = useTicketsStore((state) => state.detailOpen);
-  const tickets = useTicketsStore((state) => state.tickets);
   const closeDetail = useTicketsStore((state) => state.closeDetail);
-  const setTicketStatus = useTicketsStore((state) => state.setTicketStatus);
-  const setTicketPriority = useTicketsStore((state) => state.setTicketPriority);
-  const addComment = useTicketsStore((state) => state.addComment);
-  const setTicketAssignee = useTicketsStore((state) => state.setTicketAssignee);
+  const { data: ticket } = useTicket(detailId);
+  const setTicketStatus = useSetTicketStatus();
+  const setTicketPriority = useSetTicketPriority();
+  const addComment = useAddTicketComment();
+  const setTicketAssignee = useSetTicketAssignee();
   const [comment, setComment] = useState("");
   const now = useNow();
-
-  const ticket = tickets.find((item) => item.id === detailId);
 
   function handleSubmitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!ticket) return;
     const body = comment.trim();
     if (!body) return;
-    addComment(ticket.id, body);
+    addComment.mutate({ id: ticket.id, body });
     setComment("");
   }
 
@@ -105,7 +110,7 @@ export default function TicketDetail() {
                 <Select
                   value={ticket.status}
                   onValueChange={(value) =>
-                    setTicketStatus(ticket.id, value as TicketStatus)
+                    setTicketStatus.mutate({ id: ticket.id, status: value as TicketStatus, from: ticket.status })
                   }
                 >
                   <SelectTrigger aria-label="Estado">
@@ -122,7 +127,7 @@ export default function TicketDetail() {
                 <Select
                   value={ticket.priority}
                   onValueChange={(value) =>
-                    setTicketPriority(ticket.id, value as TicketPriority)
+                    setTicketPriority.mutate({ id: ticket.id, priority: value as TicketPriority, from: ticket.priority })
                   }
                 >
                   <SelectTrigger aria-label="Prioridade">
@@ -145,7 +150,7 @@ export default function TicketDetail() {
                   value={ticket.assignee}
                   onValueChange={(value) => {
                     const person = profileByName(value);
-                    setTicketAssignee(ticket.id, value, person.avatar);
+                    setTicketAssignee.mutate({ id: ticket.id, assignee: value, avatar: person.avatar, from: ticket.assignee });
                   }}
                 >
                   <SelectTrigger id="ticket-assignee">

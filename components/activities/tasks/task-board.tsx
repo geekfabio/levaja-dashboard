@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/_ui/scroll-area";
 import TaskColumn from "./task-column";
 import { TASK_STATUSES, type Task, type TaskStatus } from "@/data/tasks";
 import { groupTasksByStatus } from "@/lib/tasks";
-import { useActivitiesStore } from "@/stores/activities-store";
+import { useMoveTaskStatus } from "@/hooks/crm/use-activities";
 
 type TaskBoardProps = {
   tasks: Task[];
@@ -16,7 +16,7 @@ function today() {
 }
 
 export default function TaskBoard({ tasks }: TaskBoardProps) {
-  const moveTaskStatus = useActivitiesStore((state) => state.moveTaskStatus);
+  const moveTaskStatus = useMoveTaskStatus();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
 
@@ -34,7 +34,13 @@ export default function TaskBoard({ tasks }: TaskBoardProps) {
     const id = event.dataTransfer.getData("text/plain") || draggingId;
     setDragOverStatus(null);
     setDraggingId(null);
-    if (id) moveTaskStatus(id, status);
+    const task = tasks.find((item) => item.id === id);
+    if (task) toggleStatus(task.id, status);
+  }
+
+  function toggleStatus(id: string, status: TaskStatus) {
+    const task = tasks.find((item) => item.id === id);
+    if (task && task.status !== status) moveTaskStatus.mutate({ id: task.id, status, from: task.status, title: task.title });
   }
 
   return (
@@ -52,7 +58,7 @@ export default function TaskBoard({ tasks }: TaskBoardProps) {
               setDragOverStatus((current) => (current === status ? null : current))
             }
             onDrop={(event) => handleDrop(event, status)}
-            onToggleDone={moveTaskStatus}
+            onToggleDone={toggleStatus}
             onCardDragStart={handleCardDragStart}
             onCardDragEnd={() => {
               setDraggingId(null);

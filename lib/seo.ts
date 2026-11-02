@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-export const SITE_NAME = "Leva Já CRM";
+export const SITE_NAME = "AngoLeva CRM";
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://crm.levaja.ao";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://crm.angoleva.ao";
 export const SITE_DESCRIPTION =
-  "CRM do Leva Já — carteira de clientes, oportunidades e campanhas da equipa comercial.";
+  "CRM do AngoLeva — carteira de clientes, oportunidades e campanhas da equipa comercial.";
 export const DEFAULT_OG_IMAGE = "/opengraph-image.jpg";
 
 export function absoluteUrl(path: string) {
@@ -107,7 +107,7 @@ export const SITE_ROUTES: SiteRoute[] = [
   {
     path: "/login",
     title: "Entrar",
-    description: "Entrar no CRM do Leva Já.",
+    description: "Entrar no CRM do AngoLeva.",
     changeFrequency: "yearly",
     priority: 0.3,
   },

@@ -23,9 +23,8 @@ import {
   SelectValue,
 } from "@/components/_ui/select";
 import { COMPANIES, CURRENT_USER } from "@/data/companies";
-import type { Ticket } from "@/data/tickets";
-import { nowLuandaLocal } from "@/lib/format";
 import { useTicketsStore } from "@/stores/tickets-store";
+import { useCreateTicket } from "@/hooks/crm/use-tickets";
 import MailIcon from "@/public/assets/images/companies/sidebar/mail.svg";
 
 const NO_COMPANY = "none";
@@ -47,7 +46,7 @@ const EMPTY_FORM: FormState = {
 export default function CreateFromEmailDialog() {
   const open = useTicketsStore((state) => state.fromEmailOpen);
   const setOpen = useTicketsStore((state) => state.setFromEmailOpen);
-  const addTicket = useTicketsStore((state) => state.addTicket);
+  const createTicket = useCreateTicket();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
@@ -67,32 +66,20 @@ export default function CreateFromEmailDialog() {
 
     const company = COMPANIES.find((item) => item.id === form.companyId);
 
-    const ticket: Ticket = {
-      id: `tk-${Date.now()}`,
-      subject,
-      description: form.body.trim(),
-      companyId: company?.id,
-      companyName: company?.name,
-      contactName: form.from.trim() || undefined,
-      status: "Aberto",
-      priority: "Normal",
-      origin: "E-mail",
-      assignee: CURRENT_USER.name,
-      assigneeAvatar: CURRENT_USER.avatar,
-      createdAt: nowLuandaLocal(),
-      updatedAt: nowLuandaLocal(),
-      comments: [],
-      timeline: [
-        {
-          id: "t1",
-          label: "Ticket criado a partir de e-mail",
-          date: nowLuandaLocal(),
-          author: form.from.trim() || "E-mail",
-        },
-      ],
-    };
-
-    addTicket(ticket);
+    createTicket.mutate(
+      {
+        subject,
+        description: form.body.trim(),
+        companyId: company?.id,
+        companyName: company?.name,
+        contactName: form.from.trim() || undefined,
+        priority: "Normal",
+        origin: "E-mail",
+        assignee: CURRENT_USER.name,
+        assigneeAvatar: CURRENT_USER.avatar,
+      },
+      { onSuccess: () => setOpen(false) },
+    );
   }
 
   return (

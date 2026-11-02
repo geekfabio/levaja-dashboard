@@ -96,7 +96,7 @@ function phoneFor(i: number) {
 export const OWNERS: Owner[] = OWNER_NAMES.map((name, i) => ({
   name,
   avatar: AVATARS[i % AVATARS.length],
-  email: `${emailSlug(name)}@levaja.ao`,
+  email: `${emailSlug(name)}@angoleva.ao`,
   phone: phoneFor(i),
   role: i % 3 === 0 ? "Gestor de Conta Sénior" : "Gestor de Conta",
   team: TEAMS[i % TEAMS.length],
@@ -105,7 +105,7 @@ export const OWNERS: Owner[] = OWNER_NAMES.map((name, i) => ({
 export const CURRENT_USER: Owner = {
   name: "Tiago Fernandes",
   avatar: "/assets/images/_common/avatars/jensen.png",
-  email: "tiago.fernandes@levaja.ao",
+  email: "tiago.fernandes@angoleva.ao",
   phone: "+244 923 000 000",
   role: "Diretor Comercial",
   team: "Grandes Contas",

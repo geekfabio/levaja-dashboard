@@ -116,8 +116,8 @@ test("mapa: posições dos prestadores trazem a classe da viatura", async () => 
   const NOW = new Date("2026-05-12T10:00:00Z");
   const calls: string[] = [];
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0, routing: createOsrmRouting({ fetch: fakeFetch(OSRM_BODY, calls) }) });
-  await repos.auth.requestCode("operacoes@levaja.ao");
-  await repos.auth.login("operacoes@levaja.ao", "123456");
+  await repos.auth.requestCode("operacoes@angoleva.ao");
+  await repos.auth.login("operacoes@angoleva.ao", "123456");
   const positions = await repos.providers.positions();
   assert.ok(positions.length > 0);
   assert.ok(positions.every((position) => ["tow_truck", "pickup", "van", "truck"].includes(position.vehicleClass)));

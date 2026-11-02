@@ -74,10 +74,10 @@ export function createBlock(type: BlockType, id: string): CampaignBlock {
         id,
         type,
         src: BRAND_LOGO,
-        alt: "Leva Já",
+        alt: "AngoLeva",
       };
     case "button":
-      return { id, type, label: "Saber mais", href: "https://levaja.ao" };
+      return { id, type, label: "Saber mais", href: "https://angoleva.ao" };
     case "divider":
       return { id, type };
   }

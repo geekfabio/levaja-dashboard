@@ -41,7 +41,8 @@ import MailIcon from "@/public/assets/images/companies/detail/mail-04.svg";
 import PhoneIcon from "@/public/assets/images/companies/detail/phone.svg";
 import CallButton from "@/components/_common/call-button";
 import PersonalData from "./personal-data";
-import { useConversationsStore } from "@/stores/conversations-store";
+import { startConversation } from "@/hooks/crm/use-conversations";
+import { useSetContactability, useToggleConsent, useUpdateContact } from "@/hooks/crm/use-contacts";
 import { useRouter } from "next/navigation";
 
 const CHANNELS = Object.keys(CONSENT_CHANNEL_LABELS) as ConsentChannel[];
@@ -52,12 +53,9 @@ export default function ContactDetail() {
   const contacts = useContactsStore((state) => state.contacts);
   const closeDetail = useContactsStore((state) => state.closeDetail);
   const router = useRouter();
-  const updateContactability = useContactsStore(
-    (state) => state.updateContactability,
-  );
-  const toggleConsent = useContactsStore((state) => state.toggleConsent);
-
-  const updateContact = useContactsStore((state) => state.updateContact);
+  const updateContactability = useSetContactability();
+  const toggleConsent = useToggleConsent();
+  const updateContact = useUpdateContact();
   const editable = useEditable<ContactDraft>();
   const [editingFor, setEditingFor] = useState<string | null>(null);
 
@@ -104,7 +102,7 @@ export default function ContactDetail() {
               draft={editable.draft}
               onChange={editable.update}
               onSubmit={(patch) => {
-                updateContact(contact.id, patch);
+                updateContact.mutate({ id: contact.id, patch, previous: contact });
                 editable.reset();
               }}
             />
@@ -134,9 +132,7 @@ export default function ContactDetail() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    useConversationsStore
-                      .getState()
-                      .start(contact.id, contact.consent.whatsapp.granted ? "WhatsApp" : "SMS");
+                    void startConversation(contact.id, contact.consent.whatsapp.granted ? "WhatsApp" : "SMS");
                     closeDetail();
                     router.push("/conversas");
                   }}
@@ -150,10 +146,7 @@ export default function ContactDetail() {
               <Select
                 value={contact.contactability}
                 onValueChange={(value) =>
-                  updateContactability(
-                    contact.id,
-                    value as ContactabilityStatus,
-                  )
+                  updateContactability.mutate({ id: contact.id, status: value as ContactabilityStatus, previous: contact.contactability })
                 }
               >
                 <SelectTrigger>
@@ -194,7 +187,7 @@ export default function ContactDetail() {
                       </span>
                       <Checkbox
                         checked={state.granted}
-                        onCheckedChange={() => toggleConsent(contact.id, channel)}
+                        onCheckedChange={() => toggleConsent.mutate({ id: contact.id, channel, wasGranted: state.granted })}
                       />
                     </label>
                   );

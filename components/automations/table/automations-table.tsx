@@ -14,6 +14,7 @@ import {
 import { AUTOMATION_STATUS_TONES, type Automation } from "@/data/automations";
 import { automationIssues, stepDays, triggerSummary } from "@/lib/automations";
 import { formatDateTime, formatNumber } from "@/lib/format";
+import { useSetAutomationStatus } from "@/hooks/crm/use-automations";
 import { useAutomationsStore } from "@/stores/automations-store";
 
 function durationLabel(days: number) {
@@ -27,7 +28,7 @@ type AutomationsTableProps = {
 
 export default function AutomationsTable({ automations }: AutomationsTableProps) {
   const openEditor = useAutomationsStore((state) => state.openEditor);
-  const setAutomationStatus = useAutomationsStore((state) => state.setAutomationStatus);
+  const setAutomationStatus = useSetAutomationStatus();
 
   return (
     <ScrollArea orientation="both" className="min-h-0 flex-1">
@@ -99,7 +100,11 @@ export default function AutomationsTable({ automations }: AutomationsTableProps)
                     title={!active && !canActivate ? "Complete a automação antes de a ativar" : undefined}
                     onClick={(event) => {
                       event.stopPropagation();
-                      setAutomationStatus(automation.id, active ? "Pausada" : "Ativa");
+                      setAutomationStatus.mutate({
+                        id: automation.id,
+                        status: active ? "Pausada" : "Ativa",
+                        previousStatus: automation.status,
+                      });
                     }}
                   >
                     {active ? "Pausar" : "Ativar"}

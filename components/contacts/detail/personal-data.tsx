@@ -10,7 +10,7 @@ import { slugify } from "@/lib/utils";
 import { useActivitiesStore } from "@/stores/activities-store";
 import { recordEvent } from "@/stores/audit-store";
 import { useAuditStore } from "@/stores/audit-store";
-import { useContactsStore } from "@/stores/contacts-store";
+import { useAnonymizeContact } from "@/hooks/crm/use-contacts";
 import { useConversationsStore } from "@/stores/conversations-store";
 import { useMessagingStore } from "@/stores/messaging-store";
 
@@ -41,7 +41,7 @@ export function exportContactData(contact: Contact) {
 }
 
 export default function PersonalData({ contact }: { contact: Contact }) {
-  const anonymize = useContactsStore((state) => state.anonymize);
+  const anonymize = useAnonymizeContact();
   const [confirming, setConfirming] = useState(false);
   const anonymized = contact.name === ANONYMIZED_NAME;
 
@@ -67,7 +67,7 @@ export default function PersonalData({ contact }: { contact: Contact }) {
               variant="primary"
               size="sm"
               onClick={() => {
-                anonymize(contact.id);
+                anonymize.mutate(contact.id);
                 setConfirming(false);
               }}
             >

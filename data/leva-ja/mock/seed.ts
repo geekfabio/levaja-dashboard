@@ -129,12 +129,12 @@ function personName(rng: Random, first: string) {
 
 function buildAdminUsers(now: number): AdminUser[] {
   const users: [string, string, string, AdminUser["role"], boolean][] = [
-    ["adm-1", "Armando Silva", "admin@levaja.ao", "admin", true],
-    ["adm-2", "Ana Neto", "operacoes@levaja.ao", "operations", true],
-    ["adm-3", "João Manuel", "suporte@levaja.ao", "support", true],
-    ["adm-4", "Esperança Domingos", "financas@levaja.ao", "finance", true],
-    ["adm-5", "Nelson Cardoso", "nelson.cardoso@levaja.ao", "operations", true],
-    ["adm-6", "Teresa Lopes", "teresa.lopes@levaja.ao", "support", false],
+    ["adm-1", "Armando Silva", "admin@angoleva.ao", "admin", true],
+    ["adm-2", "Ana Neto", "operacoes@angoleva.ao", "operations", true],
+    ["adm-3", "João Manuel", "suporte@angoleva.ao", "support", true],
+    ["adm-4", "Esperança Domingos", "financas@angoleva.ao", "finance", true],
+    ["adm-5", "Nelson Cardoso", "nelson.cardoso@angoleva.ao", "operations", true],
+    ["adm-6", "Teresa Lopes", "teresa.lopes@angoleva.ao", "support", false],
   ];
   return users.map(([id, name, email, role, active], index) => ({
     id,
@@ -555,7 +555,7 @@ function buildTickets(ctx: Context, state: Pick<MockState, "clients" | "provider
         messages.push({
           id: `msg-${pad(index + 1)}-${messages.length + 1}`,
           author: "admin",
-          authorName: assignee?.name ?? "Suporte Leva Já",
+          authorName: assignee?.name ?? "Suporte AngoLeva",
           body: rng.pick(ADMIN_REPLIES),
           at: isoAt(Math.min(updated, ctx.now - MINUTE)),
         });
@@ -665,7 +665,7 @@ function buildRefunds(ctx: Context, state: MockState): Refund[] {
       method: request.paymentMethod ?? "card",
       status: step.status,
       requestedAt: isoAt(requested),
-      requestedBy: support?.name ?? "Suporte Leva Já",
+      requestedBy: support?.name ?? "Suporte AngoLeva",
       requestedById: support?.id ?? "adm-support",
       decidedAt: step.status === "pending" ? undefined : isoAt(decided),
       decidedBy: step.status === "pending" ? undefined : finance?.name,
@@ -1086,7 +1086,7 @@ function buildPromotions(ctx: Context, state: MockState): Promotion[] {
   const at = (days: number) => isoAt(ctx.now + days * DAY);
   const base = { maxDiscount: undefined, zoneIds: [] as string[], paused: false, createdBy: operations };
   const promotions: Promotion[] = ([
-    { ...base, id: "promo-01", code: "LEVAJA10", name: "10 % em qualquer serviço", kind: "percent", value: 10, maxDiscount: 3000, minOrder: 5000, services: [], startsAt: at(-25), endsAt: at(20), budget: 150_000, perClientLimit: 3, firstOrderOnly: false, createdAt: at(-26) },
+    { ...base, id: "promo-01", code: "ANGOLEVA10", name: "10 % em qualquer serviço", kind: "percent", value: 10, maxDiscount: 3000, minOrder: 5000, services: [], startsAt: at(-25), endsAt: at(20), budget: 150_000, perClientLimit: 3, firstOrderOnly: false, createdAt: at(-26) },
     { ...base, id: "promo-02", code: "MUDA2000", name: "2 000 Kz nas mudanças", kind: "fixed", value: 2000, minOrder: 10_000, services: ["small_move", "house_move"], startsAt: at(-18), endsAt: at(12), budget: 60_000, perClientLimit: 1, firstOrderOnly: false, createdAt: at(-19) },
     { ...base, id: "promo-03", code: "BEMVINDO", name: "Primeiro pedido com 15 %", kind: "percent", value: 15, maxDiscount: 2500, minOrder: 0, services: [], startsAt: at(-60), endsAt: at(-5), budget: 80_000, perClientLimit: 1, firstOrderOnly: true, createdAt: at(-61), endedAt: at(-5) },
     { ...base, id: "promo-04", code: "REBOQUE500", name: "500 Kz nos reboques", kind: "fixed", value: 500, minOrder: 0, services: ["tow"], startsAt: at(-10), endsAt: at(30), budget: 20_000, perClientLimit: 2, firstOrderOnly: false, paused: true, createdAt: at(-11) },
@@ -1119,7 +1119,7 @@ function buildBroadcasts(ctx: Context, state: MockState): Broadcast[] {
       title: "Lançamento das mudanças de casa",
       channel: "push",
       audience: { kind: "clients", segment: "all", zoneIds: [] },
-      message: "Olá {nome}! Já pode pedir mudanças de casa completas na Leva Já, com ajudantes incluídos.",
+      message: "Olá {nome}! Já pode pedir mudanças de casa completas na AngoLeva, com ajudantes incluídos.",
       status: "sent",
       sentAt: isoAt(ctx.now - 9 * DAY),
       recipients: 38,
@@ -1133,7 +1133,7 @@ function buildBroadcasts(ctx: Context, state: MockState): Broadcast[] {
       title: "Documentos a expirar",
       channel: "sms",
       audience: { kind: "providers", segment: "all", zoneIds: [] },
-      message: "Leva Já: {nome}, confirme na app que os seus documentos estão válidos para continuar a receber pedidos.",
+      message: "AngoLeva: {nome}, confirme na app que os seus documentos estão válidos para continuar a receber pedidos.",
       status: "sent",
       sentAt: isoAt(ctx.now - 4 * DAY),
       recipients: 22,
@@ -1187,7 +1187,7 @@ function addSatisfaction(ctx: Context, state: MockState) {
 function buildPrivacyRequests(ctx: Context, state: MockState): PrivacyRequest[] {
   const support = state.adminUsers.find((user) => user.role === "support")?.name ?? "Suporte";
   const plan: { kind: PrivacyRequest["kind"]; status: PrivacyRequest["status"]; daysAgo: number; provider?: boolean; details: string }[] = [
-    { kind: "access", status: "received", daysAgo: 2, details: "Pede cópia de todos os dados que a Leva Já tem sobre si." },
+    { kind: "access", status: "received", daysAgo: 2, details: "Pede cópia de todos os dados que a AngoLeva tem sobre si." },
     { kind: "erasure", status: "received", daysAgo: 26, details: "Quer apagar a conta e os dados pessoais." },
     { kind: "rectification", status: "in_progress", daysAgo: 9, details: "O nome está escrito com erro nos recibos." },
     { kind: "portability", status: "in_progress", daysAgo: 33, provider: true, details: "Prestador pede o histórico de serviços num ficheiro." },
@@ -1221,7 +1221,7 @@ function buildSecurity(ctx: Context, state: MockState) {
   const { rng } = ctx;
   const devices = ["Chrome · Windows", "Safari · iPhone", "Edge · Windows", "Chrome · Android", "Firefox · Ubuntu"];
   const ips = ["196.249.104.18", "105.168.33.201", "41.223.156.9", "197.149.90.44"];
-  const nelson = state.adminUsers.find((user) => user.email === "nelson.cardoso@levaja.ao");
+  const nelson = state.adminUsers.find((user) => user.email === "nelson.cardoso@angoleva.ao");
   if (nelson) nelson.twoFactorEnabled = true;
   state.adminSessions = state.adminUsers
     .filter((user) => user.active)
@@ -1286,7 +1286,7 @@ function buildIntegrations(ctx: Context, state: MockState) {
     },
     {
       id: "wh-02",
-      url: "https://bi.levaja.ao/ingest/pagamentos",
+      url: "https://bi.angoleva.ao/ingest/pagamentos",
       description: "Pagamentos e reembolsos para o painel de BI.",
       events: ["payment.paid", "refund.paid"],
       active: true,
@@ -1471,12 +1471,12 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
       reason: disputeReasons[index],
       category: disputeCategories[index],
       openedAt: isoAt(openedAt),
-      openedBy: index === 0 ? operations?.name ?? "Operações" : "Suporte Leva Já",
+      openedBy: index === 0 ? operations?.name ?? "Operações" : "Suporte AngoLeva",
       notes:
         index === 0
           ? [
               { id: `dn-${request.id}-1`, author: operations?.name ?? "Operações", text: "Pedidas fotografias da carga ao cliente.", at: isoAt(Math.min(openedAt + HOUR, now - 30 * MINUTE)) },
-              { id: `dn-${request.id}-2`, author: "Suporte Leva Já", text: "Cliente enviou três fotografias; o prestador ainda não respondeu.", at: isoAt(Math.min(openedAt + 3 * HOUR, now - 20 * MINUTE)) },
+              { id: `dn-${request.id}-2`, author: "Suporte AngoLeva", text: "Cliente enviou três fotografias; o prestador ainda não respondeu.", at: isoAt(Math.min(openedAt + 3 * HOUR, now - 20 * MINUTE)) },
             ]
           : [],
     };
@@ -1488,7 +1488,7 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
       reason: "Cliente contestou o valor cobrado.",
       category: "price",
       openedAt: isoAt(opened),
-      openedBy: "Suporte Leva Já",
+      openedBy: "Suporte AngoLeva",
       notes: [],
       resolvedAt: isoAt(opened + 2 * DAY),
       resolvedBy: "Armando Silva",

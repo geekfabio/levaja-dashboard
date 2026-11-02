@@ -15,10 +15,10 @@ import type { AdminRole } from "@/types/leva-ja";
 type Step = "email" | "code" | "otp";
 
 export const DEMO_ACCOUNTS: { email: string; role: AdminRole }[] = [
-  { email: "admin@levaja.ao", role: "admin" },
-  { email: "operacoes@levaja.ao", role: "operations" },
-  { email: "suporte@levaja.ao", role: "support" },
-  { email: "financas@levaja.ao", role: "finance" },
+  { email: "admin@angoleva.ao", role: "admin" },
+  { email: "operacoes@angoleva.ao", role: "operations" },
+  { email: "suporte@angoleva.ao", role: "support" },
+  { email: "financas@angoleva.ao", role: "finance" },
 ];
 
 function nextParam() {
@@ -106,7 +106,7 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
               type="email"
               autoComplete="email"
               value={email}
-              placeholder="nome@levaja.ao"
+              placeholder="nome@angoleva.ao"
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "admin-email-error" : undefined}
               onChange={(event) => {

@@ -19,8 +19,8 @@ import { formatMoney } from "@/lib/format";
 import { useCampaignsStore } from "@/stores/campaigns-store";
 import { useCompaniesStore } from "@/stores/companies-store";
 import { useContactsStore } from "@/stores/contacts-store";
-import { useOpportunitiesStore } from "@/stores/opportunities-store";
-import { useTicketsStore } from "@/stores/tickets-store";
+import { useOpportunities } from "@/hooks/crm/use-opportunities";
+import { useTickets } from "@/hooks/crm/use-tickets";
 import { useUiStore } from "@/stores/ui-store";
 import { CREATE_COMMANDS, PAGES, PRIMARY_CREATE, useRunCommand } from "./use-commands";
 import BuildingIcon from "@/public/assets/images/companies/sidebar/building.svg";
@@ -64,8 +64,8 @@ type RecordItem = {
 function useRecords(): RecordItem[] {
   const companies = useCompaniesStore((state) => state.companies);
   const contacts = useContactsStore((state) => state.contacts);
-  const opportunities = useOpportunitiesStore((state) => state.opportunities);
-  const tickets = useTicketsStore((state) => state.tickets);
+  const { data: opportunities = [] } = useOpportunities();
+  const { data: tickets = [] } = useTickets();
   const campaigns = useCampaignsStore((state) => state.campaigns);
 
   return [

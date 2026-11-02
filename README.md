@@ -1,6 +1,6 @@
-# Leva Já — painel de administração e CRM
+# AngoLeva — painel de administração e CRM
 
-Repositório web do **Leva Já**, a app de Luanda que liga clientes a prestadores de reboque, carga com pickup, mudança pequena e mudança de casa.
+Repositório web do **AngoLeva**, a app de Luanda que liga clientes a prestadores de reboque, carga com pickup, mudança pequena e mudança de casa.
 
 - **Painel de administração** em `/admin`: pedidos, mapa operacional, prestadores e documentos, clientes, finanças, preços e zonas, suporte e SOS, utilizadores do painel e auditoria. Todo em português de Portugal.
 - **CRM comercial** em `/`: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações e tickets.
@@ -31,14 +31,14 @@ Antes de dar uma alteração por terminada, os quatro (`tsc`, `lint`, `test`, `b
 
 ## Credenciais de demonstração
 
-Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções. `nelson.cardoso@levaja.ao` (Operações) tem o segundo factor activo: depois do código, peça-se o da aplicação de autenticação, que em demonstração é **`246810`**.
+Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções. `nelson.cardoso@angoleva.ao` (Operações) tem o segundo factor activo: depois do código, peça-se o da aplicação de autenticação, que em demonstração é **`246810`**.
 
 | E-mail | Papel | O que vê |
 | --- | --- | --- |
-| `admin@levaja.ao` | Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
-| `operacoes@levaja.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
-| `suporte@levaja.ao` | Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
-| `financas@levaja.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
+| `admin@angoleva.ao` | Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
+| `operacoes@angoleva.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
+| `suporte@angoleva.ao` | Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
+| `financas@angoleva.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
 
 Os dados de demonstração são gerados com uma semente fixa (os mesmos a cada arranque), ficam guardados no navegador e podem ser repostos em **Definições → Repor dados de demonstração**. Nas mesmas definições pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro.
 
@@ -60,7 +60,7 @@ Páginas e componentes nunca importam a implementação: usam os hooks de `hooks
 
    ```bash
    NEXT_PUBLIC_DATA_SOURCE=http
-   NEXT_PUBLIC_API_URL=https://api.levaja.ao
+   NEXT_PUBLIC_API_URL=https://api.angoleva.ao
    ```
 
 2. Reinicie o servidor. `repositories()` passa a usar `data/leva-ja/http/`, sem mudanças na UI.

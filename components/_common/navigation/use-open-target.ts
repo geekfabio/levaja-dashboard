@@ -23,13 +23,11 @@ function openEntity({ module, id }: EntityRef) {
       return;
     }
     case "Oportunidades": {
-      const store = useOpportunitiesStore.getState();
-      if (store.opportunities.some((item) => item.id === id)) store.openDetail(id);
+      useOpportunitiesStore.getState().openDetail(id);
       return;
     }
     case "Tickets": {
-      const store = useTicketsStore.getState();
-      if (store.tickets.some((item) => item.id === id)) store.openDetail(id);
+      useTicketsStore.getState().openDetail(id);
       return;
     }
     case "Campanhas": {

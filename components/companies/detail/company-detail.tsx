@@ -33,8 +33,9 @@ import EditFooter from "@/components/_common/editable/edit-footer";
 import { useEditable } from "@/components/_common/editable/use-editable";
 import { TAG_TONES, TREND_WINDOWS, ownerByName } from "@/data/companies";
 import { TREND_WINDOW_DAYS, companyScoreCards } from "@/lib/company-insights";
-import { useTicketsStore } from "@/stores/tickets-store";
+import { useTickets } from "@/hooks/crm/use-tickets";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useArchiveCompanies, useUpdateCompany } from "@/hooks/crm/use-companies";
 import { useUiStore } from "@/stores/ui-store";
 import BuildingIcon from "@/public/assets/images/companies/detail/building.svg";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
@@ -50,9 +51,9 @@ export default function CompanyDetail() {
   const closeDetail = useCompaniesStore((state) => state.closeDetail);
   const openProfile = useCompaniesStore((state) => state.openProfile);
   const [trendWindow, setTrendWindow] = useState(TREND_WINDOWS[1]);
-  const updateCompany = useCompaniesStore((state) => state.updateCompany);
-  const archiveCompanies = useCompaniesStore((state) => state.archiveCompanies);
-  const tickets = useTicketsStore((state) => state.tickets);
+  const updateCompany = useUpdateCompany();
+  const archiveCompanies = useArchiveCompanies();
+  const { data: tickets = [] } = useTickets();
   const editable = useEditable<CompanyDraft>();
   const [editingFor, setEditingFor] = useState<string | null>(null);
 
@@ -71,7 +72,7 @@ export default function CompanyDetail() {
 
   function save() {
     if (!company || !editable.draft) return;
-    updateCompany(company.id, draftToPatch(company, editable.draft));
+    updateCompany.mutate({ id: company.id, patch: draftToPatch(company, editable.draft), previous: company });
     editable.reset();
   }
 
@@ -230,7 +231,7 @@ export default function CompanyDetail() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => company && archiveCompanies([company.id])}
+                  onClick={() => company && archiveCompanies.mutate({ ids: [company.id], snapshot: [company] })}
                 >
                   Arquivar
                 </Button>

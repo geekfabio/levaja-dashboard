@@ -38,6 +38,7 @@ import {
 import { cn, slugify } from "@/lib/utils";
 import { recordEvent } from "@/stores/audit-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useImportCompanies } from "@/hooks/crm/use-companies";
 import { useContactsStore } from "@/stores/contacts-store";
 import { useSettingsStore } from "@/stores/settings-store";
 
@@ -66,7 +67,7 @@ export default function ImportDialog() {
   const open = useCompaniesStore((state) => state.importOpen);
   const setOpen = useCompaniesStore((state) => state.setImportOpen);
   const companies = useCompaniesStore((state) => state.companies);
-  const importCompanies = useCompaniesStore((state) => state.importCompanies);
+  const importCompanies = useImportCompanies();
   const zones = useSettingsStore((state) => state.zones);
   const today = useToday();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -186,34 +187,41 @@ export default function ImportDialog() {
     }
     if (created.length + updated.length === 0) return;
 
-    const undoCompanies = importCompanies(created, updated);
-    const previousContacts = useContactsStore.getState().contacts;
-    useContactsStore.setState({ contacts: [...contacts, ...previousContacts] });
+    const companiesSnapshot = companies;
+    importCompanies.mutate(
+      { created, updated, snapshot: companiesSnapshot },
+      {
+        onSuccess: () => {
+          const previousContacts = useContactsStore.getState().contacts;
+          useContactsStore.setState({ contacts: [...contacts, ...previousContacts] });
 
-    recordEvent({
-      action: `importou ${fileName}:`,
-      target: { module: "Clientes", label: `${plural(created.length, "cliente novo", "clientes novos")}, ${plural(updated.length, "atualizado", "atualizados")}` },
-      sensitive: true,
-      changes: [
-        { field: "Clientes criados", to: formatNumber(created.length) },
-        { field: "Clientes atualizados", to: formatNumber(updated.length) },
-        { field: "Contactos criados", to: formatNumber(contacts.length) },
-        { field: "Linhas ignoradas", to: formatNumber(count("ignorar")) },
-      ],
-      toast: {
-        title: "Importação concluída",
-        description: `${plural(created.length, "cliente criado", "clientes criados")}, ${plural(updated.length, "atualizado", "atualizados")}, ${plural(contacts.length, "contacto", "contactos")}.`,
-        tone: "success",
-        action: {
-          label: "Anular",
-          run: () => {
-            undoCompanies();
-            useContactsStore.setState({ contacts: previousContacts });
-          },
+          recordEvent({
+            action: `importou ${fileName}:`,
+            target: { module: "Clientes", label: `${plural(created.length, "cliente novo", "clientes novos")}, ${plural(updated.length, "atualizado", "atualizados")}` },
+            sensitive: true,
+            changes: [
+              { field: "Clientes criados", to: formatNumber(created.length) },
+              { field: "Clientes atualizados", to: formatNumber(updated.length) },
+              { field: "Contactos criados", to: formatNumber(contacts.length) },
+              { field: "Linhas ignoradas", to: formatNumber(count("ignorar")) },
+            ],
+            toast: {
+              title: "Importação concluída",
+              description: `${plural(created.length, "cliente criado", "clientes criados")}, ${plural(updated.length, "atualizado", "atualizados")}, ${plural(contacts.length, "contacto", "contactos")}.`,
+              tone: "success",
+              action: {
+                label: "Anular",
+                run: () => {
+                  useCompaniesStore.setState({ companies: companiesSnapshot });
+                  useContactsStore.setState({ contacts: previousContacts });
+                },
+              },
+            },
+          });
+          setOpen(false);
         },
       },
-    });
-    setOpen(false);
+    );
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {

@@ -2,15 +2,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { useCalendarSyncStore } from "@/stores/calendar-sync-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import type { FollowUp } from "@/data/follow-ups";
 import { nowLuandaLocal } from "@/lib/format";
 import { addDays } from "@/lib/follow-up";
 
+function setFollowUp(companyId: string, followUp: FollowUp | null) {
+  useCompaniesStore.setState((state) => ({
+    companies: state.companies.map((company) => (company.id === companyId ? { ...company, nextFollowUp: followUp ?? undefined } : company)),
+  }));
+}
+
 test("sincronização cria, atualiza e remove eventos das visitas e reuniões", () => {
   const today = nowLuandaLocal().slice(0, 10);
-  const companies = useCompaniesStore.getState();
-  const [first, second] = companies.companies;
-  companies.scheduleFollowUp(first.id, { date: addDays(today, 2), type: "Visita", note: "Tabela nova", owner: first.owner }, { silent: true });
-  companies.scheduleFollowUp(second.id, { date: addDays(today, 3), type: "Chamada", note: "", owner: second.owner }, { silent: true });
+  const [first, second] = useCompaniesStore.getState().companies;
+  setFollowUp(first.id, { date: addDays(today, 2), type: "Visita", note: "Tabela nova", owner: first.owner });
+  setFollowUp(second.id, { date: addDays(today, 3), type: "Chamada", note: "", owner: second.owner });
 
   const sync = useCalendarSyncStore.getState();
   sync.startConnect("google");
@@ -19,11 +25,11 @@ test("sincronização cria, atualiza e remove eventos das visitas e reuniões", 
   assert.ok(created.some((event) => event.uid === `followup-${first.id}`));
   assert.ok(!created.some((event) => event.uid === `followup-${second.id}`));
 
-  companies.scheduleFollowUp(first.id, { date: addDays(today, 5), type: "Visita", note: "Tabela nova", owner: first.owner }, { silent: true });
+  setFollowUp(first.id, { date: addDays(today, 5), type: "Visita", note: "Tabela nova", owner: first.owner });
   useCalendarSyncStore.getState().syncNow("google", { silent: true });
   assert.equal(useCalendarSyncStore.getState().log[0].action, "Atualizado");
 
-  companies.scheduleFollowUp(first.id, null, { silent: true });
+  setFollowUp(first.id, null);
   useCalendarSyncStore.getState().syncNow("google", { silent: true });
   assert.ok(!useCalendarSyncStore.getState().synced.some((event) => event.uid === `followup-${first.id}`));
   assert.ok(useCalendarSyncStore.getState().log.some((entry) => entry.action === "Removido"));

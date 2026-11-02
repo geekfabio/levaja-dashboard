@@ -54,12 +54,12 @@ test("reembolsos: regras puras de valor, prazo e atraso das disputas", () => {
 
 test("reembolsos: semente traz reembolsos em todos os estados e disputas com categoria", async () => {
   const repos = create();
-  await as(repos, "financas@levaja.ao");
+  await as(repos, "financas@angoleva.ao");
   const all = await repos.refunds.list({ pageSize: 50 });
   assert.deepEqual(new Set(all.items.map((refund) => refund.status)), new Set(["pending", "approved", "paid", "rejected"]));
   const summary = await repos.refunds.summary();
   assert.ok(summary.pendingCount >= 1 && summary.pendingAmount > 0);
-  await as(repos, "operacoes@levaja.ao");
+  await as(repos, "operacoes@angoleva.ao");
   const disputes = await repos.disputes.list({ pageSize: 50 });
   assert.ok(disputes.items.length >= 3);
   assert.ok(disputes.items.every((item) => item.request.dispute?.category));
@@ -68,7 +68,7 @@ test("reembolsos: semente traz reembolsos em todos os estados e disputas com cat
 
 test("reembolsos: pedir, aprovar com dupla aprovação, pagar e imputar ao prestador", async () => {
   const repos = create();
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   const { request, info } = await freshPaidRequest(repos);
   await rejectsWith(repos.refunds.create({ requestId: request.id, amount: info.refundable + 1, reason: "Serviço não prestado", chargeProvider: true }), "validation");
   await rejectsWith(repos.refunds.create({ requestId: request.id, amount: 1000, reason: "", chargeProvider: true }), "validation");
@@ -77,7 +77,7 @@ test("reembolsos: pedir, aprovar com dupla aprovação, pagar e imputar ao prest
   assert.equal((await repos.refunds.forRequest(request.id)).refundable, 0);
   await rejectsWith(repos.refunds.approve(refund.id), "forbidden");
 
-  await as(repos, "admin@levaja.ao");
+  await as(repos, "admin@angoleva.ao");
   const before = await repos.providers.get(request.provider?.id ?? "");
   const settings = await repos.settings.get();
   await repos.settings.update("payouts", { ...settings.payouts, refundDualApprovalAbove: 0 }, "Teste de dupla aprovação");
@@ -85,7 +85,7 @@ test("reembolsos: pedir, aprovar com dupla aprovação, pagar e imputar ao prest
   const mine = await repos.refunds.create({ requestId: other.request.id, amount: 500, reason: "Teste de dupla aprovação", chargeProvider: false });
   await rejectsWith(repos.refunds.approve(mine.id), "forbidden");
 
-  await as(repos, "financas@levaja.ao");
+  await as(repos, "financas@angoleva.ao");
   assert.equal((await repos.refunds.approve(mine.id)).status, "approved");
   const approved = await repos.refunds.approve(refund.id);
   assert.equal(approved.status, "approved");
@@ -95,7 +95,7 @@ test("reembolsos: pedir, aprovar com dupla aprovação, pagar e imputar ao prest
   await rejectsWith(repos.refunds.reject(refund.id, "Tarde demais"), "invalid_transition");
   const transactions = await repos.finance.transactions({ kind: ["refund"], pageSize: 50 });
   assert.ok(transactions.items.some((transaction) => transaction.requestId === request.id && transaction.amount === -refund.amount));
-  await as(repos, "admin@levaja.ao");
+  await as(repos, "admin@angoleva.ao");
   const after = await repos.providers.get(request.provider?.id ?? "");
   assert.equal(after.balance, before.balance - refund.amount);
   const audit = await repos.audit.list({ action: ["refund.paid"], pageSize: 5 });
@@ -104,7 +104,7 @@ test("reembolsos: pedir, aprovar com dupla aprovação, pagar e imputar ao prest
 
 test("disputas: notas, resolução parcial gera reembolso e não se resolve duas vezes", async () => {
   const repos = create();
-  await as(repos, "admin@levaja.ao");
+  await as(repos, "admin@angoleva.ao");
   const { request, info } = await freshPaidRequest(repos);
   await repos.requests.openDispute(request.id, "Móvel riscado na descarga", "damage");
   const noted = await repos.disputes.addNote(request.id, "Fotografias recebidas.");
@@ -126,6 +126,6 @@ test("disputas: notas, resolução parcial gera reembolso e não se resolve duas
     await rejectsWith(repos.disputes.resolve(delivered.id, { outcome: "refund_full", resolution: "Devolver" }), "validation");
   }
 
-  await as(repos, "financas@levaja.ao");
+  await as(repos, "financas@angoleva.ao");
   await rejectsWith(repos.disputes.list(), "forbidden");
 });

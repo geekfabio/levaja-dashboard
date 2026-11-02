@@ -1,36 +1,18 @@
 import { create } from "zustand";
 import {
-  BLANK_SMS_TEMPLATE,
-  BLANK_TEMPLATE,
   CAMPAIGNS,
-  DEFAULT_AUDIENCE,
-  DEFAULT_FALLBACKS,
-  EMAIL_DEFAULTS,
-  SMS_DEFAULTS,
-  blocksFromTemplate,
   type AudienceFilters,
   type BlockType,
   type Campaign,
-  type CampaignStatus,
   type CampaignBlock,
-  type Channel,
   type VariableKey,
 } from "@/data/campaigns";
 import { DEFAULT_CAMPAIGN_FILTERS, createBlock } from "@/lib/campaigns";
-import { useSettingsStore } from "./settings-store";
-import { recordEvent } from "./audit-store";
-import { useMessagingStore } from "./messaging-store";
-import type { AuditChange } from "@/data/audit";
-import { formatDateTime, formatNumber } from "@/lib/format";
 
 export type EditorStep = "conteudo" | "destinatarios" | "revisao" | "resultados";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function luandaNow() {
-  return new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16);
 }
 
 function newId(prefix: string) {
@@ -52,7 +34,6 @@ type CampaignsState = {
   openEditor: (id: string) => void;
   closeEditor: () => void;
   setEditorStep: (step: EditorStep) => void;
-  createFromTemplate: (channel: Channel, templateId: string) => void;
   updateDetails: (
     id: string,
     patch: Partial<
@@ -74,11 +55,6 @@ type CampaignsState = {
   moveBlock: (id: string, blockId: string, delta: number) => void;
   setFallback: (id: string, key: VariableKey, value: string) => void;
   setAudience: (id: string, patch: Partial<AudienceFilters>) => void;
-  submitForReview: (id: string) => void;
-  backToDraft: (id: string) => void;
-  recordTest: (id: string) => void;
-  schedule: (id: string, scheduledAt: string, recipients: number, cost?: number) => void;
-  cancelSchedule: (id: string) => void;
 };
 
 export const useCampaignsStore = create<CampaignsState>((set, get) => {
@@ -90,32 +66,6 @@ export const useCampaignsStore = create<CampaignsState>((set, get) => {
           : campaign,
       ),
     }));
-  }
-
-  function transition(
-    id: string,
-    from: CampaignStatus,
-    next: Partial<Campaign> & { status: CampaignStatus },
-    action: string,
-    changes: AuditChange[] = [],
-  ) {
-    const campaign = get().campaigns.find((item) => item.id === id);
-    if (campaign?.status !== from) return;
-    patch(id, () => next);
-    recordEvent({
-      action,
-      target: { module: "Campanhas", id, label: campaign.name },
-      sensitive: next.status === "Agendada",
-      changes: [{ field: "Estado", from, to: next.status }, ...changes],
-      toast:
-        next.status === "Agendada"
-          ? {
-              title: "Campanha agendada",
-              description: `${campaign.name} · em modo de teste, nada é enviado a clientes reais.`,
-              tone: "success",
-            }
-          : undefined,
-    });
   }
 
   function editBlocks(
@@ -147,64 +97,6 @@ export const useCampaignsStore = create<CampaignsState>((set, get) => {
     },
     closeEditor: () => set({ editorId: null }),
     setEditorStep: (editorStep) => set({ editorStep }),
-
-    createFromTemplate: (channel, templateId) => {
-      const id = newId("cmp");
-      const base = {
-        id,
-        channel,
-        status: "Rascunho" as const,
-        fallbacks: { ...DEFAULT_FALLBACKS },
-        audience: { ...DEFAULT_AUDIENCE },
-        recipients: 0,
-        updatedAt: today(),
-      };
-      const settings = useSettingsStore.getState();
-      const smsDefaults = {
-        ...SMS_DEFAULTS,
-        senderId: settings.senders.smsSenderId,
-        sendWindow: {
-          start: settings.senders.windowStart,
-          end: settings.senders.windowEnd,
-        },
-      };
-      let campaign: Campaign;
-
-      if (channel === "SMS") {
-        const template =
-          settings.smsTemplates.find((item) => item.id === templateId) ??
-          BLANK_SMS_TEMPLATE;
-        campaign = {
-          ...base,
-          ...EMAIL_DEFAULTS,
-          ...smsDefaults,
-          name:
-            template.id === BLANK_SMS_TEMPLATE.id ? "Nova campanha SMS" : template.name,
-          templateId: template.id,
-          smsBody: template.body,
-        };
-      } else {
-        const template =
-          settings.emailTemplates.find((item) => item.id === templateId) ??
-          BLANK_TEMPLATE;
-        campaign = {
-          ...base,
-          ...smsDefaults,
-          name: template.id === BLANK_TEMPLATE.id ? "Nova campanha" : template.name,
-          templateId: template.id,
-          subject: template.subject,
-          preheader: template.preheader,
-          blocks: blocksFromTemplate(template, id),
-        };
-      }
-
-      set((state) => ({
-        campaigns: [campaign, ...state.campaigns],
-        libraryOpen: false,
-        editorId: id,
-        editorStep: "conteudo",
-      }));
-    },
 
     updateDetails: (id, details) =>
       patch(id, (campaign) => (campaign.status === "Rascunho" ? details : {})),
@@ -239,50 +131,5 @@ export const useCampaignsStore = create<CampaignsState>((set, get) => {
           ? { audience: { ...campaign.audience, ...audience } }
           : {},
       ),
-
-    submitForReview: (id) =>
-      transition(id, "Rascunho", { status: "Em revisão" }, "enviou para revisão a campanha"),
-    backToDraft: (id) =>
-      transition(
-        id,
-        "Em revisão",
-        { status: "Rascunho", testSentAt: undefined },
-        "devolveu a rascunho a campanha",
-      ),
-    recordTest: (id) => {
-      const campaign = get().campaigns.find((item) => item.id === id);
-      if (campaign?.status !== "Em revisão") return;
-      patch(id, () => ({ testSentAt: luandaNow() }));
-      recordEvent({
-        action: "enviou um teste da campanha",
-        target: { module: "Campanhas", id, label: campaign.name },
-        notify: false,
-        sensitive: true,
-      });
-    },
-    schedule: (id, scheduledAt, recipients, cost) => {
-      const campaign = get().campaigns.find((item) => item.id === id);
-      if (campaign?.status !== "Em revisão" || !campaign.testSentAt) return;
-      if (campaign.channel === "SMS" && cost) useMessagingStore.getState().reserve(id, cost);
-      transition(
-        id,
-        "Em revisão",
-        { status: "Agendada", scheduledAt, recipients },
-        "agendou a campanha",
-        [
-          { field: "Envio", to: formatDateTime(scheduledAt) },
-          { field: "Destinatários", to: formatNumber(recipients) },
-        ],
-      );
-    },
-    cancelSchedule: (id) => {
-      useMessagingStore.getState().release(id);
-      transition(
-        id,
-        "Agendada",
-        { status: "Em revisão", scheduledAt: undefined },
-        "cancelou o agendamento da campanha",
-      );
-    },
   };
 });

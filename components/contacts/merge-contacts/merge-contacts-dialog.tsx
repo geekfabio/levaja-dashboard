@@ -20,6 +20,7 @@ import {
 } from "@/components/_ui/select";
 import type { MergeFieldKey } from "@/stores/contacts-store";
 import { useContactsStore } from "@/stores/contacts-store";
+import { useMergeContacts } from "@/hooks/crm/use-contacts";
 
 const FIELD_LABELS: Record<MergeFieldKey, string> = {
   role: "Cargo",
@@ -42,7 +43,7 @@ export default function MergeContactsDialog() {
     (state) => state.setMergeSecondaryId,
   );
   const setMergeChoice = useContactsStore((state) => state.setMergeChoice);
-  const confirmMerge = useContactsStore((state) => state.confirmMerge);
+  const mergeMutation = useMergeContacts();
 
   const primary = contacts.find((item) => item.id === mergePrimaryId);
   const secondary = contacts.find((item) => item.id === mergeSecondaryId);
@@ -149,7 +150,13 @@ export default function MergeContactsDialog() {
             variant="primary"
             size="sm"
             disabled={!canMerge}
-            onClick={confirmMerge}
+            onClick={() => {
+              if (!primary || !secondary) return;
+              mergeMutation.mutate(
+                { primaryId: primary.id, secondaryId: secondary.id, choices: mergeChoices, primary, secondary, snapshot: contacts },
+                { onSuccess: () => setMergeOpen(false) },
+              );
+            }}
           >
             Fundir Contactos
           </Button>

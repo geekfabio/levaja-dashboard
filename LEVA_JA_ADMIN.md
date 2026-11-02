@@ -1,4 +1,4 @@
-# Painel administrativo Leva Já — especificação e estado do trabalho
+# Painel administrativo AngoLeva — especificação e estado do trabalho
 
 Documento de passagem de testemunho. Contém o pedido original, as decisões já tomadas com o utilizador e o ponto exacto onde o trabalho parou. Lê-o inteiro antes de escrever código.
 
@@ -8,7 +8,7 @@ Documento de passagem de testemunho. Contém o pedido original, as decisões já
 
 ## 1. Pedido original
 
-**Contexto.** Painel administrativo do **Leva Já**, uma app móvel de Luanda (Angola) que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. A app móvel (React Native + Expo) usa dados mockados atrás do padrão Repository. O painel segue a mesma regra: **ainda não há backend**, todos os dados são mockados, e trocar os mocks pela API real tem de ser só trocar uma implementação.
+**Contexto.** Painel administrativo do **AngoLeva**, uma app móvel de Luanda (Angola) que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. A app móvel (React Native + Expo) usa dados mockados atrás do padrão Repository. O painel segue a mesma regra: **ainda não há backend**, todos os dados são mockados, e trocar os mocks pela API real tem de ser só trocar uma implementação.
 
 **Idioma, moeda e datas**
 - Todos os textos do painel em **português de Portugal (pt-PT)**: «ecrã», «utilizador», «registo», «facturação», «activo».
@@ -76,7 +76,7 @@ Os tipos já estão escritos em `types/leva-ja.ts`. Para além dos tipos da app,
 
 ### Páginas do painel
 
-1. **Login (mock).** Credenciais `admin@levaja.ao` com o código `123456`. Cada papel só vê as suas secções.
+1. **Login (mock).** Credenciais `admin@angoleva.ao` com o código `123456`. Cada papel só vê as suas secções.
 2. **Visão geral.**
    - KPIs do dia e da semana: pedidos, em curso, concluídos, cancelados, receita da plataforma (taxas + comissões), volume transaccionado, tempo médio até atribuição, prestadores online e avaliação média.
    - Gráficos: pedidos por dia, distribuição por serviço, funil por estado e receita.
@@ -160,7 +160,7 @@ data/leva-ja/
 
 ### Visual
 
-- **Tema do projecto com os acentos Leva Já:**
+- **Tema do projecto com os acentos AngoLeva:**
 
   | Uso | Cor |
   | --- | --- |
@@ -199,13 +199,13 @@ data/leva-ja/
 - Todas as páginas têm estados de carregamento, vazio, erro e sucesso.
 - Todos os textos do painel estão em pt-PT.
 - As acções críticas têm confirmação, motivo e registo na auditoria.
-- O CRM existente continua a funcionar, já com a marca Leva Já.
+- O CRM existente continua a funcionar, já com a marca AngoLeva.
 
 ---
 
 ## 2. Decisões tomadas com o utilizador
 
-- **CRM existente:** passa para a marca Leva Já (nome, logótipo, cores e metadata) e perde a **cadeia Cash & Carry**. Remove-se:
+- **CRM existente:** passa para a marca AngoLeva (nome, logótipo, cores e metadata) e perde a **cadeia Cash & Carry**. Remove-se:
   - as páginas Vendas (`/vendas`), Cotações/Encomendas (`/cotacoes`), Previsão (`/previsao`) e Relatórios (`/relatorios`);
   - tudo o que depende delas:
     - o simulador de vendas e o diálogo de associar vendas;
@@ -223,7 +223,7 @@ data/leva-ja/
   Actualiza também `CLAUDE.md`, `AGENTS.md`, `FEATURES.md` e `ROADMAP.md`, que ainda falam da Alimenta Angola. Depois de remover, confirma que não ficaram imports partidos (`grep`) e que os testes que restam passam.
 - **Hooks:** TanStack Query (`@tanstack/react-query`), já autorizado. O `QueryClientProvider` fica no layout do admin.
 - **Git:** o repositório foi criado nesta sessão. Faz um commit por fase em pt-PT, e cada mensagem termina com a linha `Co-Authored-By: Claude <noreply@anthropic.com>`.
-- **Logótipo:** cria um wordmark SVG provisório «Leva Já» em `public/assets/images/_common/brand/leva-ja-logo.svg`.
+- **Logótipo:** cria um wordmark SVG provisório «AngoLeva» em `public/assets/images/_common/brand/leva-ja-logo.svg`.
 - **Rotas:**
   - `app/admin/login/` fica fora da guarda;
   - `app/admin/(painel)/layout.tsx` tem a guarda de sessão, a verificação de papel, a sidebar e a topbar reutilizadas do CRM, e o `QueryClientProvider`;
@@ -236,15 +236,15 @@ data/leva-ja/
   - `_ui/`: `button`, `table`, `tag` (badges), `dialog`, `sheet` (drawer), `select`, `tabs`, `field`, `input`, `textarea`, `checkbox`, `popover`, `dropdown-menu`, `avatar`, `count-badge` e `scroll-area`;
   - `_common/`: `module-header` (topbar), `header-actions`, `sidebar/*`, `totals/totals-bar`, `stat-tile`, `sparkline`, `filter-menu`, `detail-section`, `form-section` e `ranked-bar-list`;
   - `toast()` de `stores/toast-store.ts` e `downloadCsv` de `lib/csv.ts`.
-- **Tema:** os tokens Leva Já ficam em `app/globals.css` com âmbito `[data-area="admin"]` (tema claro, fundo `#F8F9F7`) e são expostos via `@theme inline`. A fonte continua a **Geist**, porque o projecto já a define.
+- **Tema:** os tokens AngoLeva ficam em `app/globals.css` com âmbito `[data-area="admin"]` (tema claro, fundo `#F8F9F7`) e são expostos via `@theme inline`. A fonte continua a **Geist**, porque o projecto já a define.
 - **Contas de demonstração:** todas usam o código `123456`.
 
   | E-mail | Papel |
   | --- | --- |
-  | `admin@levaja.ao` | admin |
-  | `operacoes@levaja.ao` | operations |
-  | `suporte@levaja.ao` | support |
-  | `financas@levaja.ao` | finance |
+  | `admin@angoleva.ao` | admin |
+  | `operacoes@angoleva.ao` | operations |
+  | `suporte@angoleva.ao` | support |
+  | `financas@angoleva.ao` | finance |
 
 ---
 

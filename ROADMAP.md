@@ -1,4 +1,4 @@
-# Roadmap — Leva Já
+# Roadmap — AngoLeva
 
 Ordem de trabalho do painel de administração. Um commit pequeno por fase, em pt-PT. O detalhe funcional está em `LEVA_JA_ADMIN.md` e `FEATURES.md`; as regras em `CLAUDE.md`.
 
@@ -16,7 +16,7 @@ Tipos (`types/leva-ja.ts`), regras de negócio (`lib/leva-ja/`), formatação (`
 
 ## Fase 3 — Shell, login e permissões ✅
 
-- Rebrand do CRM para Leva Já e remoção da cadeia Cash & Carry (`LEVA_JA_ADMIN.md`, secção 2).
+- Rebrand do CRM para AngoLeva e remoção da cadeia Cash & Carry (`LEVA_JA_ADMIN.md`, secção 2).
 - Gráficos reutilizáveis em `components/_common/charts/`.
 - Tema do painel em `:root[data-area="admin"]`.
 - `/admin/login`, guarda de sessão e de papel, sidebar e topbar reutilizadas do CRM, `QueryClientProvider`.
@@ -92,4 +92,4 @@ Suporte com prazos de primeira resposta, respostas prontas e satisfação; segun
 - Todas as páginas têm estados de carregamento, vazio, erro e sucesso.
 - Todos os textos do painel estão em pt-PT.
 - As acções críticas têm confirmação, motivo e registo na auditoria.
-- O CRM continua a funcionar, com a marca Leva Já.
+- O CRM continua a funcionar, com a marca AngoLeva.

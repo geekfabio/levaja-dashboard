@@ -20,16 +20,20 @@ import {
 } from "@/components/_ui/select";
 import { LOSS_REASONS, type LossReason } from "@/data/opportunities";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
+import { useMoveStage, useOpportunity } from "@/hooks/crm/use-opportunities";
 
 export default function LossReasonDialog() {
-  const pendingLossMove = useOpportunitiesStore(
-    (state) => state.pendingLossMove,
-  );
-  const confirmLossMove = useOpportunitiesStore(
-    (state) => state.confirmLossMove,
-  );
+  const pendingLossMove = useOpportunitiesStore((state) => state.pendingLossMove);
   const cancelLossMove = useOpportunitiesStore((state) => state.cancelLossMove);
+  const moveStage = useMoveStage();
+  const { data: opportunity } = useOpportunity(pendingLossMove?.id ?? null);
   const [reason, setReason] = useState<LossReason>(LOSS_REASONS[0]);
+
+  function confirm() {
+    if (!opportunity) return;
+    moveStage.mutate({ id: opportunity.id, stage: "Fechada - Perdida", previous: opportunity, lossReason: reason });
+    cancelLossMove();
+  }
 
   return (
     <Dialog
@@ -71,7 +75,7 @@ export default function LossReasonDialog() {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => confirmLossMove(reason)}
+            onClick={confirm}
           >
             Confirmar perda
           </Button>

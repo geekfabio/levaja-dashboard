@@ -13,9 +13,10 @@ import LossReasonDialog from "./loss-reason-dialog";
 import { filterOpportunities } from "@/lib/opportunities";
 import { nowLuandaLocal } from "@/lib/format";
 import { useOpportunitiesStore } from "@/stores/opportunities-store";
+import { useOpportunities } from "@/hooks/crm/use-opportunities";
 
 export default function Opportunities() {
-  const opportunities = useOpportunitiesStore((state) => state.opportunities);
+  const { data: opportunities = [] } = useOpportunities();
   const owner = useOpportunitiesStore((state) => state.owner);
   const stage = useOpportunitiesStore((state) => state.stage);
   const search = useOpportunitiesStore((state) => state.search);

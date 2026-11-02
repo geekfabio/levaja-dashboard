@@ -66,7 +66,7 @@ export default function PromotionDialog({ open, onOpenChange, today }: { open: b
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Código" htmlFor="promo-code" required error={issueFor("code")}>
-          <Input id="promo-code" value={code} placeholder="LEVAJA10" onChange={(event) => setCode(event.target.value.toUpperCase())} />
+          <Input id="promo-code" value={code} placeholder="ANGOLEVA10" onChange={(event) => setCode(event.target.value.toUpperCase())} />
         </Field>
         <Field label="Nome" htmlFor="promo-name" required error={issueFor("name")}>
           <Input id="promo-name" value={name} placeholder="10 % em qualquer serviço" onChange={(event) => setName(event.target.value)} />

@@ -1,13 +1,6 @@
-import type { Metadata } from "next";
-import { pageMetadata } from "@/lib/seo";
-import Login from "@/components/login/login";
-
-export const metadata: Metadata = pageMetadata({
-  title: "Entrar — Leva Já CRM",
-  description: "Inicie sessão no CRM do Leva Já.",
-  path: "/login",
-});
+import AdminLogin from "@/components/admin/login/admin-login";
+import { dataSource } from "@/data/leva-ja";
 
 export default function LoginPage() {
-  return <Login />;
+  return <AdminLogin demo={dataSource() === "mock"} />;
 }

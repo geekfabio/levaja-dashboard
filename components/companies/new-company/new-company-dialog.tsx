@@ -42,6 +42,7 @@ import { findByNif } from "@/lib/company-profile";
 import { isValidNif, normalizeNif } from "@/lib/nif";
 import { slugify } from "@/lib/utils";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useCreateCompany } from "@/hooks/crm/use-companies";
 import { useSettingsStore } from "@/stores/settings-store";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
 
@@ -78,7 +79,7 @@ const EMPTY_FORM: FormState = {
 export default function NewCompanyDialog() {
   const open = useCompaniesStore((state) => state.newCompanyOpen);
   const setOpen = useCompaniesStore((state) => state.setNewCompanyOpen);
-  const addCompany = useCompaniesStore((state) => state.addCompany);
+  const createCompany = useCreateCompany();
   const companies = useCompaniesStore((state) => state.companies);
   const openDetail = useCompaniesStore((state) => state.openDetail);
   const [nifError, setNifError] = useState<string | null>(null);
@@ -132,7 +133,7 @@ export default function NewCompanyDialog() {
       profile: { ...EMPTY_PROFILE, nif: normalizeNif(form.nif), customerSince: TODAY },
     };
 
-    addCompany(company);
+    createCompany.mutate(company, { onSuccess: () => setOpen(false) });
   }
 
   return (

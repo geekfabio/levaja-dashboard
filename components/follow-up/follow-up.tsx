@@ -37,6 +37,9 @@ import Asset from "@/components/_ui/asset";
 import { useRouter } from "next/navigation";
 import { useAutomationRunsStore } from "@/stores/automation-runs-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
+import { useMoveTaskStatus, usePostponeTask, useTasks } from "@/hooks/crm/use-activities";
+import { useSetOfferStatus } from "@/hooks/crm/use-offers";
 import { useFollowUps } from "./use-follow-ups";
 import ChevronIcon from "@/public/assets/images/_common/chevron-down.svg";
 
@@ -77,20 +80,28 @@ function ScheduleMenu({ label, onPick, variant = "ghost" }: { label: string; onP
 function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
   const openTarget = useOpenTarget();
   const startActivity = useActivitiesStore((state) => state.startActivity);
-  const moveTaskStatus = useActivitiesStore((state) => state.moveTaskStatus);
-  const postponeTask = useActivitiesStore((state) => state.postponeTask);
-  const setOfferStatus = useAutomationRunsStore((state) => state.setOfferStatus);
-  const scheduleFollowUp = useCompaniesStore((state) => state.scheduleFollowUp);
+  const moveTaskStatus = useMoveTaskStatus();
+  const postponeTask = usePostponeTask();
+  const { data: tasks = [] } = useTasks();
+  const task = tasks.find((entry) => entry.id === item.taskId);
+  const offers = useAutomationRunsStore((state) => state.offers);
+  const offer = offers.find((entry) => entry.id === item.offerId);
+  const setOfferStatus = useSetOfferStatus();
+  const scheduleFollowUp = useScheduleFollowUp();
   const company = useCompaniesStore((state) => state.companies.find((entry) => entry.id === item.companyId));
   const owner = profileByName(item.owner);
 
   function schedule(days: number) {
     if (!item.companyId) return;
-    scheduleFollowUp(item.companyId, {
-      date: addDays(today, days),
-      type: item.contactType ?? company?.nextFollowUp?.type ?? "Chamada",
-      note: company?.nextFollowUp?.note ?? item.detail,
-      owner: item.owner,
+    scheduleFollowUp.mutate({
+      id: item.companyId,
+      followUp: {
+        date: addDays(today, days),
+        type: item.contactType ?? company?.nextFollowUp?.type ?? "Chamada",
+        note: company?.nextFollowUp?.note ?? item.detail,
+        owner: item.owner,
+      },
+      previous: company?.nextFollowUp,
     });
   }
 
@@ -160,10 +171,18 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setOfferStatus(item.offerId!, "Apresentada")}>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    offer && setOfferStatus.mutate({ id: offer.id, status: "Apresentada", previousStatus: offer.status })
+                  }
+                >
                   Apresentada ao cliente
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setOfferStatus(item.offerId!, "Recusada")}>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    offer && setOfferStatus.mutate({ id: offer.id, status: "Recusada", previousStatus: offer.status })
+                  }
+                >
                   Cliente recusou
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -171,10 +190,17 @@ function FollowUpRow({ item, today }: { item: FollowUpItem; today: string }) {
           </>
         ) : item.taskId ? (
           <>
-            <Button variant="secondary" size="sm" onClick={() => moveTaskStatus(item.taskId!, "Feita")}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => task && moveTaskStatus.mutate({ id: task.id, status: "Feita", from: task.status, title: task.title })}
+            >
               Concluir
             </Button>
-            <ScheduleMenu label="Adiar" onPick={(days) => postponeTask(item.taskId!, addDays(today, days))} />
+            <ScheduleMenu
+              label="Adiar"
+              onPick={(days) => task && postponeTask.mutate({ id: task.id, dueDate: addDays(today, days), previousDueDate: task.dueDate, title: task.title })}
+            />
           </>
         ) : item.kind === "agendado" ? (
           <>

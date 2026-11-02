@@ -7,7 +7,7 @@ import { applicationBlocker, isPenaltyActive, nextApplicationStage, penaltyIssue
 
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 
-async function setup(email = "operacoes@levaja.ao") {
+async function setup(email = "operacoes@angoleva.ao") {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
   await repos.auth.login(email, "123456");
   return repos;
@@ -72,7 +72,7 @@ test("candidaturas: percurso completo até criar o prestador com documentos por 
   const queue = await repos.documents.queue({ pageSize: 200 });
   assert.ok(queue.items.some((item) => item.providerId === provider.id));
   await rejectsWith(repos.applications.reject(fresh.id, "Tarde"), "invalid_transition");
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   await rejectsWith(repos.applications.list(), "forbidden");
 });
 
@@ -100,7 +100,7 @@ test("frotas: estatísticas, motoristas e suspensão", async () => {
   const suspended = await repos.fleets.setStatus(created.id, "suspended", "Documentação em falta");
   assert.equal(suspended.status, "suspended");
   await rejectsWith(repos.fleets.addDriver(created.id, loose.id), "invalid_transition");
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   await rejectsWith(repos.fleets.list(), "forbidden");
 });
 
@@ -134,6 +134,6 @@ test("qualidade e penalizações: multa sai da carteira, suspensão temporária 
   const quality = await repos.quality.provider(target.id);
   assert.equal(quality.activePenalties, 0);
 
-  await as(repos, "suporte@levaja.ao");
+  await as(repos, "suporte@angoleva.ao");
   await rejectsWith(repos.quality.penalize(target.id, { kind: "warning", reason: "Atraso" }), "forbidden");
 });

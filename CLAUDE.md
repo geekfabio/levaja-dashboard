@@ -1,13 +1,13 @@
 @AGENTS.md
 
-# Leva Já — CRM e painel de administração
+# AngoLeva — CRM e painel de administração
 
-Repositório web do **Leva Já**, a app móvel de Luanda que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. Tem duas áreas:
+Repositório web do **AngoLeva**, a app móvel de Luanda que liga clientes a prestadores de **reboque**, **carga com pickup**, **mudança pequena** e **mudança de casa**. Tem duas áreas:
 
 | Área | Rotas | O que é |
 | --- | --- | --- |
 | **Painel de administração** | `/admin/*` | Operação da plataforma: pedidos, mapa, prestadores, documentos, clientes, finanças, preços e zonas, suporte, utilizadores e auditoria. Especificação completa em `LEVA_JA_ADMIN.md`. |
-| **CRM** | `/`, `/oportunidades`, `/campanhas`… | CRM comercial herdado do template `kargul-starter`, já com a marca Leva Já: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações, tickets, auditoria e definições. |
+| **CRM** | `/`, `/oportunidades`, `/campanhas`… | CRM comercial herdado do template `kargul-starter`, já com a marca AngoLeva: clientes, contactos, oportunidades, follow-up, actividades, conversas, campanhas, automações, tickets, auditoria e definições. |
 
 Antes de escrever código, lê também:
 
@@ -40,7 +40,7 @@ data/leva-ja/
 
 - Páginas e componentes **nunca** importam `data/leva-ja/mock`. Usam os hooks de TanStack Query em `hooks/admin/`, que chamam `repositories()`.
 - Os erros chegam como `RepositoryError` com `code` (`network`, `not_found`, `invalid_transition`, `forbidden`, `validation`, `unauthorized`).
-- O CRM continua com dados fictícios em `data/*.ts` e stores Zustand em `stores/`.
+- O CRM migrou por completo para o mesmo padrão Repository, em `data/crm/` (contratos + mock que simula a API + esqueleto HTTP, troca por `NEXT_PUBLIC_DATA_SOURCE=http`), consumido pelos hooks de TanStack Query em `hooks/crm/` sob o `CrmProviders`. Módulos migrados: **tickets**, **oportunidades**, **clientes** (`companies`), **documentos de cliente**, **contactos + conversas**, **actividades + tarefas**, **campanhas**, **automações** e **propostas de desconto** (`offers`) — nestas, a store Zustand do módulo passou a guardar só estado de UI (filtros, diálogos, selecção, editor). **Excepção deliberada — leitura síncrona** (companies, documents, contacts, conversations, activities, campaigns, automations, offers): outras stores (`automation-runs`, `rename-zone`, `calendar-sync`, `field`, `messaging`) dependem de leitura (e nalguns casos escrita) síncrona destes dados para simulações internas (automações, sincronização de calendário, consentimento, envio simulado, check-ins). Por isso os mocks destes módulos operam sobre o estado partilhado nas próprias stores Zustand (`stores/companies-store.ts`, `stores/contacts-store.ts`, `stores/conversations-store.ts`, `stores/documents-store.ts`, `stores/activities-store.ts`, `stores/campaigns-store.ts`, `stores/automations-store.ts`, `stores/automation-runs-store.ts`), em vez de um array só do repositório: a escrita passa a ir pelo repositório (regras, `RepositoryError`, pronta para a API real); a leitura continua reactiva via Zustand, para essas stores vizinhas não precisarem de mudar. **Excepção deliberada — edição de rascunho** (campaigns, automations): os passos finos de edição de um rascunho (blocos e detalhes de uma campanha em `updateDetails`/`addBlock`/`updateBlock`/`removeBlock`/`moveBlock`/`setFallback`/`setAudience`; nome, gatilho, condições e passos de uma automação em `updateName`/`updateTrigger`/`updateConditions`/`addStep`/`updateStep`/`removeStep`/`moveStep`) continuam a escrever directamente na store Zustand, sem passar pelo repositório: são edições de rascunho frequentes (por tecla, por arrasto), já guardadas por `status === "Rascunho"` nas próprias stores, e route-las por uma chamada de rede simulada seria uma regressão de UX sem ganho de regras de negócio. Só as acções discretas e auditáveis (criar a partir de modelo, submeter para revisão, voltar a rascunho, registar teste, agendar/cancelar agendamento de campanha; criar/remover automação, activar/pausar; criar proposta, registar resultado) passam pelo repositório.
 
 ## Marca
 

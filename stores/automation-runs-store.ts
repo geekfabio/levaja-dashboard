@@ -1,25 +1,26 @@
 import { create } from "zustand";
 import { SYSTEM_ACTOR, type AuditChange } from "@/data/audit";
-import { ACTION_LABELS, type ActionType, type DiscountScope } from "@/data/automations";
+import { ACTION_LABELS, type ActionType } from "@/data/automations";
 import { STAGES, type Company, type Stage } from "@/data/companies";
 import { DISCOUNT_OFFERS, OPEN_OFFER_STATUSES, type DiscountOffer } from "@/data/discount-offers";
 import type { Notification } from "@/data/notifications";
 import type { Task } from "@/data/tasks";
 import {
+  buildOffer,
   daysSince,
   dueSteps,
   offerScopeLabel,
   renderTemplate,
+  supersede,
   campaignAutomationEvents,
   type AutomationEvent,
   type AutomationEventType,
   type DueStep,
 } from "@/lib/automation-engine";
 import { CAMPAIGN_EVENTS } from "@/data/campaign-events";
-import { addDays } from "@/lib/follow-up";
 import { formatDateShort, formatMoney, formatPercent, nowLuandaLocal, plural } from "@/lib/format";
 import { useActivitiesStore } from "./activities-store";
-import { useAuditStore, recordEvent } from "./audit-store";
+import { useAuditStore } from "./audit-store";
 import { useAutomationsStore } from "./automations-store";
 import { useCompaniesStore } from "./companies-store";
 import { useContactsStore } from "./contacts-store";
@@ -53,21 +54,12 @@ export type AutomationRun = {
   detail: string;
 };
 
-type ManualOffer = {
-  companyId: string;
-  percent: number;
-  scope: DiscountScope;
-  validDays: number;
-};
-
 type AutomationRunsState = {
   runs: AutomationRun[];
   events: AutomationEvent[];
   emit: (type: AutomationEventType, companyId: string, extra?: Pick<AutomationEvent, "stage" | "engagement">) => void;
   offers: DiscountOffer[];
   runDue: (today: string, options?: { manual?: boolean }) => number;
-  createOffer: (input: ManualOffer, today: string) => void;
-  setOfferStatus: (id: string, status: "Apresentada" | "Recusada") => void;
 };
 
 function newId(prefix: string) {
@@ -84,38 +76,6 @@ function replaceStage(company: Company, stage: Stage) {
 function currentStage(company: Company) {
   const stages: readonly string[] = STAGES;
   return company.tags.find((tag) => stages.includes(tag));
-}
-
-function buildOffer(
-  company: Company,
-  percent: number,
-  scope: DiscountScope,
-  validDays: number,
-  today: string,
-  origin: string,
-  extra: Partial<DiscountOffer> = {},
-): DiscountOffer {
-  return {
-    id: newId("of"),
-    companyId: company.id,
-    percent,
-    scope,
-    categories: [],
-    createdAt: nowLuandaLocal(),
-    validUntil: addDays(today, validDays),
-    status: "Por apresentar",
-    owner: company.owner,
-    origin,
-    ...extra,
-  };
-}
-
-function supersede(offers: DiscountOffer[], companyId: string) {
-  return offers.map((offer) =>
-    offer.companyId === companyId && OPEN_OFFER_STATUSES.includes(offer.status)
-      ? { ...offer, status: "Substituída" as const }
-      : offer,
-  );
 }
 
 export const useAutomationRunsStore = create<AutomationRunsState>((set, get) => ({
@@ -390,57 +350,5 @@ export const useAutomationRunsStore = create<AutomationRunsState>((set, get) => 
       });
     }
     return runs.length;
-  },
-
-  createOffer: ({ companyId, percent, scope, validDays }, today) => {
-    const company = useCompaniesStore.getState().companies.find((item) => item.id === companyId);
-    if (!company) return;
-    const previous = get().offers;
-    const offer = buildOffer(company, percent, scope, validDays, today, "Proposta manual");
-    set({ offers: [offer, ...supersede(previous, companyId)] });
-    recordEvent({
-      action: `propôs ${formatPercent(percent)} de desconto a`,
-      target: { module: "Clientes", id: companyId, label: company.name },
-      companyId,
-      notify: false,
-      changes: [
-        { field: "Desconto", to: `${formatPercent(percent)} ${offerScopeLabel(offer)}` },
-        { field: "Válida até", to: formatDateShort(offer.validUntil) },
-      ],
-      toast: {
-        title: "Proposta de desconto criada",
-        description: `${company.name} · ${formatPercent(percent)} até ${formatDateShort(offer.validUntil)}`,
-        tone: "success",
-        action: { label: "Anular", run: () => set({ offers: previous }) },
-      },
-    });
-  },
-
-  setOfferStatus: (id, status) => {
-    const offer = get().offers.find((item) => item.id === id);
-    if (!offer || offer.status === status) return;
-    set((state) => ({
-      offers: state.offers.map((item) => (item.id === id ? { ...item, status } : item)),
-    }));
-    const company = useCompaniesStore.getState().companies.find((item) => item.id === offer.companyId);
-    recordEvent({
-      action: status === "Apresentada" ? "apresentou a proposta de desconto a" : "registou que recusou o desconto:",
-      target: { module: "Clientes", id: offer.companyId, label: company?.name ?? offer.companyId },
-      companyId: offer.companyId,
-      notify: false,
-      changes: [{ field: "Proposta", from: offer.status, to: status }],
-      toast: {
-        title: status === "Apresentada" ? "Proposta apresentada" : "Proposta recusada",
-        description: company?.name,
-        tone: "success",
-        action: {
-          label: "Anular",
-          run: () =>
-            set((state) => ({
-              offers: state.offers.map((item) => (item.id === id ? { ...item, status: offer.status } : item)),
-            })),
-        },
-      },
-    });
   },
 }));

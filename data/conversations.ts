@@ -61,7 +61,7 @@ export const CONVERSATIONS: Conversation[] = [
     channel: "SMS",
     unread: 1,
     messages: [
-      { id: "m1", direction: "out", body: "Leva Já: a sua cotação de leite está pronta. Responda SIM para confirmar.", at: "2026-10-11T10:00", author: "Sara Neto", status: "Simulado" },
+      { id: "m1", direction: "out", body: "AngoLeva: a sua cotação de leite está pronta. Responda SIM para confirmar.", at: "2026-10-11T10:00", author: "Sara Neto", status: "Simulado" },
       { id: "m2", direction: "in", body: "Obrigada, passo amanhã na loja.", at: "2026-10-11T12:41" },
     ],
   },

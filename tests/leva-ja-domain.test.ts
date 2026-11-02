@@ -83,7 +83,7 @@ test("gerador: semente fixa, volumes e coerência", () => {
 
 test("reposição: repor os dados volta ao estado da semente", async () => {
   const repos = createMockRepositories({ now: () => NOW, latencyMs: 0, storage: null, tickMs: 0 });
-  await repos.auth.login("admin@levaja.ao", "123456");
+  await repos.auth.login("admin@angoleva.ao", "123456");
   const request = (await repos.requests.list({ status: ["searching"], pageSize: 1 })).items[0];
   await repos.requests.cancel(request.id, "Teste de reposição");
   await repos.demo?.reset();

@@ -87,7 +87,7 @@ export default function CompanyTab() {
         <div className="bg-brand-paper text-brand-ink/60 flex flex-col gap-1 rounded-md px-4 py-4 text-center text-[12px] leading-[1.5]">
           <span>{emailFooter(draft)}</span>
           <span>
-            Recebe este e-mail por ser cliente do Leva Já.{" "}
+            Recebe este e-mail por ser cliente do AngoLeva.{" "}
             <span className="underline">Remover subscrição</span>
           </span>
         </div>

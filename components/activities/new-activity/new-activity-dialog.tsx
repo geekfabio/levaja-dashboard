@@ -27,6 +27,8 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { ACTIVITY_TYPES, type Activity, type ActivityType } from "@/data/activities";
 import { useActivitiesStore } from "@/stores/activities-store";
 import { useCompaniesStore } from "@/stores/companies-store";
+import { useScheduleFollowUp } from "@/hooks/crm/use-companies";
+import { useCreateActivity, useRemoveActivity, useUpdateActivity } from "@/hooks/crm/use-activities";
 import { FOLLOW_UP_TYPES, type FollowUpType } from "@/data/follow-ups";
 import { formatDateShort } from "@/lib/format";
 import PlusIcon from "@/public/assets/images/_common/plus.svg";
@@ -62,9 +64,9 @@ const EMPTY_FORM: FormState = {
 export default function NewActivityDialog() {
   const open = useActivitiesStore((state) => state.newActivityOpen);
   const setOpen = useActivitiesStore((state) => state.setNewActivityOpen);
-  const addActivity = useActivitiesStore((state) => state.addActivity);
-  const updateActivity = useActivitiesStore((state) => state.updateActivity);
-  const removeActivity = useActivitiesStore((state) => state.removeActivity);
+  const addActivity = useCreateActivity();
+  const updateActivity = useUpdateActivity();
+  const removeActivity = useRemoveActivity();
   const editingId = useActivitiesStore((state) => state.editingActivityId);
   const editing = useActivitiesStore((state) =>
     state.activities.find((item) => item.id === state.editingActivityId),
@@ -102,7 +104,7 @@ export default function NewActivityDialog() {
       date: today(),
     });
   }
-  const scheduleFollowUp = useCompaniesStore((state) => state.scheduleFollowUp);
+  const scheduleFollowUp = useScheduleFollowUp();
   const zones = useSettingsStore((state) => state.zones);
   const companies = useCompaniesStore((state) => state.companies);
   const zone = form.zone || zones[0]?.name || "";
@@ -127,17 +129,24 @@ export default function NewActivityDialog() {
     const company = companies.find((item) => item.id === form.companyId);
     if (!company) return;
 
-    if (editingId) {
-      updateActivity(editingId, {
-        type: form.type,
-        companyId: company.id,
-        companyName: company.name,
-        contactName: form.contactName.trim() || undefined,
-        owner: form.owner,
-        zone,
-        date: form.date || today(),
-        note,
-      });
+    if (editingId && editing) {
+      updateActivity.mutate(
+        {
+          id: editingId,
+          patch: {
+            type: form.type,
+            companyId: company.id,
+            companyName: company.name,
+            contactName: form.contactName.trim() || undefined,
+            owner: form.owner,
+            zone,
+            date: form.date || today(),
+            note,
+          },
+          previous: editing,
+        },
+        { onSuccess: () => setOpen(false) },
+      );
       return;
     }
 
@@ -153,15 +162,16 @@ export default function NewActivityDialog() {
       note,
     };
 
-    addActivity(activity);
+    addActivity.mutate(activity, { onSuccess: () => setOpen(false) });
     if (form.nextDate) {
-      scheduleFollowUp(
-        company.id,
-        { date: form.nextDate, type: form.nextType, note: "", owner: form.owner },
-        { silent: true },
-      );
+      scheduleFollowUp.mutate({
+        id: company.id,
+        followUp: { date: form.nextDate, type: form.nextType, note: "", owner: form.owner },
+        previous: company.nextFollowUp,
+        silent: true,
+      });
     } else if (company.nextFollowUp && company.nextFollowUp.date <= activity.date) {
-      scheduleFollowUp(company.id, null, { silent: true });
+      scheduleFollowUp.mutate({ id: company.id, followUp: null, previous: company.nextFollowUp, silent: true });
     }
   }
 
@@ -355,7 +365,7 @@ export default function NewActivityDialog() {
                 variant="ghost"
                 size="sm"
                 className="mr-auto"
-                onClick={() => removeActivity(editingId)}
+                onClick={() => removeActivity.mutate(editingId, { onSuccess: () => setOpen(false) })}
               >
                 Eliminar
               </Button>

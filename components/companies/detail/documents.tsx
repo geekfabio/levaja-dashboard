@@ -17,13 +17,14 @@ import { useToday } from "@/hooks/use-today";
 import { addDays } from "@/lib/follow-up";
 import { formatDateShort, formatDateTimeShort } from "@/lib/format";
 import { formatBytes, useDocumentsStore } from "@/stores/documents-store";
+import { useRemoveDocument, useUploadDocument } from "@/hooks/crm/use-documents";
 import XIcon from "@/public/assets/images/companies/detail/x.svg";
 
 export default function Documents({ companyId }: { companyId: string }) {
   const allDocuments = useDocumentsStore((state) => state.documents);
   const documents = useMemo(() => allDocuments.filter((item) => item.companyId === companyId), [allDocuments, companyId]);
-  const upload = useDocumentsStore((state) => state.upload);
-  const remove = useDocumentsStore((state) => state.remove);
+  const upload = useUploadDocument();
+  const remove = useRemoveDocument();
   const today = useToday();
   const inputRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<DocumentCategory>("Contrato");
@@ -35,9 +36,22 @@ export default function Documents({ companyId }: { companyId: string }) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    const problem = upload(companyId, file, category, withExpiry ? expiresAt : undefined);
-    setError(problem);
-    if (!problem) setExpiresAt("");
+    setError(undefined);
+    upload.mutate(
+      {
+        companyId,
+        name: file.name,
+        mime: file.type,
+        size: file.size,
+        category,
+        expiresAt: withExpiry ? expiresAt : undefined,
+        url: URL.createObjectURL(file),
+      },
+      {
+        onSuccess: () => setExpiresAt(""),
+        onError: (mutationError) => setError(mutationError instanceof Error ? mutationError.message : "Não foi possível anexar o ficheiro."),
+      },
+    );
   }
 
   return (
@@ -74,7 +88,7 @@ export default function Documents({ companyId }: { companyId: string }) {
                     {!document.url && " · exemplo sem ficheiro"}
                   </span>
                 </div>
-                <Button variant="ghost" size="icon-sm" aria-label={`Remover ${document.name}`} onClick={() => remove(document.id)}>
+                <Button variant="ghost" size="icon-sm" aria-label={`Remover ${document.name}`} onClick={() => remove.mutate(document.id)}>
                   <XIcon aria-hidden className="size-3.5" />
                 </Button>
               </li>
