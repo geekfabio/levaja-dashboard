@@ -55,7 +55,7 @@ async function captureMailedCode(fn: () => Promise<unknown>) {
   const original = console.log;
   let captured = "";
   console.log = (...args: unknown[]) => {
-    captured += args.join(" ");
+    captured += args.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg))).join(" ");
   };
   try {
     await fn();

@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 
 export function newOpaqueToken(prefix: string) {
   return `${prefix}_${randomBytes(32).toString("base64url")}`;
@@ -9,6 +9,5 @@ export function hashOpaqueToken(token: string) {
 }
 
 export function newOtpCode() {
-  const value = Math.floor(Math.random() * 1_000_000);
-  return value.toString().padStart(6, "0");
+  return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
