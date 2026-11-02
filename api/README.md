@@ -1,0 +1,61 @@
+# angoleva-api
+
+API que serve o painel web (`levaja-dashboard`, admin + CRM) e a app móvel (`leva-ja`), sobre uma base de dados **Neon** (Postgres serverless).
+
+Plano completo em [`../PLANO_API.md`](../PLANO_API.md). Contrato da app móvel em [`leva-ja/docs/api.md`](https://github.com/geekfabio/leva-ja/blob/main/docs/api.md).
+
+## Decisão de infra desta fase
+
+Esta API corre sobre uma base de dados **Neon partilhada** com outra aplicação (projecto `umoja-ai`) — por isso todas as tabelas vivem isoladas no schema Postgres **`angoleva`**, nunca em `public`. Nunca criar tabelas, alterar ou consultar `public.*` a partir deste serviço.
+
+A ligação usa o **driver HTTP do Neon** (`@neondatabase/serverless` + `drizzle-orm/neon-http`), não TCP directo — é o que funciona em ambientes com saída de rede restrita a HTTPS, e é o modo recomendado para runtimes serverless.
+
+## Começar
+
+```bash
+cp .env.example .env   # preencher DATABASE_URL e os segredos (ver comentários no ficheiro)
+npm install
+npm run db:generate    # gera a migração a partir de src/db/schema/
+npm run db:migrate     # aplica contra o schema `angoleva`
+npm run dev             # http://localhost:4000, com recarregamento
+npm test
+```
+
+## Stack
+
+Fastify + TypeScript + Zod · Drizzle ORM (`drizzle-orm/neon-http`) · `tsx` (dev **e** produção, por agora — ver nota de módulos abaixo).
+
+## Estrutura
+
+```
+src/
+  env.ts            variáveis de ambiente validadas (Zod)
+  app.ts            build() do Fastify: plugins, tratamento de erros, rotas
+  index.ts           arranque (porta 4000)
+  db/
+    client.ts         ligação Drizzle + Neon HTTP
+    migrate.ts         aplica as migrações geradas
+    schema/
+      schema.ts         pgSchema("angoleva")
+      auth.ts            accounts, sessions, refresh_tokens, otp_codes, devices
+      ops.ts             domínio operacional (pedidos, prestadores, pagamentos, chat…) — contrato da app móvel
+      admin.ts           auditoria e definições do painel
+      crm.ts             tabelas do CRM — contrato de data/crm/repositories/*.ts
+  plugins/
+    error-handler.ts    converte erros no envelope { error: { code, message } } do contrato
+  lib/
+    envelope.ts          ApiError, dataEnvelope(), listEnvelope()
+    ids.ts                 newId(prefix) com cuid2
+  routes/
+    health.ts              GET /health (confirma a ligação à BD)
+drizzle/              migrações SQL geradas (versionadas)
+tests/                 node:test — um ficheiro por módulo, à medida que as fases avançam
+```
+
+## Nota sobre módulos ESM
+
+`tsconfig.json` usa `moduleResolution: "bundler"` (importações sem extensão `.js`), e por isso o arranque em produção ainda corre por `tsx` (`npm start`), não por `tsc` + `node dist/`. Antes de um deploy real, rever: ou mudar para `NodeNext` com extensões `.js` explícitas em todos os imports (mais Node-idiomático), ou manter `tsx`/um bundler (esbuild) no passo de build. Não é um bloqueio para as fases seguintes.
+
+## Fases
+
+Ver a tabela em `../PLANO_API.md`. Esta pasta corresponde à Fase 1 (scaffolding + esquema). As fases seguintes acrescentam rotas em `src/routes/`, com os testes de contrato correspondentes em `tests/`, sem mexer no que já está — o esquema pode crescer (novas colunas/tabelas), mas o que existe aqui não muda de forma incompatível sem motivo.

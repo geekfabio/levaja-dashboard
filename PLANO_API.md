@@ -14,10 +14,9 @@ Este plano não inventa um contrato novo: liga os três ao mesmo servidor e à m
 
 ## 1. Base de dados — Neon
 
-- **Um projecto Neon**, branch `main` (produção) e uma branch por ambiente de pré-produção; o branching do Neon (cópia instantânea, copy-on-write) serve bem para **branches de PR** da API — cada pull request ganha uma base de dados isolada com os mesmos dados de semente, sem custo de cópia completa.
-- **Pooling**: usar o *connection pooler* do Neon (compatível com PgBouncer, modo `transaction`) — obrigatório em ambiente serverless (Lambda/Vercel/Fly com muitas instâncias curtas); ligação directa só para migrações.
-- **Região**: a mais próxima do serviço da API (não há região Neon em África; Europa — `eu-central-1` — é a mais próxima de Angola em latência).
-- **Esquemas Postgres** dentro do mesmo database, para organizar sem separar fisicamente os dados:
+- **Decidido:** em vez de um projecto Neon novo, usamos o que já está disponível neste ambiente (`DATABASE_URL`, projecto `umoja-ai`, região `eu-central-1`), **partilhado com outra aplicação**. Por isso todos os dados do AngoLeva vivem isolados num schema Postgres próprio, **`angoleva`** — nunca em `public`, que já tem tabelas de outra app (Prisma). Ligação pelo **driver HTTP do Neon** (`@neondatabase/serverless`), porque este ambiente não permite TCP directo ao Postgres (só HTTPS sai pelo proxy); é também o modo certo para um runtime serverless.
+- **Pooling**: o endpoint já usado é o *pooler* do Neon (`-pooler` no hostname, compatível com PgBouncer).
+- **Esquemas Postgres** dentro do mesmo database `umoja-ai`, só dentro de `angoleva`, para organizar sem separar fisicamente os dados:
   - `auth` — contas, sessões, tokens, códigos
   - `ops` — domínio operacional (pedidos, prestadores, viaturas, pagamentos, zonas) — serve a app e o painel
   - `crm` — clientes empresariais, contactos, oportunidades, campanhas, automações, tickets do CRM
@@ -25,10 +24,10 @@ Este plano não inventa um contrato novo: liga os três ao mesmo servidor e à m
 
 ## 2. Stack da API
 
-- **Serviço Node.js + TypeScript** à parte dos dois repositórios de frontend (os dois já pressupõem isto: `DEFAULT_API_URL = "http://localhost:4000/api"` em `data/leva-ja/index.ts` e `data/crm/index.ts`, porta diferente da app Next.js).
-- **Fastify** (recomendado) — leve, rápido, bom suporte a validação com Zod (`@fastify/type-provider-zod`), que já é a biblioteca de esquemas usada nos dois frontends. Alternativas: NestJS (mais estrutura, mais peso) ou Express (mais simples, menos ferramentas prontas).
-- **ORM: Drizzle** (recomendado) — TypeScript-first, sem geração de código separada, driver HTTP/serverless próprio para Neon (`@neondatabase/serverless` + `drizzle-orm/neon-http`), migrações simples (`drizzle-kit`). Alternativa: Prisma (mais maduro, mas o cliente gerado pesa mais em arranque serverless).
-- **Onde vive**: um repositório novo (ex. `geekfabio/angoleva-api`), não dentro de `levaja-dashboard` nem de `leva-ja` — os dois consumidores já tratam a API como um serviço externo.
+- **Serviço Node.js + TypeScript**, processo próprio na porta 4000 (os dois frontends já pressupõem isto: `DEFAULT_API_URL = "http://localhost:4000/api"` em `data/leva-ja/index.ts` e `data/crm/index.ts`).
+- **Fastify** — leve, rápido, validação com Zod, a mesma biblioteca já usada nos dois frontends.
+- **ORM: Drizzle** (`drizzle-orm/neon-http` + `drizzle-kit`) — TypeScript-first, sem geração de código separada, fala HTTP com o Neon (necessário neste ambiente).
+- **Onde vive:** `api/`, pasta própria dentro deste repositório (`levaja-dashboard`), não um repositório novo — decisão tomada para começar mais depressa. Processo e `package.json` próprios (não é uma rota Next.js), por isso tem o seu próprio `node_modules`, testes e CI. Pode ser extraído para um repositório dedicado mais tarde sem mudar o contrato.
 
 ## 3. Modelo de dados
 
@@ -103,8 +102,7 @@ O CRM (`/`, fora de `/admin`) ainda não tem guarda de sessão própria nesta fa
 ## 8. Decisões em aberto
 
 - **CRM**: sessão própria ou partilhada com o painel de administração (secção 4)?
-- **Framework da API**: Fastify (proposto) vs NestJS vs Express.
-- **ORM**: Drizzle (proposto) vs Prisma.
-- **Onde hospedar o serviço** (o Neon é só a base de dados): Render, Railway, Fly.io ou VPS próprio.
+- **Onde hospedar o serviço em produção** (o Neon é só a base de dados): Render, Railway, Fly.io ou VPS próprio. Em dev/staging corre neste ambiente, processo próprio.
 - **E-mail transaccional** para os códigos OTP e de verificação de registo: Resend, Amazon SES ou outro.
+- **Base de dados partilhada**: por agora usamos `umoja-ai` com o schema `angoleva` isolado (ver `api/README.md`). Se o AngoLeva crescer a ponto de precisar de isolamento total (backup, limites de tamanho, plano de pagamento próprios), migrar para um projecto Neon dedicado é só um `pg_dump`/`pg_restore` do schema.
 - **Processador de pagamentos real** (EMIS/Multicaixa Express) e **notificações push** (Expo) ficam marcados como «ainda por integrar» em `docs/api.md` — fora do âmbito inicial deste plano, a juntar depois da Fase 3.

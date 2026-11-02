@@ -1,0 +1,34 @@
+import { boolean, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { accounts } from "./auth";
+import { angoleva } from "./schema";
+
+export const adminAuditLog = angoleva.table("admin_audit_log", {
+  id: text("id").primaryKey(),
+  actorAccountId: text("actor_account_id")
+    .notNull()
+    .references(() => accounts.id),
+  action: varchar("action", { length: 160 }).notNull(),
+  targetModule: varchar("target_module", { length: 80 }),
+  targetId: text("target_id"),
+  targetLabel: varchar("target_label", { length: 160 }),
+  reason: text("reason"),
+  changes: jsonb("changes").$type<unknown[]>().notNull().default([]),
+  sensitive: boolean("sensitive").notNull().default(false),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const platformSettings = angoleva.table("platform_settings", {
+  key: varchar("key", { length: 120 }).primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedByAccountId: text("updated_by_account_id").references(() => accounts.id),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const pricingRules = angoleva.table("pricing_rules", {
+  id: text("id").primaryKey(),
+  serviceType: varchar("service_type", { length: 40 }).notNull(),
+  zoneId: text("zone_id"),
+  baseKz: jsonb("base_kz").notNull(),
+  active: boolean("active").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
