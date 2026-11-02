@@ -73,9 +73,7 @@ Fluxo já especificado em `data/leva-ja/repositories/admin-auth.ts`, sem passwor
 
 ### CRM
 
-O CRM (`/`, fora de `/admin`) ainda não tem guarda de sessão própria nesta fase (mock). Duas opções a decidir com o utilizador:
-1. Reaproveitar a sessão de administração (um utilizador do painel também usa o CRM) — mais simples, um só login.
-2. Conta de CRM à parte (equipa comercial, sem acesso a `/admin`) — precisa de um novo papel e de uma tabela de permissões própria.
+**Decidido:** o CRM reaproveita a sessão de administração (secção anterior) — a mesma conta `kind: "admin"`, o mesmo cookie, o mesmo middleware `authenticateAdmin`. Um só login para toda a equipa interna (painel + CRM), sem um segundo sistema de sessões a manter. Se mais tarde for preciso dar acesso ao CRM a alguém sem acesso ao `/admin`, resolve-se com um papel novo na mesma matriz de permissões (`lib/leva-ja/permissions.ts`), não com uma conta/sessão à parte.
 
 ## 5. Formato de fio
 
@@ -101,7 +99,6 @@ O CRM (`/`, fora de `/admin`) ainda não tem guarda de sessão própria nesta fa
 
 ## 8. Decisões em aberto
 
-- **CRM**: sessão própria ou partilhada com o painel de administração (secção 4)?
 - **Onde hospedar o serviço em produção** (o Neon é só a base de dados): Render, Railway, Fly.io ou VPS próprio. Em dev/staging corre neste ambiente, processo próprio.
 - **E-mail transaccional** para os códigos OTP e de verificação de registo: Resend, Amazon SES ou outro.
 - **Base de dados partilhada**: por agora usamos `umoja-ai` com o schema `angoleva` isolado (ver `api/README.md`). Se o AngoLeva crescer a ponto de precisar de isolamento total (backup, limites de tamanho, plano de pagamento próprios), migrar para um projecto Neon dedicado é só um `pg_dump`/`pg_restore` do schema.
