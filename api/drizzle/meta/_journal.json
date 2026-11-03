@@ -15,6 +15,13 @@
       "when": 1793663677616,
       "tag": "0001_foamy_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793663883402,
+      "tag": "0002_huge_mauler",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,23 @@ export type RequestActor = "client" | "provider" | "system";
 
 const CANCELLABLE_STATUSES: ServiceRequestStatus[] = ["searching", "assigned", "en_route", "arrived"];
 
+export const ACTIVE_REQUEST_STATUSES: readonly ServiceRequestStatus[] = [
+  "searching",
+  "assigned",
+  "en_route",
+  "arrived",
+  "pickup_confirmed",
+  "in_transit",
+];
+
+export const PROVIDER_BUSY_STATUSES: readonly ServiceRequestStatus[] = [
+  "assigned",
+  "en_route",
+  "arrived",
+  "pickup_confirmed",
+  "in_transit",
+];
+
 export const TRANSITION_ACTOR: Partial<Record<ServiceRequestStatus, Exclude<RequestActor, "system">>> = {
   assigned: "provider",
   en_route: "provider",

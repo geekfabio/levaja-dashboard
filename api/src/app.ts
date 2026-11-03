@@ -7,6 +7,15 @@ import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { chatRoutes } from "./routes/chat";
 import { deviceRoutes } from "./routes/devices";
+import { adminAuditRoutes } from "./routes/admin-audit";
+import { adminClientRoutes } from "./routes/admin-clients";
+import { adminDocumentRoutes } from "./routes/admin-documents";
+import { adminMetricsRoutes } from "./routes/admin-metrics";
+import { adminPricingRoutes } from "./routes/admin-pricing";
+import { adminProviderRoutes } from "./routes/admin-providers";
+import { adminRequestRoutes } from "./routes/admin-requests";
+import { adminSecurityRoutes } from "./routes/admin-security";
+import { adminZoneRoutes } from "./routes/admin-zones";
 import { healthRoutes } from "./routes/health";
 import { providerRoutes } from "./routes/providers";
 import { paymentRoutes } from "./routes/payments";
@@ -37,6 +46,15 @@ export async function buildApp() {
   await app.register(paymentRoutes);
   await app.register(chatRoutes);
   await app.register(deviceRoutes);
+  await app.register(adminRequestRoutes);
+  await app.register(adminProviderRoutes);
+  await app.register(adminClientRoutes);
+  await app.register(adminDocumentRoutes);
+  await app.register(adminZoneRoutes);
+  await app.register(adminPricingRoutes);
+  await app.register(adminSecurityRoutes);
+  await app.register(adminAuditRoutes);
+  await app.register(adminMetricsRoutes);
 
   return app;
 }
