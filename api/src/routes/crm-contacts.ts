@@ -28,7 +28,6 @@ const createBodySchema = z.object({
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
   email: z.string().optional(),
-  preferred_language: z.string().default("Português"),
   contactability: z.enum(CONTACTABILITY_STATUSES).default("Válido"),
   consent: consentSchema,
 });
@@ -72,7 +71,6 @@ function presentContact(row: ContactRow) {
     phone: row.phone,
     whatsapp: row.whatsapp,
     email: row.email,
-    preferred_language: row.preferredLanguage,
     contactability: row.contactability,
     consent: row.consent,
     created_at: row.createdAt.toISOString(),
@@ -118,7 +116,6 @@ export async function crmContactsRoutes(app: FastifyInstance) {
         phone: body.phone,
         whatsapp: body.whatsapp,
         email: body.email,
-        preferredLanguage: body.preferred_language,
         contactability: body.contactability,
         consent: body.consent,
       })
@@ -159,7 +156,6 @@ export async function crmContactsRoutes(app: FastifyInstance) {
       phone: body.phone,
       whatsapp: body.whatsapp,
       email: body.email,
-      preferredLanguage: body.preferred_language,
       contactability: body.contactability,
       consent: body.consent,
     };
@@ -236,7 +232,6 @@ export async function crmContactsRoutes(app: FastifyInstance) {
         phone: contact.phone,
         whatsapp: contact.whatsapp,
         email: contact.email,
-        preferredLanguage: contact.preferred_language,
         contactability: contact.contactability,
         consent: contact.consent,
       };

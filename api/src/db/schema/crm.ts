@@ -35,7 +35,6 @@ export const crmContacts = angoleva.table(
     phone: varchar("phone", { length: 32 }),
     whatsapp: varchar("whatsapp", { length: 32 }),
     email: varchar("email", { length: 254 }),
-    preferredLanguage: varchar("preferred_language", { length: 40 }).notNull().default("Português"),
     contactability: varchar("contactability", { length: 20 }).notNull().default("Válido"),
     consent: jsonb("consent").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
