@@ -16,6 +16,7 @@ export const accounts = angoleva.table(
     fullName: varchar("full_name", { length: 160 }).notNull(),
     active: boolean("active").notNull().default(true),
     adminRole: adminRoleEnum("admin_role"),
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

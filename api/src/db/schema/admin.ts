@@ -1,4 +1,4 @@
-import { boolean, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, inet, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { accounts } from "./auth";
 import { angoleva } from "./schema";
 
@@ -23,6 +23,30 @@ export const platformSettings = angoleva.table("platform_settings", {
   updatedByAccountId: text("updated_by_account_id").references(() => accounts.id),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const adminAccessResultEnum = angoleva.enum("admin_access_result", [
+  "success",
+  "wrong_code",
+  "two_factor_failed",
+  "inactive",
+  "logout",
+  "revoked",
+]);
+
+export const adminAccessLog = angoleva.table(
+  "admin_access_log",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").references(() => accounts.id),
+    email: varchar("email", { length: 254 }).notNull(),
+    userName: varchar("user_name", { length: 160 }),
+    result: adminAccessResultEnum("result").notNull(),
+    ip: inet("ip"),
+    device: text("device"),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("admin_access_log_account_idx").on(table.accountId), index("admin_access_log_at_idx").on(table.at)],
+);
 
 export const pricingRules = angoleva.table("pricing_rules", {
   id: text("id").primaryKey(),

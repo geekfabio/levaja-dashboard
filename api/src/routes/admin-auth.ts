@@ -14,6 +14,7 @@ import { computeCsrfToken, newCsrfSecret } from "../lib/csrf";
 import { DEFAULT_ROLE_PERMISSIONS, isAdminRole, requireAdminRole, ROLE_LABELS, type AdminRole } from "../lib/admin-roles";
 import { toWireAdminUser } from "../lib/admin-users";
 import { recordAdminAudit } from "../lib/admin-audit";
+import { recordAdminAccess } from "../lib/admin-access-log";
 import { requireReason } from "../lib/require-reason";
 
 const requestCodeBody = z.object({ email: z.string() });
@@ -80,6 +81,11 @@ export async function adminAuthRoutes(app: FastifyInstance) {
   app.post("/admin/auth/login", async (request, reply) => {
     const { email, code } = loginBody.parse(request.body);
     const normalized = normalizeEmail(email);
+    const ip = request.ip;
+    const device = (request.headers["user-agent"] as string | undefined) ?? null;
+
+    const recordAccess = (result: Parameters<typeof recordAdminAccess>[0]["result"], account?: { id: string; fullName: string } | null) =>
+      recordAdminAccess({ accountId: account?.id ?? null, email: normalized, userName: account?.fullName ?? null, result, ip, device });
 
     const [otpRow] = await db
       .select()
@@ -89,14 +95,17 @@ export async function adminAuthRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!otpRow || otpRow.consumedAt) {
+      await recordAccess("wrong_code");
       throw genericLoginError();
     }
     if (otpRow.expiresAt.getTime() <= Date.now()) {
       await db.update(schema.otpCodes).set({ consumedAt: new Date() }).where(eq(schema.otpCodes.id, otpRow.id));
+      await recordAccess("wrong_code");
       throw apiError("unauthorized", "O código expirou. Peça um novo código.");
     }
     if (otpRow.attempts >= OTP_MAX_ATTEMPTS) {
       await db.update(schema.otpCodes).set({ consumedAt: new Date() }).where(eq(schema.otpCodes.id, otpRow.id));
+      await recordAccess("wrong_code");
       throw genericLoginError();
     }
 
@@ -106,6 +115,7 @@ export async function adminAuthRoutes(app: FastifyInstance) {
         .update(schema.otpCodes)
         .set({ attempts, consumedAt: attempts >= OTP_MAX_ATTEMPTS ? new Date() : null })
         .where(eq(schema.otpCodes.id, otpRow.id));
+      await recordAccess("wrong_code");
       throw genericLoginError();
     }
 
@@ -118,9 +128,11 @@ export async function adminAuthRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!account || !account.adminRole) {
+      await recordAccess("wrong_code");
       throw genericLoginError();
     }
     if (!account.active) {
+      await recordAccess("inactive", account);
       throw apiError("unauthorized", "A sua conta está desactivada. Contacte um administrador.");
     }
 
@@ -151,6 +163,7 @@ export async function adminAuthRoutes(app: FastifyInstance) {
       targetId: account.id,
       targetLabel: account.email,
     });
+    await recordAccess("success", account);
 
     return dataEnvelope({
       token: sessionRow.id,
@@ -185,6 +198,14 @@ export async function adminAuthRoutes(app: FastifyInstance) {
         targetModule: "session",
         targetId: account.id,
         targetLabel: account.email,
+      });
+      await recordAdminAccess({
+        accountId: account.id,
+        email: account.email,
+        userName: account.fullName,
+        result: "logout",
+        ip: request.ip,
+        device: (request.headers["user-agent"] as string | undefined) ?? null,
       });
     }
     reply.clearCookie(ADMIN_SESSION_COOKIE, { path: "/" });

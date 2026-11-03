@@ -18,6 +18,7 @@ import { adminPricingRoutes } from "./routes/admin-pricing";
 import { adminProviderRoutes } from "./routes/admin-providers";
 import { adminRequestRoutes } from "./routes/admin-requests";
 import { adminSecurityRoutes } from "./routes/admin-security";
+import { adminSettingsRoutes } from "./routes/admin-settings";
 import { adminZoneRoutes } from "./routes/admin-zones";
 import { healthRoutes } from "./routes/health";
 import { providerRoutes } from "./routes/providers";
@@ -61,6 +62,7 @@ export async function buildApp() {
   await app.register(adminZoneRoutes);
   await app.register(adminPricingRoutes);
   await app.register(adminSecurityRoutes);
+  await app.register(adminSettingsRoutes);
   await app.register(adminAuditRoutes);
   await app.register(adminMetricsRoutes);
 
