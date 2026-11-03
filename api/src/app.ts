@@ -5,6 +5,15 @@ import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
+import { adminAuditRoutes } from "./routes/admin-audit";
+import { adminClientRoutes } from "./routes/admin-clients";
+import { adminDocumentRoutes } from "./routes/admin-documents";
+import { adminMetricsRoutes } from "./routes/admin-metrics";
+import { adminPricingRoutes } from "./routes/admin-pricing";
+import { adminProviderRoutes } from "./routes/admin-providers";
+import { adminRequestRoutes } from "./routes/admin-requests";
+import { adminSecurityRoutes } from "./routes/admin-security";
+import { adminZoneRoutes } from "./routes/admin-zones";
 import { healthRoutes } from "./routes/health";
 import { requestRoutes } from "./routes/requests";
 
@@ -21,6 +30,15 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(adminRequestRoutes);
+  await app.register(adminProviderRoutes);
+  await app.register(adminClientRoutes);
+  await app.register(adminDocumentRoutes);
+  await app.register(adminZoneRoutes);
+  await app.register(adminPricingRoutes);
+  await app.register(adminSecurityRoutes);
+  await app.register(adminAuditRoutes);
+  await app.register(adminMetricsRoutes);
 
   return app;
 }

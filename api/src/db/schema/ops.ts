@@ -27,12 +27,16 @@ export const transactionTypeEnum = angoleva.enum("wallet_transaction_type", ["ea
 
 export const transactionStatusEnum = angoleva.enum("wallet_transaction_status", ["pending", "completed", "failed"]);
 
+export const providerAccountStatusEnum = angoleva.enum("provider_account_status", ["pending_approval", "active", "suspended"]);
+
 export const clients = angoleva.table("clients", {
   accountId: text("account_id")
     .primaryKey()
     .references(() => accounts.id, { onDelete: "cascade" }),
   rating: numeric("rating", { precision: 2, scale: 1 }),
   avatarUrl: text("avatar_url"),
+  blocked: boolean("blocked").notNull().default(false),
+  blockedReason: text("blocked_reason"),
 });
 
 export const providers = angoleva.table("providers", {
@@ -49,6 +53,8 @@ export const providers = angoleva.table("providers", {
   coverageZoneIds: jsonb("coverage_zone_ids").$type<string[]>().notNull().default([]),
   coverageServiceTypes: jsonb("coverage_service_types").$type<string[]>().notNull().default([]),
   declinedRequestIds: jsonb("declined_request_ids").$type<string[]>().notNull().default([]),
+  accountStatus: providerAccountStatusEnum("account_status").notNull().default("active"),
+  suspensionReason: text("suspension_reason"),
 });
 
 export const vehicles = angoleva.table("vehicles", {
