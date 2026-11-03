@@ -73,12 +73,14 @@ before(async () => {
 
 after(async () => {
   if (accountIds.length > 0) {
+    await db.delete(schema.adminAccessLog).where(inArray(schema.adminAccessLog.accountId, accountIds));
     await db.delete(schema.adminAuditLog).where(inArray(schema.adminAuditLog.actorAccountId, accountIds));
     await db.delete(schema.adminAuditLog).where(inArray(schema.adminAuditLog.targetId, accountIds));
     await db.delete(schema.adminSessions).where(inArray(schema.adminSessions.accountId, accountIds));
     await db.delete(schema.accounts).where(inArray(schema.accounts.id, accountIds));
   }
   if (testEmails.length > 0) {
+    await db.delete(schema.adminAccessLog).where(inArray(schema.adminAccessLog.email, testEmails));
     await db.delete(schema.otpCodes).where(inArray(schema.otpCodes.email, testEmails));
   }
   await app.close();

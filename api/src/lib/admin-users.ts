@@ -20,6 +20,6 @@ export function toWireAdminUser(account: AdminAccount, lastLoginAt?: Date | null
     active: account.active,
     created_at: account.createdAt.toISOString(),
     last_login_at: lastLoginAt ? lastLoginAt.toISOString() : undefined,
-    two_factor_enabled: false,
+    two_factor_enabled: account.twoFactorEnabled,
   };
 }
