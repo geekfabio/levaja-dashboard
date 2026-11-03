@@ -6,3 +6,4 @@ export * from "./crm";
 export * from "./refunds";
 export * from "./disputes";
 export * from "./claims";
+export * from "./finance";
