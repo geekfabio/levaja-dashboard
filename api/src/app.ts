@@ -5,7 +5,10 @@ import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
+import { chatRoutes } from "./routes/chat";
+import { deviceRoutes } from "./routes/devices";
 import { healthRoutes } from "./routes/health";
+import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
 
 export async function buildApp() {
@@ -21,6 +24,9 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(paymentRoutes);
+  await app.register(chatRoutes);
+  await app.register(deviceRoutes);
 
   return app;
 }

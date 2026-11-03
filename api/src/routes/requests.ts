@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gt, inArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client";
-import { providers, serviceRequestEvents, serviceRequests } from "../db/schema/ops";
+import { providers, serviceRequests } from "../db/schema/ops";
 import { authenticate } from "../lib/authenticate";
 import { apiError, dataEnvelope, listEnvelope } from "../lib/envelope";
 import { estimateDistanceKm, estimateDurationMin } from "../lib/geo";
@@ -10,8 +10,8 @@ import { newId } from "../lib/ids";
 import type { PriceBreakdown } from "../lib/pricing";
 import { estimatePrice, providerEarningFor } from "../lib/pricing";
 import { presentServiceRequest } from "../lib/request-presenter";
+import { recordRequestEvent } from "../lib/request-events";
 import { SERVICE_REQUEST_STATUS_FLOW, TRANSITION_ACTOR, canTransition, isCancellable } from "../lib/request-state";
-import type { RequestActor, ServiceRequestStatus } from "../lib/request-state";
 import { creditEarning } from "../lib/wallet";
 
 type ServiceRequestRow = typeof serviceRequests.$inferSelect;
@@ -106,10 +106,6 @@ async function generateRequestCode() {
     if (!existing) return candidate;
   }
   throw apiError("server", "Não foi possível gerar o código do pedido.");
-}
-
-async function recordEvent(requestId: string, status: ServiceRequestStatus, actor: RequestActor, at: Date) {
-  await db.insert(serviceRequestEvents).values({ id: newId("evt"), requestId, status, actor, at });
 }
 
 function canSeeRequest(account: { id: string; kind: string }, row: Pick<ServiceRequestRow, "clientAccountId" | "providerAccountId" | "status">) {
@@ -254,7 +250,7 @@ export async function requestRoutes(app: FastifyInstance) {
       createdAt: now,
       updatedAt: now,
     });
-    await recordEvent(id, "searching", "system", now);
+    await recordRequestEvent(id, "searching", "system", now);
 
     const row = await loadRequestOrNotFound(id);
     reply.status(201).send(dataEnvelope(await presentServiceRequest(row)));
@@ -287,7 +283,7 @@ export async function requestRoutes(app: FastifyInstance) {
 
     const now = new Date();
     await db.update(serviceRequests).set({ status: body.to, updatedAt: now }).where(eq(serviceRequests.id, id));
-    await recordEvent(id, body.to, body.actor, now);
+    await recordRequestEvent(id, body.to, body.actor, now);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
@@ -316,7 +312,7 @@ export async function requestRoutes(app: FastifyInstance) {
       .update(serviceRequests)
       .set({ status: "assigned", providerAccountId: body.provider_id, updatedAt: now })
       .where(eq(serviceRequests.id, id));
-    await recordEvent(id, "assigned", "provider", now);
+    await recordRequestEvent(id, "assigned", "provider", now);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
@@ -342,7 +338,7 @@ export async function requestRoutes(app: FastifyInstance) {
       .update(serviceRequests)
       .set({ status: "cancelled", cancelReason: body.reason, updatedAt: now })
       .where(eq(serviceRequests.id, id));
-    await recordEvent(id, "cancelled", isClient ? "client" : "provider", now);
+    await recordRequestEvent(id, "cancelled", isClient ? "client" : "provider", now);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
@@ -414,7 +410,7 @@ export async function requestRoutes(app: FastifyInstance) {
         updatedAt: now,
       })
       .where(eq(serviceRequests.id, id));
-    await recordEvent(id, "assigned", "client", now);
+    await recordRequestEvent(id, "assigned", "client", now);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
@@ -457,7 +453,7 @@ export async function requestRoutes(app: FastifyInstance) {
     };
 
     await db.update(serviceRequests).set({ status: "delivered", proof, updatedAt: now }).where(eq(serviceRequests.id, id));
-    await recordEvent(id, "delivered", "provider", now);
+    await recordRequestEvent(id, "delivered", "provider", now);
 
     if (row.providerEarningKz !== null) {
       await creditEarning(row.providerAccountId, id, row.providerEarningKz);
@@ -484,7 +480,7 @@ export async function requestRoutes(app: FastifyInstance) {
       .update(serviceRequests)
       .set({ status: "rated", rating: body.rating, review: body.review, updatedAt: now })
       .where(eq(serviceRequests.id, id));
-    await recordEvent(id, "rated", "client", now);
+    await recordRequestEvent(id, "rated", "client", now);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
