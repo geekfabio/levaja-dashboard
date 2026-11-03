@@ -7,6 +7,10 @@ import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { healthRoutes } from "./routes/health";
 import { requestRoutes } from "./routes/requests";
+import { crmCompaniesRoutes } from "./routes/crm-companies";
+import { crmContactsRoutes } from "./routes/crm-contacts";
+import { crmOpportunitiesRoutes } from "./routes/crm-opportunities";
+import { crmTicketsRoutes } from "./routes/crm-tickets";
 
 export async function buildApp() {
   const env = loadEnv();
@@ -21,6 +25,10 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(crmCompaniesRoutes);
+  await app.register(crmContactsRoutes);
+  await app.register(crmOpportunitiesRoutes);
+  await app.register(crmTicketsRoutes);
 
   return app;
 }
