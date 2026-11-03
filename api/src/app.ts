@@ -1,10 +1,13 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import Fastify from "fastify";
 import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
+import { adminApplicationRoutes } from "./routes/admin-applications";
+import { applicationRoutes } from "./routes/applications";
 import { chatRoutes } from "./routes/chat";
 import { deviceRoutes } from "./routes/devices";
 import { adminAuditRoutes } from "./routes/admin-audit";
@@ -20,6 +23,7 @@ import { healthRoutes } from "./routes/health";
 import { providerRoutes } from "./routes/providers";
 import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
+import { uploadRoutes } from "./routes/uploads";
 import { crmCompaniesRoutes } from "./routes/crm-companies";
 import { crmContactsRoutes } from "./routes/crm-contacts";
 import { crmOpportunitiesRoutes } from "./routes/crm-opportunities";
@@ -31,6 +35,7 @@ export async function buildApp() {
 
   await app.register(cors, { origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : true, credentials: true });
   await app.register(cookie, { secret: env.ADMIN_SESSION_SECRET });
+  await app.register(multipart, { limits: { fileSize: 15 * 1024 * 1024 } });
 
   registerErrorHandler(app);
 
@@ -39,6 +44,8 @@ export async function buildApp() {
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
   await app.register(providerRoutes);
+  await app.register(applicationRoutes);
+  await app.register(uploadRoutes);
   await app.register(crmCompaniesRoutes);
   await app.register(crmContactsRoutes);
   await app.register(crmOpportunitiesRoutes);
@@ -48,6 +55,7 @@ export async function buildApp() {
   await app.register(deviceRoutes);
   await app.register(adminRequestRoutes);
   await app.register(adminProviderRoutes);
+  await app.register(adminApplicationRoutes);
   await app.register(adminClientRoutes);
   await app.register(adminDocumentRoutes);
   await app.register(adminZoneRoutes);
