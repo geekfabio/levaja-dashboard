@@ -31,6 +31,9 @@ import { crmTicketsRoutes } from "./routes/crm-tickets";
 import { crmActivitiesRoutes } from "./routes/crm-activities";
 import { crmConversationsRoutes } from "./routes/crm-conversations";
 import { crmDocumentsRoutes } from "./routes/crm-documents";
+import { crmCampaignsRoutes } from "./routes/crm-campaigns";
+import { crmAutomationsRoutes } from "./routes/crm-automations";
+import { crmOffersRoutes } from "./routes/crm-offers";
 
 export async function buildApp() {
   const env = loadEnv();
@@ -56,6 +59,9 @@ export async function buildApp() {
   await app.register(crmActivitiesRoutes);
   await app.register(crmConversationsRoutes);
   await app.register(crmDocumentsRoutes);
+  await app.register(crmCampaignsRoutes);
+  await app.register(crmAutomationsRoutes);
+  await app.register(crmOffersRoutes);
   await app.register(paymentRoutes);
   await app.register(chatRoutes);
   await app.register(deviceRoutes);
