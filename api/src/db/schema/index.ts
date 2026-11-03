@@ -3,3 +3,4 @@ export * from "./auth";
 export * from "./ops";
 export * from "./admin";
 export * from "./crm";
+export * from "./finance";
