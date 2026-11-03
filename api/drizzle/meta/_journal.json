@@ -8,6 +8,13 @@
       "when": 1793660316905,
       "tag": "0000_bouncy_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793663677616,
+      "tag": "0001_foamy_trish_tilby",
+      "breakpoints": true
     }
   ]
 }
