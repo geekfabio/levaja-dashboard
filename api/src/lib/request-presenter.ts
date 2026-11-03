@@ -11,7 +11,7 @@ async function buildClientDto(clientAccountId: string) {
   return toClientResponse(account);
 }
 
-async function buildProviderDto(providerAccountId: string) {
+export async function buildProviderDto(providerAccountId: string) {
   const account = await findAccountById(providerAccountId);
   if (!account) return null;
 

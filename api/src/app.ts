@@ -6,6 +6,7 @@ import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { healthRoutes } from "./routes/health";
+import { providerRoutes } from "./routes/providers";
 import { requestRoutes } from "./routes/requests";
 
 export async function buildApp() {
@@ -21,6 +22,7 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(providerRoutes);
 
   return app;
 }
