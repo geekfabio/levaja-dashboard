@@ -5,8 +5,11 @@ import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
 import { adminAuthRoutes } from "./routes/admin-auth";
+import { chatRoutes } from "./routes/chat";
+import { deviceRoutes } from "./routes/devices";
 import { healthRoutes } from "./routes/health";
 import { providerRoutes } from "./routes/providers";
+import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
 import { crmCompaniesRoutes } from "./routes/crm-companies";
 import { crmContactsRoutes } from "./routes/crm-contacts";
@@ -31,6 +34,9 @@ export async function buildApp() {
   await app.register(crmContactsRoutes);
   await app.register(crmOpportunitiesRoutes);
   await app.register(crmTicketsRoutes);
+  await app.register(paymentRoutes);
+  await app.register(chatRoutes);
+  await app.register(deviceRoutes);
 
   return app;
 }
