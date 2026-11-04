@@ -7,3 +7,4 @@ export * from "./refunds";
 export * from "./disputes";
 export * from "./claims";
 export * from "./finance";
+export * from "./promotions";
