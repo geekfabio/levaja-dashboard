@@ -14,6 +14,16 @@ export const HTTP_SESSION_KEY = "levaja.admin.session.v1";
 
 const id = encodeURIComponent;
 
+function toWireContract(contract: { startsAt: string; endsAt: string; discountRate: number; paymentTermsDays: number; creditLimit: number }) {
+  return {
+    startsAt: contract.startsAt,
+    endsAt: contract.endsAt,
+    discountRate: contract.discountRate,
+    paymentTermsDays: contract.paymentTermsDays,
+    creditLimitKz: contract.creditLimit,
+  };
+}
+
 function sessionStore(storage: HttpRepositoriesOptions["storage"]) {
   return {
     read(): AdminSession | null {
@@ -74,7 +84,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     requests: {
       list: (filters = {}) => http.get("/admin/requests", filters),
       get: (requestId) => http.get(`/admin/requests/${id(requestId)}`),
-      reassignCandidates: (requestId) => http.get(`/admin/requests/${id(requestId)}/candidates`),
+      reassignCandidates: (requestId) => http.get(`/admin/requests/${id(requestId)}/reassign-candidates`),
       reassign: (requestId, providerId, reason) => http.post(`/admin/requests/${id(requestId)}/reassign`, { providerId, reason }),
       cancel: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/cancel`, { reason }),
       openDispute: (requestId, reason, category) => http.post(`/admin/requests/${id(requestId)}/dispute`, { reason, category }),
@@ -84,20 +94,20 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     privacy: {
-      list: (filters = {}) => http.get("/admin/privacy-requests", filters),
-      summary: () => http.get("/admin/privacy-requests/summary"),
-      get: (requestId) => http.get(`/admin/privacy-requests/${id(requestId)}`),
-      start: (requestId) => http.post(`/admin/privacy-requests/${id(requestId)}/start`),
-      complete: (requestId, resolution) => http.post(`/admin/privacy-requests/${id(requestId)}/complete`, { resolution }),
-      reject: (requestId, reason) => http.post(`/admin/privacy-requests/${id(requestId)}/reject`, { reason }),
-      exportData: (requestId) => http.get(`/admin/privacy-requests/${id(requestId)}/export`),
+      list: (filters = {}) => http.get("/admin/privacy/requests", filters),
+      summary: () => http.get("/admin/privacy/summary"),
+      get: (requestId) => http.get(`/admin/privacy/requests/${id(requestId)}`),
+      start: (requestId) => http.post(`/admin/privacy/requests/${id(requestId)}/start`),
+      complete: (requestId, resolution) => http.post(`/admin/privacy/requests/${id(requestId)}/complete`, { resolution }),
+      reject: (requestId, reason) => http.post(`/admin/privacy/requests/${id(requestId)}/reject`, { reason }),
+      exportData: (requestId) => http.post(`/admin/privacy/requests/${id(requestId)}/export`),
     },
 
     security: {
       sessions: () => http.get("/admin/security/sessions"),
       revokeSession: (sessionId, reason) => http.post(`/admin/security/sessions/${id(sessionId)}/revoke`, { reason }),
       accessLog: (filters = {}) => http.get("/admin/security/access-log", filters),
-      setTwoFactor: (userId, enabled, reason) => http.post(`/admin/users/${id(userId)}/two-factor`, { enabled, reason }),
+      setTwoFactor: (userId, enabled, reason) => http.post(`/admin/security/users/${id(userId)}/two-factor`, { enabled, reason }),
     },
 
     integrations: {
@@ -106,7 +116,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       revokeKey: (keyId, reason) => http.post(`/admin/integrations/keys/${id(keyId)}/revoke`, { reason }),
       webhooks: () => http.get("/admin/integrations/webhooks"),
       createWebhook: (input) => http.post("/admin/integrations/webhooks", input),
-      setWebhookActive: (webhookId, active) => http.post(`/admin/integrations/webhooks/${id(webhookId)}/${active ? "activate" : "deactivate"}`),
+      setWebhookActive: (webhookId, active) => http.post(`/admin/integrations/webhooks/${id(webhookId)}/active`, { active }),
       testWebhook: (webhookId) => http.post(`/admin/integrations/webhooks/${id(webhookId)}/test`),
     },
 
@@ -114,8 +124,8 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       list: (filters = {}) => http.get("/admin/business-accounts", filters),
       get: (accountId) => http.get(`/admin/business-accounts/${id(accountId)}`),
       candidates: () => http.get("/admin/business-accounts/candidates"),
-      create: (input) => http.post("/admin/business-accounts", input),
-      updateContract: (accountId, contract, reason) => http.put(`/admin/business-accounts/${id(accountId)}/contract`, { contract, reason }),
+      create: (input) => http.post("/admin/business-accounts", { ...input, contract: toWireContract(input.contract) }),
+      updateContract: (accountId, contract, reason) => http.put(`/admin/business-accounts/${id(accountId)}/contract`, { contract: toWireContract(contract), reason }),
       addMember: (accountId, clientId) => http.post(`/admin/business-accounts/${id(accountId)}/members`, { clientId }),
       removeMember: (accountId, clientId, reason) => http.post(`/admin/business-accounts/${id(accountId)}/members/${id(clientId)}/remove`, { reason }),
       markStatementPaid: (accountId, month, reference) => http.post(`/admin/business-accounts/${id(accountId)}/statements/${id(month)}/paid`, { reference }),
@@ -125,19 +135,34 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     promotions: {
       list: (filters = {}) => http.get("/admin/promotions", filters),
       get: (promotionId) => http.get(`/admin/promotions/${id(promotionId)}`),
-      create: (input) => http.post("/admin/promotions", input),
+      create: (input) =>
+        http.post("/admin/promotions", {
+          code: input.code,
+          name: input.name,
+          kind: input.kind,
+          value: input.value,
+          maxDiscountKz: input.maxDiscount,
+          minOrderKz: input.minOrder,
+          services: input.services,
+          zoneIds: input.zoneIds,
+          startsAt: input.startsAt,
+          endsAt: input.endsAt,
+          budgetKz: input.budget,
+          perClientLimit: input.perClientLimit,
+          firstOrderOnly: input.firstOrderOnly,
+        }),
       pause: (promotionId, reason) => http.post(`/admin/promotions/${id(promotionId)}/pause`, { reason }),
       resume: (promotionId) => http.post(`/admin/promotions/${id(promotionId)}/resume`),
       end: (promotionId, reason) => http.post(`/admin/promotions/${id(promotionId)}/end`, { reason }),
     },
 
     communications: {
-      list: (filters = {}) => http.get("/admin/broadcasts", filters),
-      estimate: (audience) => http.post("/admin/broadcasts/estimate", audience),
-      create: (input) => http.post("/admin/broadcasts", input),
-      schedule: (broadcastId, at) => http.post(`/admin/broadcasts/${id(broadcastId)}/schedule`, { at }),
-      send: (broadcastId) => http.post(`/admin/broadcasts/${id(broadcastId)}/send`),
-      cancel: (broadcastId, reason) => http.post(`/admin/broadcasts/${id(broadcastId)}/cancel`, { reason }),
+      list: (filters = {}) => http.get("/admin/communications", filters),
+      estimate: (audience) => http.post("/admin/communications/estimate", audience),
+      create: (input) => http.post("/admin/communications", input),
+      schedule: (broadcastId, at) => http.post(`/admin/communications/${id(broadcastId)}/schedule`, { at }),
+      send: (broadcastId) => http.post(`/admin/communications/${id(broadcastId)}/send`),
+      cancel: (broadcastId, reason) => http.post(`/admin/communications/${id(broadcastId)}/cancel`, { reason }),
     },
 
     reports: {
@@ -145,9 +170,9 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     operations: {
-      scheduled: (filters = {}) => http.get("/admin/requests/scheduled", filters),
-      sla: (range) => http.get("/admin/metrics/sla", range),
-      heatmap: (query) => http.get("/admin/metrics/heatmap", query),
+      scheduled: (filters = {}) => http.get("/admin/operations/scheduled", filters),
+      sla: (range) => http.get("/admin/operations/sla", range),
+      heatmap: (query) => http.get("/admin/operations/heatmap", query),
     },
 
     claims: {
@@ -155,12 +180,19 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       summary: () => http.get("/admin/claims/summary"),
       get: (claimId) => http.get(`/admin/claims/${id(claimId)}`),
       forRequest: (requestId) => http.get(`/admin/requests/${id(requestId)}/claims`),
-      report: (input) => http.post("/admin/claims", input),
-      startReview: (claimId, insurer, policyNumber) => http.post(`/admin/claims/${id(claimId)}/review`, { insurer, policyNumber }),
+      report: (input) =>
+        http.post("/admin/claims", {
+          requestId: input.requestId,
+          kind: input.kind,
+          description: input.description,
+          estimatedAmountKz: input.estimatedAmount,
+          occurredAt: input.occurredAt,
+        }),
+      startReview: (claimId, insurer, policyNumber) => http.post(`/admin/claims/${id(claimId)}/start-review`, { insurer, policyNumber }),
       addNote: (claimId, text) => http.post(`/admin/claims/${id(claimId)}/notes`, { text }),
-      approve: (claimId, amount, reason) => http.post(`/admin/claims/${id(claimId)}/approve`, { amount, reason }),
+      approve: (claimId, amount, reason) => http.post(`/admin/claims/${id(claimId)}/approve`, { amountKz: amount, reason }),
       reject: (claimId, reason) => http.post(`/admin/claims/${id(claimId)}/reject`, { reason }),
-      markPaid: (claimId, paymentReference) => http.post(`/admin/claims/${id(claimId)}/paid`, { paymentReference }),
+      markPaid: (claimId, paymentReference) => http.post(`/admin/claims/${id(claimId)}/mark-paid`, { paymentReference }),
     },
 
     applications: {
@@ -181,7 +213,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       create: (input) => http.post("/admin/fleets", input),
       addDriver: (fleetId, providerId) => http.post(`/admin/fleets/${id(fleetId)}/drivers`, { providerId }),
       removeDriver: (fleetId, providerId, reason) => http.post(`/admin/fleets/${id(fleetId)}/drivers/${id(providerId)}/remove`, { reason }),
-      setStatus: (fleetId, status, reason) => http.post(`/admin/fleets/${id(fleetId)}/${status === "suspended" ? "suspend" : "reactivate"}`, { reason }),
+      setStatus: (fleetId, status, reason) => http.post(`/admin/fleets/${id(fleetId)}/status`, { status, reason }),
     },
 
     quality: {
@@ -196,28 +228,40 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       list: (filters = {}) => http.get("/admin/disputes", filters),
       summary: () => http.get("/admin/disputes/summary"),
       addNote: (requestId, text) => http.post(`/admin/disputes/${id(requestId)}/notes`, { text }),
-      setCategory: (requestId, category) => http.put(`/admin/disputes/${id(requestId)}/category`, { category }),
-      resolve: (requestId, input) => http.post(`/admin/disputes/${id(requestId)}/resolve`, input),
+      setCategory: (requestId, category) => http.patch(`/admin/disputes/${id(requestId)}/category`, { category }),
+      resolve: (requestId, input) =>
+        http.post(`/admin/disputes/${id(requestId)}/resolve`, {
+          outcome: input.outcome,
+          amountKz: input.amount,
+          chargeProvider: input.chargeProvider,
+          resolution: input.resolution,
+        }),
     },
 
     refunds: {
       list: (filters = {}) => http.get("/admin/refunds", filters),
       summary: () => http.get("/admin/refunds/summary"),
       forRequest: (requestId) => http.get(`/admin/requests/${id(requestId)}/refunds`),
-      create: (input) => http.post("/admin/refunds", input),
+      create: (input) =>
+        http.post("/admin/refunds", {
+          requestId: input.requestId,
+          amountKz: input.amount,
+          reason: input.reason,
+          chargeProvider: input.chargeProvider,
+        }),
       approve: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/approve`, { reason }),
       reject: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/reject`, { reason }),
-      markPaid: (refundId, paymentReference) => http.post(`/admin/refunds/${id(refundId)}/paid`, { paymentReference }),
+      markPaid: (refundId, paymentReference) => http.post(`/admin/refunds/${id(refundId)}/mark-paid`, { paymentReference }),
     },
 
     providers: {
       list: (filters = {}) => http.get("/admin/providers", filters),
-      get: (providerId) => http.get(`/providers/${id(providerId)}`),
+      get: (providerId) => http.get(`/admin/providers/${id(providerId)}`),
       approve: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/approve`, { reason }),
       suspend: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/suspend`, { reason }),
       reactivate: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/reactivate`, { reason }),
-      transactions: (providerId, query = {}) => http.get(`/providers/${id(providerId)}/earnings`, query),
-      reviews: (providerId, query = {}) => http.get(`/providers/${id(providerId)}/reviews`, query),
+      transactions: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/transactions`, query),
+      reviews: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/reviews`, query),
       requests: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/requests`, query),
       positions: () => http.get("/admin/providers/positions"),
       subscribe: (listener) => subscribe("providers", listener),
@@ -232,7 +276,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     clients: {
       list: (filters = {}) => http.get("/admin/clients", filters),
-      get: (clientId) => http.get(`/clients/${id(clientId)}`),
+      get: (clientId) => http.get(`/admin/clients/${id(clientId)}`),
       requests: (clientId, query = {}) => http.get(`/admin/clients/${id(clientId)}/requests`, query),
       reviewsGiven: (clientId) => http.get(`/admin/clients/${id(clientId)}/reviews`),
       tickets: (clientId) => http.get(`/admin/clients/${id(clientId)}/tickets`),
@@ -241,32 +285,32 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     finance: {
-      revenue: (range) => http.get("/admin/revenue", range),
-      withdrawals: (filters = {}) => http.get("/admin/withdrawals", filters),
-      requestWithdrawal: (providerId, amount) => http.post("/admin/withdrawals", { providerId, amount }),
-      approveWithdrawal: (withdrawalId) => http.post(`/admin/withdrawals/${id(withdrawalId)}/approve`),
-      rejectWithdrawal: (withdrawalId, reason) => http.post(`/admin/withdrawals/${id(withdrawalId)}/reject`, { reason }),
-      markWithdrawalPaid: (withdrawalId, paymentReference) => http.post(`/admin/withdrawals/${id(withdrawalId)}/paid`, { paymentReference }),
-      transactions: (filters = {}) => http.get("/admin/transactions", filters),
-      exportTransactions: (filters = {}) => http.get("/admin/transactions/export", filters),
-      batches: (filters = {}) => http.get("/admin/payout-batches", filters),
-      batch: (batchId) => http.get(`/admin/payout-batches/${id(batchId)}`),
-      createBatch: (withdrawalIds) => http.post("/admin/payout-batches", { withdrawalIds }),
-      sendBatch: (batchId) => http.post(`/admin/payout-batches/${id(batchId)}/send`),
-      markBatchPaid: (batchId, bankReference) => http.post(`/admin/payout-batches/${id(batchId)}/paid`, { bankReference }),
-      cancelBatch: (batchId, reason) => http.post(`/admin/payout-batches/${id(batchId)}/cancel`, { reason }),
+      revenue: (range) => http.get("/admin/finance/revenue", range),
+      withdrawals: (filters = {}) => http.get("/admin/finance/withdrawals", filters),
+      requestWithdrawal: (providerId, amount) => http.post("/admin/finance/withdrawals", { providerId, amountKz: amount }),
+      approveWithdrawal: (withdrawalId) => http.post(`/admin/finance/withdrawals/${id(withdrawalId)}/approve`),
+      rejectWithdrawal: (withdrawalId, reason) => http.post(`/admin/finance/withdrawals/${id(withdrawalId)}/reject`, { reason }),
+      markWithdrawalPaid: (withdrawalId, paymentReference) => http.post(`/admin/finance/withdrawals/${id(withdrawalId)}/mark-paid`, { paymentReference }),
+      transactions: (filters = {}) => http.get("/admin/finance/transactions", filters),
+      exportTransactions: (filters = {}) => http.get("/admin/finance/transactions/export", filters),
+      batches: (filters = {}) => http.get("/admin/finance/batches", filters),
+      batch: (batchId) => http.get(`/admin/finance/batches/${id(batchId)}`),
+      createBatch: (withdrawalIds) => http.post("/admin/finance/batches", { withdrawalIds }),
+      sendBatch: (batchId) => http.post(`/admin/finance/batches/${id(batchId)}/send`),
+      markBatchPaid: (batchId, bankReference) => http.post(`/admin/finance/batches/${id(batchId)}/mark-paid`, { bankReference }),
+      cancelBatch: (batchId, reason) => http.post(`/admin/finance/batches/${id(batchId)}/cancel`, { reason }),
     },
 
     billing: {
-      invoices: (filters = {}) => http.get("/admin/invoices", filters),
-      exportInvoices: (filters = {}) => http.get("/admin/invoices/export", filters),
-      invoice: (invoiceId) => http.get(`/admin/invoices/${id(invoiceId)}`),
-      settlements: (filters) => http.get("/admin/settlements", filters),
-      registerSettlement: (settlementId, amount, reference) => http.post(`/admin/settlements/${id(settlementId)}/received`, { amount, reference }),
-      resolveSettlement: (settlementId, resolution) => http.post(`/admin/settlements/${id(settlementId)}/resolve`, { resolution }),
-      cashDebts: (filters = {}) => http.get("/admin/cash-debts", filters),
-      cashDeposits: (providerId) => http.get(`/admin/cash-debts/${id(providerId)}/deposits`),
-      registerCashDeposit: (providerId, amount, reference) => http.post(`/admin/cash-debts/${id(providerId)}/deposits`, { amount, reference }),
+      invoices: (filters = {}) => http.get("/admin/billing/invoices", filters),
+      exportInvoices: (filters = {}) => http.get("/admin/billing/invoices/export", filters),
+      invoice: (invoiceId) => http.get(`/admin/billing/invoices/${id(invoiceId)}`),
+      settlements: (filters) => http.get("/admin/billing/settlements", filters),
+      registerSettlement: (settlementId, amount, reference) => http.post(`/admin/billing/settlements/${id(settlementId)}/register`, { amountKz: amount, reference }),
+      resolveSettlement: (settlementId, resolution) => http.post(`/admin/billing/settlements/${id(settlementId)}/resolve`, { resolution }),
+      cashDebts: (filters = {}) => http.get("/admin/billing/cash-debts", filters),
+      cashDeposits: (providerId) => http.get("/admin/billing/cash-deposits", { providerId }),
+      registerCashDeposit: (providerId, amount, reference) => http.post("/admin/billing/cash-deposits", { providerId, amountKz: amount, reference }),
     },
 
     pricing: {
@@ -277,24 +321,24 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     zones: {
       list: () => http.get("/admin/zones"),
       create: (input, reason) => http.post("/admin/zones", { ...input, reason }),
-      update: (zoneId, input, reason) => http.put(`/admin/zones/${id(zoneId)}`, { ...input, reason }),
+      update: (zoneId, input, reason) => http.patch(`/admin/zones/${id(zoneId)}`, { ...input, reason }),
       remove: (zoneId, reason) => http.del(`/admin/zones/${id(zoneId)}`, { reason }),
     },
 
     support: {
-      assignees: () => http.get("/admin/tickets/assignees"),
-      tickets: (filters = {}) => http.get("/admin/tickets", filters),
-      ticket: (ticketId) => http.get(`/admin/tickets/${id(ticketId)}`),
-      assignTicket: (ticketId, adminId) => http.post(`/admin/tickets/${id(ticketId)}/assign`, { adminId }),
-      replyTicket: (ticketId, body) => http.post(`/admin/tickets/${id(ticketId)}/reply`, { body }),
-      resolveTicket: (ticketId, resolution) => http.post(`/admin/tickets/${id(ticketId)}/resolve`, { resolution }),
-      sosAlerts: (status) => http.get("/admin/sos", { status }),
-      acknowledgeSos: (sosId) => http.post(`/admin/sos/${id(sosId)}/acknowledge`),
-      resolveSos: (sosId, resolution) => http.post(`/admin/sos/${id(sosId)}/resolve`, { resolution }),
-      lowRatings: (query = {}) => http.get("/admin/reviews/low", query),
-      responseSummary: () => http.get("/admin/tickets/response-summary"),
-      satisfaction: () => http.get("/admin/tickets/satisfaction"),
-      markReviewHandled: (reviewId, note) => http.post(`/admin/reviews/${id(reviewId)}/handled`, { note }),
+      assignees: () => http.get("/admin/support/assignees"),
+      tickets: (filters = {}) => http.get("/admin/support/tickets", filters),
+      ticket: (ticketId) => http.get(`/admin/support/tickets/${id(ticketId)}`),
+      assignTicket: (ticketId, adminId) => http.post(`/admin/support/tickets/${id(ticketId)}/assign`, { assigneeId: adminId }),
+      replyTicket: (ticketId, body) => http.post(`/admin/support/tickets/${id(ticketId)}/reply`, { body }),
+      resolveTicket: (ticketId, resolution) => http.post(`/admin/support/tickets/${id(ticketId)}/resolve`, { resolution }),
+      sosAlerts: (status) => http.get("/admin/support/sos", { status }),
+      acknowledgeSos: (sosId) => http.post(`/admin/support/sos/${id(sosId)}/acknowledge`),
+      resolveSos: (sosId, resolution) => http.post(`/admin/support/sos/${id(sosId)}/resolve`, { resolution }),
+      lowRatings: (query = {}) => http.get("/admin/support/low-ratings", query),
+      responseSummary: () => http.get("/admin/support/response-summary"),
+      satisfaction: () => http.get("/admin/support/satisfaction"),
+      markReviewHandled: (reviewId, note) => http.post(`/admin/support/low-ratings/${id(reviewId)}/handle`, { note }),
       subscribe: (listener) => subscribe("support", listener),
     },
 
@@ -310,8 +354,8 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     settings: {
       get: () => http.get("/admin/settings"),
       update: (section, value, reason) => http.put(`/admin/settings/${id(section)}`, { value, reason }),
-      rolePermissions: () => http.get("/admin/roles"),
-      updateRolePermissions: (matrix, reason) => http.put("/admin/roles", { matrix, reason }),
+      rolePermissions: () => http.get("/admin/settings/roles"),
+      updateRolePermissions: (matrix, reason) => http.put("/admin/settings/roles", { matrix, reason }),
     },
   };
 }

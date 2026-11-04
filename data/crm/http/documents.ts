@@ -8,7 +8,7 @@ export function createHttpDocuments(http: HttpClient): DocumentsRepository {
   return {
     list: () => http.get<ClientDocument[]>("/crm/documents"),
     upload: (input: DocumentUpload) => http.post<ClientDocument>("/crm/documents", input),
-    remove: (documentId) => http.post<ClientDocument>(`/crm/documents/${id(documentId)}/remove`, {}),
-    restore: (document: ClientDocument) => http.post<ClientDocument>("/crm/documents/restore", document),
+    remove: (documentId) => http.del<ClientDocument>(`/crm/documents/${id(documentId)}`),
+    restore: (document: ClientDocument) => http.put<ClientDocument>(`/crm/documents/${id(document.id)}/restore`, document),
   };
 }

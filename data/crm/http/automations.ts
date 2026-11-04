@@ -8,7 +8,7 @@ export function createHttpAutomations(http: HttpClient): AutomationsRepository {
   return {
     list: () => http.get<Automation[]>("/crm/automations"),
     create: () => http.post<Automation>("/crm/automations", {}),
-    remove: (automationId) => http.post<Automation>(`/crm/automations/${id(automationId)}/remove`, {}),
-    setStatus: (automationId, status: AutomationStatus) => http.post<Automation>(`/crm/automations/${id(automationId)}/status`, { status }),
+    remove: (automationId) => http.del<Automation>(`/crm/automations/${id(automationId)}`),
+    setStatus: (automationId, status: AutomationStatus) => http.patch<Automation>(`/crm/automations/${id(automationId)}/status`, { status }),
   };
 }
