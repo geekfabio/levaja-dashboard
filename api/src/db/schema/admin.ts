@@ -1,4 +1,4 @@
-import { boolean, index, inet, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, inet, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { accounts } from "./auth";
 import { angoleva } from "./schema";
 
@@ -55,4 +55,84 @@ export const pricingRules = angoleva.table("pricing_rules", {
   baseKz: jsonb("base_kz").notNull(),
   active: boolean("active").notNull().default(true),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const adminApiKeys = angoleva.table("admin_api_keys", {
+  id: text("id").primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  prefix: varchar("prefix", { length: 20 }).notNull(),
+  secretHash: text("secret_hash").notNull(),
+  scopes: jsonb("scopes").$type<string[]>().notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdByAccountId: text("created_by_account_id")
+    .notNull()
+    .references(() => accounts.id),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedByAccountId: text("revoked_by_account_id").references(() => accounts.id),
+  revokeReason: text("revoke_reason"),
+});
+
+export const adminWebhooks = angoleva.table("admin_webhooks", {
+  id: text("id").primaryKey(),
+  url: text("url").notNull(),
+  description: varchar("description", { length: 240 }).notNull().default(""),
+  events: jsonb("events").$type<string[]>().notNull().default([]),
+  active: boolean("active").notNull().default(true),
+  secretHash: text("secret_hash").notNull(),
+  secretPreview: varchar("secret_preview", { length: 60 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdByAccountId: text("created_by_account_id")
+    .notNull()
+    .references(() => accounts.id),
+});
+
+export const adminWebhookDeliveries = angoleva.table(
+  "admin_webhook_deliveries",
+  {
+    id: text("id").primaryKey(),
+    webhookId: text("webhook_id")
+      .notNull()
+      .references(() => adminWebhooks.id, { onDelete: "cascade" }),
+    event: varchar("event", { length: 80 }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+    status: varchar("status", { length: 10 }).notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    simulated: boolean("simulated").notNull().default(true),
+  },
+  (table) => [index("admin_webhook_deliveries_webhook_idx").on(table.webhookId)],
+);
+
+export const broadcastChannelEnum = angoleva.enum("broadcast_channel", ["push", "sms", "email"]);
+export const broadcastStatusEnum = angoleva.enum("broadcast_status", ["draft", "scheduled", "sent", "cancelled"]);
+export const broadcastAudienceKindEnum = angoleva.enum("broadcast_audience_kind", ["clients", "providers"]);
+export const broadcastAudienceSegmentEnum = angoleva.enum("broadcast_audience_segment", [
+  "all",
+  "inactive_30",
+  "new_30",
+  "online",
+  "business",
+]);
+
+export const broadcasts = angoleva.table("broadcasts", {
+  id: text("id").primaryKey(),
+  title: varchar("title", { length: 160 }).notNull(),
+  channel: broadcastChannelEnum("channel").notNull(),
+  audienceKind: broadcastAudienceKindEnum("audience_kind").notNull(),
+  audienceSegment: broadcastAudienceSegmentEnum("audience_segment").notNull(),
+  audienceZoneIds: jsonb("audience_zone_ids").$type<string[]>().notNull().default([]),
+  subject: varchar("subject", { length: 200 }),
+  message: text("message").notNull(),
+  status: broadcastStatusEnum("status").notNull().default("draft"),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  recipients: integer("recipients"),
+  delivered: integer("delivered"),
+  failed: integer("failed"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdByAccountId: text("created_by_account_id")
+    .notNull()
+    .references(() => accounts.id),
+  cancelReason: text("cancel_reason"),
 });
