@@ -344,7 +344,7 @@ const DEFAULT_SETTINGS: AllSettings = {
   updated_by: "Sistema",
 };
 
-async function loadSettings(): Promise<AllSettings> {
+export async function loadSettings(): Promise<AllSettings> {
   const [row] = await db.select().from(platformSettings).where(eq(platformSettings.key, SETTINGS_KEY)).limit(1);
   return (row?.value as AllSettings | undefined) ?? DEFAULT_SETTINGS;
 }
