@@ -4,7 +4,7 @@ import type { HttpClient, HttpClientOptions } from "./client";
 import { createHttpClient, polling } from "./client";
 import { createOsrmRouting } from "./routing";
 
-export type HttpRepositoriesOptions = Omit<HttpClientOptions, "getToken" | "onUnauthorized"> & {
+export type HttpRepositoriesOptions = Omit<HttpClientOptions, "getCsrfToken" | "onUnauthorized"> & {
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
   pollMs?: number;
   routingUrl?: string;
@@ -40,17 +40,18 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     demo: null,
 
     auth: {
-      requestCode: (email) => http.post("/auth/request-code", { email }),
+      requestCode: (email) => http.post("/admin/auth/request-code", { email }),
       login: async (email, code, otp) => {
-        const created = await http.post<AdminSession>("/auth/login", { email, code, otp });
+        const created = await http.post<AdminSession>("/admin/auth/login", { email, code, otp });
         session.write(created);
         return created;
       },
       currentSession: async () => {
         if (!session.read()) return null;
         try {
-          const current = await http.get<AdminSession>("/auth/session");
-          session.write(current);
+          const current = await http.get<AdminSession | null>("/admin/auth/session");
+          if (current) session.write({ ...current, csrfToken: session.read()?.csrfToken });
+          else session.write(null);
           return current;
         } catch {
           session.write(null);
@@ -59,15 +60,15 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       },
       logout: async () => {
         try {
-          await http.post("/auth/logout");
+          await http.post("/admin/auth/logout");
         } finally {
           session.write(null);
         }
       },
       listUsers: () => http.get("/admin/users"),
       createUser: (input, reason) => http.post("/admin/users", { ...input, reason }),
-      changeRole: (userId, role, reason) => http.post(`/admin/users/${id(userId)}/role`, { role, reason }),
-      setActive: (userId, active, reason) => http.post(`/admin/users/${id(userId)}/${active ? "activate" : "deactivate"}`, { reason }),
+      changeRole: (userId, role, reason) => http.patch(`/admin/users/${id(userId)}/role`, { role, reason }),
+      setActive: (userId, active, reason) => http.patch(`/admin/users/${id(userId)}/active`, { active, reason }),
     },
 
     requests: {
@@ -315,12 +316,16 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
   };
 }
 
+export function readAdminCsrfToken(storage: HttpRepositoriesOptions["storage"]): string | null {
+  return sessionStore(storage).read()?.csrfToken ?? null;
+}
+
 export function createHttpRepositories(options: HttpRepositoriesOptions): Repositories {
   const session = sessionStore(options.storage ?? null);
   const http = createHttpClient({
     baseUrl: options.baseUrl,
     fetch: options.fetch,
-    getToken: () => session.read()?.token ?? null,
+    getCsrfToken: () => session.read()?.csrfToken ?? null,
     onUnauthorized: () => session.write(null),
   });
   return { ...build(http, session, options.pollMs ?? 15_000), routing: createOsrmRouting({ baseUrl: options.routingUrl, fetch: options.fetch }) };

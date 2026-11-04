@@ -1,4 +1,4 @@
-export { createHttpRepositories, HTTP_SESSION_KEY } from "./repositories";
+export { createHttpRepositories, readAdminCsrfToken, HTTP_SESSION_KEY } from "./repositories";
 export type { HttpRepositoriesOptions } from "./repositories";
 export { buildQuery, createHttpClient, toRepositoryError } from "./client";
 export { createOsrmRouting, parseOsrmRoute, DEFAULT_ROUTING_URL } from "./routing";
