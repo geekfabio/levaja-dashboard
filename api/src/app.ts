@@ -13,6 +13,8 @@ import { deviceRoutes } from "./routes/devices";
 import { adminAuditRoutes } from "./routes/admin-audit";
 import { adminClaimRoutes } from "./routes/admin-claims";
 import { adminBillingRoutes } from "./routes/admin-billing";
+import { adminBusinessRoutes } from "./routes/admin-business";
+import { adminQualityRoutes } from "./routes/admin-quality";
 import { adminClientRoutes } from "./routes/admin-clients";
 import { adminCommunicationsRoutes } from "./routes/admin-communications";
 import { adminIntegrationsRoutes } from "./routes/admin-integrations";
@@ -101,6 +103,8 @@ export async function buildApp() {
   await app.register(adminSupportRoutes);
   await app.register(adminIntegrationsRoutes);
   await app.register(adminCommunicationsRoutes);
+  await app.register(adminBusinessRoutes);
+  await app.register(adminQualityRoutes);
 
   return app;
 }
