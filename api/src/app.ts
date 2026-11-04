@@ -14,6 +14,8 @@ import { adminAuditRoutes } from "./routes/admin-audit";
 import { adminClaimRoutes } from "./routes/admin-claims";
 import { adminBillingRoutes } from "./routes/admin-billing";
 import { adminClientRoutes } from "./routes/admin-clients";
+import { adminCommunicationsRoutes } from "./routes/admin-communications";
+import { adminIntegrationsRoutes } from "./routes/admin-integrations";
 import { adminDisputeRoutes } from "./routes/admin-disputes";
 import { adminDocumentRoutes } from "./routes/admin-documents";
 import { adminFinanceRoutes } from "./routes/admin-finance";
@@ -93,6 +95,8 @@ export async function buildApp() {
   await app.register(adminPrivacyRoutes);
   await app.register(adminFleetRoutes);
   await app.register(adminSupportRoutes);
+  await app.register(adminIntegrationsRoutes);
+  await app.register(adminCommunicationsRoutes);
 
   return app;
 }
