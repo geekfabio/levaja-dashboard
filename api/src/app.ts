@@ -20,6 +20,8 @@ import { adminFinanceRoutes } from "./routes/admin-finance";
 import { adminMetricsRoutes } from "./routes/admin-metrics";
 import { adminPricingRoutes } from "./routes/admin-pricing";
 import { adminProviderRoutes } from "./routes/admin-providers";
+import { adminPrivacyRoutes } from "./routes/admin-privacy";
+import { adminFleetRoutes } from "./routes/admin-fleets";
 import { adminRefundRoutes } from "./routes/admin-refunds";
 import { adminRequestRoutes } from "./routes/admin-requests";
 import { adminSecurityRoutes } from "./routes/admin-security";
@@ -87,6 +89,8 @@ export async function buildApp() {
   await app.register(adminMetricsRoutes);
   await app.register(adminFinanceRoutes);
   await app.register(adminBillingRoutes);
+  await app.register(adminPrivacyRoutes);
+  await app.register(adminFleetRoutes);
 
   return app;
 }

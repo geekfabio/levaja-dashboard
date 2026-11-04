@@ -29,6 +29,20 @@ export const transactionStatusEnum = angoleva.enum("wallet_transaction_status", 
 
 export const providerAccountStatusEnum = angoleva.enum("provider_account_status", ["pending_approval", "active", "suspended"]);
 
+export const fleetStatusEnum = angoleva.enum("fleet_status", ["active", "suspended"]);
+
+export const fleets = angoleva.table("fleets", {
+  id: text("id").primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  nif: varchar("nif", { length: 20 }).notNull().unique(),
+  contactName: varchar("contact_name", { length: 160 }).notNull(),
+  phone: varchar("phone", { length: 32 }).notNull(),
+  email: varchar("email", { length: 254 }).notNull(),
+  status: fleetStatusEnum("status").notNull().default("active"),
+  suspensionReason: text("suspension_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const clients = angoleva.table("clients", {
   accountId: text("account_id")
     .primaryKey()
@@ -55,6 +69,7 @@ export const providers = angoleva.table("providers", {
   declinedRequestIds: jsonb("declined_request_ids").$type<string[]>().notNull().default([]),
   accountStatus: providerAccountStatusEnum("account_status").notNull().default("active"),
   suspensionReason: text("suspension_reason"),
+  fleetId: text("fleet_id").references(() => fleets.id),
 });
 
 export const vehicles = angoleva.table("vehicles", {
