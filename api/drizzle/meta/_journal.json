@@ -57,6 +57,13 @@
       "when": 1793727502834,
       "tag": "0007_lame_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793803897219,
+      "tag": "0008_breezy_fallen_one",
+      "breakpoints": true
     }
   ]
 }
