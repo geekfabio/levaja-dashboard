@@ -22,7 +22,7 @@ import { createRefundRecord } from "./admin-refunds";
 type DisputeRow = typeof disputes.$inferSelect;
 type ServiceRequestRow = typeof serviceRequests.$inferSelect;
 
-const DISPUTE_CATEGORIES = ["damage", "payment", "price", "no_show", "delay", "conduct", "other"] as const;
+export const DISPUTE_CATEGORIES = ["damage", "payment", "price", "no_show", "delay", "conduct", "other"] as const;
 const DISPUTE_OUTCOMES = ["no_refund", "refund_full", "refund_partial"] as const;
 
 const listQuerySchema = pageQuerySchema.extend({ state: z.enum(["open", "resolved", "overdue"]).optional(), category: z.string().optional(), q: z.string().optional() });

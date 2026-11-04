@@ -34,6 +34,23 @@ export const PROVIDER_BUSY_STATUSES: readonly ServiceRequestStatus[] = [
   "in_transit",
 ];
 
+export const REASSIGNABLE_REQUEST_STATUSES: readonly ServiceRequestStatus[] = CANCELLABLE_STATUSES;
+
+export const DISPUTABLE_REQUEST_STATUSES: readonly ServiceRequestStatus[] = [
+  "pickup_confirmed",
+  "in_transit",
+  "delivered",
+  "paid",
+  "rated",
+];
+
+export const FORCE_COMPLETE_REQUEST_STATUSES: readonly ServiceRequestStatus[] = [
+  "pickup_confirmed",
+  "in_transit",
+  "delivered",
+  "paid",
+];
+
 export const TRANSITION_ACTOR: Partial<Record<ServiceRequestStatus, Exclude<RequestActor, "system">>> = {
   assigned: "provider",
   en_route: "provider",
@@ -56,3 +73,16 @@ export function canTransition(from: ServiceRequestStatus, to: ServiceRequestStat
 }
 
 export const isCancellable = (status: ServiceRequestStatus) => CANCELLABLE_STATUSES.includes(status);
+
+export const isReassignable = (status: ServiceRequestStatus) => REASSIGNABLE_REQUEST_STATUSES.includes(status);
+
+export const canOpenDispute = (status: ServiceRequestStatus) => DISPUTABLE_REQUEST_STATUSES.includes(status);
+
+export const isForceCompletable = (status: ServiceRequestStatus) => FORCE_COMPLETE_REQUEST_STATUSES.includes(status);
+
+export function stepsUntil(from: ServiceRequestStatus, to: FlowStatus): FlowStatus[] {
+  const start = SERVICE_REQUEST_STATUS_FLOW.indexOf(from as FlowStatus);
+  const end = SERVICE_REQUEST_STATUS_FLOW.indexOf(to);
+  if (start < 0 || end <= start) return [];
+  return SERVICE_REQUEST_STATUS_FLOW.slice(start + 1, end + 1);
+}
