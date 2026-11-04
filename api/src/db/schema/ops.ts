@@ -43,6 +43,14 @@ export const fleets = angoleva.table("fleets", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const ticketStatusEnum = angoleva.enum("ticket_status", ["open", "in_progress", "resolved"]);
+
+export const ticketPriorityEnum = angoleva.enum("ticket_priority", ["low", "medium", "high", "urgent"]);
+
+export const ticketMessageAuthorEnum = angoleva.enum("ticket_message_author", ["client", "provider", "admin"]);
+
+export const sosAlertStatusEnum = angoleva.enum("sos_alert_status", ["open", "acknowledged", "resolved"]);
+
 export const clients = angoleva.table("clients", {
   accountId: text("account_id")
     .primaryKey()
@@ -247,17 +255,46 @@ export const chatMessages = angoleva.table(
   (table) => [index("chat_messages_thread_idx").on(table.threadId)],
 );
 
-export const supportTickets = angoleva.table("support_tickets", {
-  id: text("id").primaryKey(),
-  code: varchar("code", { length: 20 }).notNull().unique(),
-  requestId: text("request_id").references(() => serviceRequests.id),
-  accountId: text("account_id")
-    .notNull()
-    .references(() => accounts.id),
-  reason: varchar("reason", { length: 120 }).notNull(),
-  description: text("description").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const supportTickets = angoleva.table(
+  "support_tickets",
+  {
+    id: text("id").primaryKey(),
+    code: varchar("code", { length: 20 }).notNull().unique(),
+    requestId: text("request_id").references(() => serviceRequests.id),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    reason: varchar("reason", { length: 120 }).notNull(),
+    description: text("description").notNull(),
+    subject: varchar("subject", { length: 160 }),
+    status: ticketStatusEnum("status").notNull().default("open"),
+    priority: ticketPriorityEnum("priority").notNull().default("medium"),
+    assigneeAccountId: text("assignee_account_id").references(() => accounts.id),
+    resolution: text("resolution"),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    satisfactionScore: integer("satisfaction_score"),
+    satisfactionComment: text("satisfaction_comment"),
+    satisfactionAt: timestamp("satisfaction_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("support_tickets_status_idx").on(table.status), index("support_tickets_assignee_idx").on(table.assigneeAccountId)],
+);
+
+export const supportTicketMessages = angoleva.table(
+  "support_ticket_messages",
+  {
+    id: text("id").primaryKey(),
+    ticketId: text("ticket_id")
+      .notNull()
+      .references(() => supportTickets.id, { onDelete: "cascade" }),
+    author: ticketMessageAuthorEnum("author").notNull(),
+    authorName: varchar("author_name", { length: 160 }).notNull(),
+    body: text("body").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("support_ticket_messages_ticket_idx").on(table.ticketId)],
+);
 
 export const sosAlerts = angoleva.table("sos_alerts", {
   id: text("id").primaryKey(),
@@ -267,6 +304,25 @@ export const sosAlerts = angoleva.table("sos_alerts", {
     .references(() => accounts.id),
   lat: numeric("lat", { precision: 9, scale: 6 }).notNull(),
   lng: numeric("lng", { precision: 9, scale: 6 }).notNull(),
+  area: varchar("area", { length: 160 }),
+  message: text("message"),
+  status: sosAlertStatusEnum("status").notNull().default("open"),
+  acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolution: text("resolution"),
+  handledByAccountId: text("handled_by_account_id").references(() => accounts.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const reviewNotes = angoleva.table("review_notes", {
+  id: text("id").primaryKey(),
+  requestId: text("request_id")
+    .notNull()
+    .references(() => serviceRequests.id, { onDelete: "cascade" }),
+  note: text("note").notNull(),
+  handledByAccountId: text("handled_by_account_id")
+    .notNull()
+    .references(() => accounts.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
