@@ -98,7 +98,6 @@ export default function NewContactDialog() {
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim() || form.phone.trim(),
       email: form.email.trim(),
-      preferredLanguage: "Português",
       contactability: "Válido",
       consent: {
         email: {

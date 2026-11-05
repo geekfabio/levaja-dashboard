@@ -9,7 +9,7 @@ export function createHttpOpportunities(http: HttpClient): OpportunitiesReposito
     list: () => http.get<Opportunity[]>("/crm/opportunities"),
     get: (opportunityId) => http.get<Opportunity>(`/crm/opportunities/${id(opportunityId)}`),
     create: (draft: OpportunityDraft) => http.post<Opportunity>("/crm/opportunities", draft),
-    update: (opportunityId, patch: OpportunityPatch) => http.post<Opportunity>(`/crm/opportunities/${id(opportunityId)}`, patch),
+    update: (opportunityId, patch: OpportunityPatch) => http.patch<Opportunity>(`/crm/opportunities/${id(opportunityId)}`, patch),
     moveStage: (opportunityId, stage: OpportunityStage, lossReason?: LossReason) => http.post<Opportunity>(`/crm/opportunities/${id(opportunityId)}/stage`, { stage, lossReason }),
   };
 }

@@ -404,7 +404,7 @@ export type AdminPermission =
 
 export type RolePermissions = Record<AdminRole, AdminPermission[]>;
 
-export type AdminSession = { token: string; user: AdminUser; expiresAt: string; rolePermissions?: RolePermissions };
+export type AdminSession = { token: string; user: AdminUser; expiresAt: string; rolePermissions?: RolePermissions; csrfToken?: string };
 
 export type ProviderAvailability = "online" | "offline";
 export type ProviderAccountStatus = "pending_approval" | "active" | "suspended";

@@ -10,8 +10,8 @@ export function createHttpTickets(http: HttpClient): TicketsRepository {
     get: (ticketId) => http.get<Ticket>(`/crm/tickets/${id(ticketId)}`),
     create: (draft: TicketDraft) => http.post<Ticket>("/crm/tickets", draft),
     addComment: (ticketId, body) => http.post<Ticket>(`/crm/tickets/${id(ticketId)}/comments`, { body }),
-    setStatus: (ticketId, status: TicketStatus) => http.post<Ticket>(`/crm/tickets/${id(ticketId)}/status`, { status }),
-    setPriority: (ticketId, priority: TicketPriority) => http.post<Ticket>(`/crm/tickets/${id(ticketId)}/priority`, { priority }),
-    setAssignee: (ticketId, assignee, avatar) => http.post<Ticket>(`/crm/tickets/${id(ticketId)}/assignee`, { assignee, avatar }),
+    setStatus: (ticketId, status: TicketStatus) => http.patch<Ticket>(`/crm/tickets/${id(ticketId)}/status`, { status }),
+    setPriority: (ticketId, priority: TicketPriority) => http.patch<Ticket>(`/crm/tickets/${id(ticketId)}/priority`, { priority }),
+    setAssignee: (ticketId, assignee, avatar) => http.patch<Ticket>(`/crm/tickets/${id(ticketId)}/assignee`, { assignee, avatar }),
   };
 }
