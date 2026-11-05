@@ -41,6 +41,7 @@ import { providerRoutes } from "./routes/providers";
 import { vehicleRoutes } from "./routes/vehicles";
 import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
+import { supportMobileRoutes } from "./routes/support-mobile";
 import { uploadRoutes } from "./routes/uploads";
 import { crmCompaniesRoutes } from "./routes/crm-companies";
 import { crmContactsRoutes } from "./routes/crm-contacts";
@@ -68,6 +69,7 @@ export async function buildApp() {
   await app.register(accountsRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(supportMobileRoutes);
   await app.register(providerRoutes);
   await app.register(locationRoutes);
   await app.register(vehicleRoutes);
