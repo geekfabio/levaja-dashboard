@@ -278,7 +278,7 @@ export async function providerRoutes(app: FastifyInstance) {
     reply.send(dataEnvelope(presentVehicle(row!)));
   });
 
-  app.get("/zones", { preHandler: authenticate }, async (_request, reply) => {
+  app.get("/zones", async (_request, reply) => {
     const rows = await db.select().from(zones).orderBy(asc(zones.name));
     reply.send(listEnvelope(rows.map(presentZone)));
   });

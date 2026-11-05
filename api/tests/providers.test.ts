@@ -355,6 +355,15 @@ test("GET /zones devolve as zonas para qualquer conta autenticada", async () => 
   assert.equal(typeof zone.radius_km, "number");
 });
 
+test("GET /zones é pública — um candidato a prestador sem sessão também consegue ver as zonas", async () => {
+  const zoneId = await createZone("Zona de teste sem sessão");
+
+  const res = await app.inject({ method: "GET", url: "/zones" });
+  assert.equal(res.statusCode, 200);
+  const zone = res.json().data.find((item: { id: string }) => item.id === zoneId);
+  assert.ok(zone);
+});
+
 test("um prestador não acede ao estado, cobertura ou carteira de outro", async () => {
   const providerA = await createProvider("acesso-a");
   const providerB = await createProvider("acesso-b");
