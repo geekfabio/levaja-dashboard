@@ -1,23 +1,6 @@
-export type ServiceKind = "tow" | "cargo" | "small_move" | "house_move";
+import { loadPricingConfig, type PricingConfig, type PricingRuleKind } from "./pricing-config";
 
-export const PLATFORM_FEE_KZ = 500;
-export const PROVIDER_COMMISSION = 0.15;
-
-const BASE_KZ: Record<ServiceKind, number> = {
-  tow: 8000,
-  cargo: 5500,
-  small_move: 9000,
-  house_move: 18000,
-};
-
-const PER_KM_KZ: Record<ServiceKind, number> = {
-  tow: 250,
-  cargo: 250,
-  small_move: 300,
-  house_move: 400,
-};
-
-const roundTo500 = (value: number) => Math.round(value / 500) * 500;
+export type ServiceKind = PricingRuleKind;
 
 export type TowDetailsInput = { can_move?: boolean; incident?: string };
 export type CargoDetailsInput = {
@@ -72,7 +55,7 @@ const VEHICLE_CLASS_EXTRA: Record<NonNullable<CargoDetailsInput["vehicle_class"]
   truck: 6000,
 };
 
-function extrasFor(input: PricingInput) {
+function detailExtrasFor(input: PricingInput) {
   let extras = 0;
   if (input.serviceType === "tow" && input.tow) {
     if (input.tow.can_move === false) extras += 1500;
@@ -93,23 +76,36 @@ function extrasFor(input: PricingInput) {
   return extras;
 }
 
-export function estimatePrice(input: PricingInput): PriceBreakdown {
-  const base = BASE_KZ[input.serviceType];
-  const distance = roundTo500(input.distanceKm * PER_KM_KZ[input.serviceType]);
-  const extras = extrasFor(input);
-  const service = roundTo500(base + distance + extras);
+function configuredExtrasFor(input: PricingInput, config: PricingConfig) {
+  return config.extras.filter((extra) => extra.kinds.includes(input.serviceType)).reduce((total, extra) => total + extra.amount, 0);
+}
+
+function ruleFor(config: PricingConfig, serviceType: ServiceKind) {
+  return config.rules.find((rule) => rule.kind === serviceType);
+}
+
+export async function estimatePrice(input: PricingInput): Promise<PriceBreakdown> {
+  const config = await loadPricingConfig();
+  const rule = ruleFor(config, input.serviceType);
+  const roundTo = (value: number) => Math.round(value / config.round_to) * config.round_to;
+
+  const base = rule?.base ?? 0;
+  const distance = roundTo(input.distanceKm * (rule?.per_km ?? 0));
+  const extras = detailExtrasFor(input) + configuredExtrasFor(input, config);
+  const service = roundTo(base + distance + extras);
   return {
     base_kz: base,
     distance_kz: distance,
     extras_kz: service - base - distance,
-    platform_fee_kz: PLATFORM_FEE_KZ,
-    total_kz: service + PLATFORM_FEE_KZ,
+    platform_fee_kz: config.platform_fee,
+    total_kz: service + config.platform_fee,
   };
 }
 
-export function providerEarningFor(price: Pick<PriceBreakdown, "total_kz" | "platform_fee_kz">) {
+export async function providerEarningFor(price: Pick<PriceBreakdown, "total_kz" | "platform_fee_kz">): Promise<number> {
+  const config = await loadPricingConfig();
   const service = price.total_kz - price.platform_fee_kz;
-  return Math.floor((service * (1 - PROVIDER_COMMISSION)) / 500) * 500;
+  return Math.floor((service * (1 - config.commission_rate)) / config.round_to) * config.round_to;
 }
 
 export const needsProposal = (serviceType: ServiceKind) => serviceType === "house_move";

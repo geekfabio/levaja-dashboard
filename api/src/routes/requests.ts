@@ -212,14 +212,14 @@ export async function requestRoutes(app: FastifyInstance) {
 
     const distanceKm = estimateDistanceKm(body.pickup, body.dropoff, body.stops);
     const durationMin = estimateDurationMin(distanceKm);
-    const pricing = estimatePrice({
+    const pricing = await estimatePrice({
       serviceType: body.service_type,
       distanceKm,
       tow: body.tow_details,
       cargo: body.cargo_details,
       moving: body.moving_details,
     });
-    const providerEarningKz = providerEarningFor(pricing);
+    const providerEarningKz = await providerEarningFor(pricing);
     const code = await generateRequestCode();
     const id = newId("req");
     const now = new Date();
@@ -398,7 +398,7 @@ export async function requestRoutes(app: FastifyInstance) {
       extras_kz: proposal.amount_kz - currentPricing.base_kz - currentPricing.distance_kz,
       total_kz: proposal.amount_kz + currentPricing.platform_fee_kz,
     };
-    const providerEarningKz = providerEarningFor(nextPricing);
+    const providerEarningKz = await providerEarningFor(nextPricing);
 
     await db
       .update(serviceRequests)

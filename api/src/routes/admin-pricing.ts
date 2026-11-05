@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -9,8 +8,7 @@ import { recordAdminAudit } from "../lib/admin-audit";
 import { requireCsrf } from "../lib/require-csrf";
 import { requirePermission } from "../lib/require-permission";
 import { requireReason } from "../lib/require-reason";
-
-const PRICING_KEY = "pricing";
+import { PRICING_SETTINGS_KEY, loadPricingConfig, type PricingConfig } from "../lib/pricing-config";
 
 const ruleSchema = z.object({ kind: z.enum(["tow", "cargo", "small_move", "house_move"]), base: z.number().nonnegative(), per_km: z.number().nonnegative() });
 const extraSchema = z.object({ id: z.string(), label: z.string(), amount: z.number(), kinds: z.array(z.enum(["tow", "cargo", "small_move", "house_move"])) });
@@ -24,31 +22,6 @@ const pricingUpdateSchema = z.object({
   reason: z.string().optional(),
 });
 
-type PricingConfig = {
-  rules: { kind: string; base: number; per_km: number }[];
-  extras: { id: string; label: string; amount: number; kinds: string[] }[];
-  platform_fee: number;
-  commission_rate: number;
-  round_to: number;
-  updated_at: string;
-  updated_by: string;
-};
-
-const DEFAULT_PRICING: PricingConfig = {
-  rules: [
-    { kind: "tow", base: 8000, per_km: 250 },
-    { kind: "cargo", base: 5500, per_km: 250 },
-    { kind: "small_move", base: 9000, per_km: 300 },
-    { kind: "house_move", base: 18000, per_km: 400 },
-  ],
-  extras: [],
-  platform_fee: 500,
-  commission_rate: 0.15,
-  round_to: 500,
-  updated_at: new Date(0).toISOString(),
-  updated_by: "Sistema",
-};
-
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
   if (value !== null && typeof value === "object") {
@@ -58,15 +31,10 @@ function stableStringify(value: unknown): string {
   return JSON.stringify(value);
 }
 
-async function loadPricing(): Promise<PricingConfig> {
-  const [row] = await db.select().from(platformSettings).where(eq(platformSettings.key, PRICING_KEY)).limit(1);
-  return (row?.value as PricingConfig | undefined) ?? DEFAULT_PRICING;
-}
-
 export async function adminPricingRoutes(app: FastifyInstance) {
   app.get("/admin/pricing", { preHandler: [authenticateAdmin] }, async (request) => {
     requirePermission(request.adminAccount!.adminRole!, "pricing.view");
-    return dataEnvelope(await loadPricing());
+    return dataEnvelope(await loadPricingConfig());
   });
 
   app.put("/admin/pricing", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -80,7 +48,7 @@ export async function adminPricingRoutes(app: FastifyInstance) {
       throw apiError("validation", "Cada serviço só pode ter uma regra de preço.");
     }
 
-    const current = await loadPricing();
+    const current = await loadPricingConfig();
     const next: PricingConfig = {
       rules: body.rules,
       extras: body.extras,
@@ -101,7 +69,7 @@ export async function adminPricingRoutes(app: FastifyInstance) {
 
     await db
       .insert(platformSettings)
-      .values({ key: PRICING_KEY, value: next, updatedByAccountId: admin.id })
+      .values({ key: PRICING_SETTINGS_KEY, value: next, updatedByAccountId: admin.id })
       .onConflictDoUpdate({ target: platformSettings.key, set: { value: next, updatedByAccountId: admin.id, updatedAt: new Date() } });
 
     await recordAdminAudit({
