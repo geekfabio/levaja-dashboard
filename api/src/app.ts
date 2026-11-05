@@ -35,7 +35,9 @@ import { adminSettingsRoutes } from "./routes/admin-settings";
 import { adminSupportRoutes } from "./routes/admin-support";
 import { adminZoneRoutes } from "./routes/admin-zones";
 import { healthRoutes } from "./routes/health";
+import { locationRoutes } from "./routes/locations";
 import { providerRoutes } from "./routes/providers";
+import { vehicleRoutes } from "./routes/vehicles";
 import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
 import { uploadRoutes } from "./routes/uploads";
@@ -65,6 +67,8 @@ export async function buildApp() {
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
   await app.register(providerRoutes);
+  await app.register(locationRoutes);
+  await app.register(vehicleRoutes);
   await app.register(applicationRoutes);
   await app.register(uploadRoutes);
   await app.register(crmCompaniesRoutes);
