@@ -1,4 +1,4 @@
-import type { AdminUser, Review, SosAlert, SosStatus, Ticket, TicketPriority, TicketStatus } from "@/types/leva-ja";
+import type { AdminUser, EmergencyContact, Review, SosAlert, SosStatus, Ticket, TicketPriority, TicketStatus } from "@/types/leva-ja";
 import type { Page, PageQuery, RealtimeListener, Unsubscribe } from "./common";
 
 export type TicketFilters = PageQuery & {
@@ -17,6 +17,8 @@ export type LowRatingItem = Review & {
 };
 
 export type TicketAssignee = Pick<AdminUser, "id" | "name" | "initials" | "role">;
+
+export type EmergencyContactInput = { label: string; phoneNumber: string };
 
 export type ResponseSummary = { pending: number; atRisk: number; breached: number; metRate: number | null };
 
@@ -42,5 +44,9 @@ export interface SupportRepository {
   markReviewHandled(id: string, note: string): Promise<LowRatingItem>;
   responseSummary(): Promise<ResponseSummary>;
   satisfaction(): Promise<SatisfactionReport>;
+  emergencyContacts(): Promise<EmergencyContact[]>;
+  createEmergencyContact(input: EmergencyContactInput, reason: string): Promise<EmergencyContact>;
+  updateEmergencyContact(id: string, input: EmergencyContactInput, reason: string): Promise<EmergencyContact>;
+  removeEmergencyContact(id: string, reason: string): Promise<void>;
   subscribe(listener: RealtimeListener): Unsubscribe;
 }

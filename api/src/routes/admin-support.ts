@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "../db/client";
 import { platformSettings } from "../db/schema/admin";
 import { accounts } from "../db/schema/auth";
-import { reviewNotes, serviceRequests, sosAlerts, supportTicketMessages, supportTickets } from "../db/schema/ops";
+import { emergencyContacts, reviewNotes, serviceRequests, sosAlerts, supportTicketMessages, supportTickets } from "../db/schema/ops";
 import { authenticateAdmin } from "../lib/authenticate-admin";
 import { hasPermission, type AdminRole } from "../lib/admin-roles";
 import { initialsOf } from "../lib/admin-users";
@@ -45,6 +45,16 @@ const sosQuerySchema = z.object({ status: z.string().optional() });
 const sosResolveBodySchema = z.object({ resolution: z.string().optional() });
 const lowRatingsQuerySchema = pageQuerySchema.extend({ handled: z.enum(["true", "false"]).optional() });
 const handleReviewBodySchema = z.object({ note: z.string().optional() });
+
+const emergencyContactBodySchema = z.object({
+  label: z.string().trim().min(1, "Indica um nome."),
+  phone_number: z.string().trim().min(1, "Indica um número."),
+  reason: z.string().optional(),
+});
+
+function presentEmergencyContact(row: typeof emergencyContacts.$inferSelect) {
+  return { id: row.id, label: row.label, phone_number: row.phoneNumber };
+}
 
 function matchesText(q: string | undefined, ...fields: (string | null | undefined)[]) {
   if (!q?.trim()) return true;
@@ -516,5 +526,89 @@ export async function adminSupportRoutes(app: FastifyInstance) {
       response_rate: tickets.length ? rated.length / tickets.length : null,
       recent,
     });
+  });
+
+  app.get("/admin/support/emergency-contacts", { preHandler: [authenticateAdmin] }, async (request) => {
+    requirePermission(request.adminAccount!.adminRole! as AdminRole, "support.sos");
+    const rows = await db.select().from(emergencyContacts).orderBy(asc(emergencyContacts.label));
+    return dataEnvelope(rows.map(presentEmergencyContact));
+  });
+
+  app.post("/admin/support/emergency-contacts", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
+    const admin = request.adminAccount!;
+    requirePermission(admin.adminRole! as AdminRole, "support.sos");
+    const body = emergencyContactBodySchema.parse(request.body);
+    const reason = requireReason(body.reason, "o motivo");
+
+    const [row] = await db.insert(emergencyContacts).values({ id: newId("emc"), label: body.label, phoneNumber: body.phone_number }).returning();
+
+    await recordAdminAudit({
+      actorAccountId: admin.id,
+      action: "support.emergency_contact.create",
+      targetModule: "support",
+      targetId: row!.id,
+      targetLabel: row!.label,
+      reason,
+      changes: [{ field: "Contacto", from: "—", to: `${row!.label}: ${row!.phoneNumber}` }],
+      sensitive: true,
+    });
+
+    return dataEnvelope(presentEmergencyContact(row!));
+  });
+
+  app.patch("/admin/support/emergency-contacts/:id", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
+    const admin = request.adminAccount!;
+    requirePermission(admin.adminRole! as AdminRole, "support.sos");
+    const { id } = request.params as { id: string };
+    const body = emergencyContactBodySchema.parse(request.body);
+    const reason = requireReason(body.reason, "o motivo");
+
+    const [existing] = await db.select().from(emergencyContacts).where(eq(emergencyContacts.id, id)).limit(1);
+    if (!existing) throw apiError("not_found", "Contacto não encontrado.");
+
+    const [row] = await db
+      .update(emergencyContacts)
+      .set({ label: body.label, phoneNumber: body.phone_number })
+      .where(eq(emergencyContacts.id, id))
+      .returning();
+
+    await recordAdminAudit({
+      actorAccountId: admin.id,
+      action: "support.emergency_contact.update",
+      targetModule: "support",
+      targetId: row!.id,
+      targetLabel: row!.label,
+      reason,
+      changes: [{ field: "Contacto", from: `${existing.label}: ${existing.phoneNumber}`, to: `${row!.label}: ${row!.phoneNumber}` }],
+      sensitive: true,
+    });
+
+    return dataEnvelope(presentEmergencyContact(row!));
+  });
+
+  app.delete("/admin/support/emergency-contacts/:id", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
+    const admin = request.adminAccount!;
+    requirePermission(admin.adminRole! as AdminRole, "support.sos");
+    const { id } = request.params as { id: string };
+    const body = z.object({ reason: z.string().optional() }).parse(request.body ?? {});
+    const reason = requireReason(body.reason, "o motivo");
+
+    const [existing] = await db.select().from(emergencyContacts).where(eq(emergencyContacts.id, id)).limit(1);
+    if (!existing) throw apiError("not_found", "Contacto não encontrado.");
+
+    await db.delete(emergencyContacts).where(eq(emergencyContacts.id, id));
+
+    await recordAdminAudit({
+      actorAccountId: admin.id,
+      action: "support.emergency_contact.remove",
+      targetModule: "support",
+      targetId: id,
+      targetLabel: existing.label,
+      reason,
+      changes: [{ field: "Contacto", from: `${existing.label}: ${existing.phoneNumber}`, to: "—" }],
+      sensitive: true,
+    });
+
+    return dataEnvelope(null);
   });
 }

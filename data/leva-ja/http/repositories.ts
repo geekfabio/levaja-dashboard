@@ -339,6 +339,10 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       responseSummary: () => http.get("/admin/support/response-summary"),
       satisfaction: () => http.get("/admin/support/satisfaction"),
       markReviewHandled: (reviewId, note) => http.post(`/admin/support/low-ratings/${id(reviewId)}/handle`, { note }),
+      emergencyContacts: () => http.get("/admin/support/emergency-contacts"),
+      createEmergencyContact: (input, reason) => http.post("/admin/support/emergency-contacts", { ...input, reason }),
+      updateEmergencyContact: (contactId, input, reason) => http.patch(`/admin/support/emergency-contacts/${id(contactId)}`, { ...input, reason }),
+      removeEmergencyContact: (contactId, reason) => http.del(`/admin/support/emergency-contacts/${id(contactId)}`, { reason }),
       subscribe: (listener) => subscribe("support", listener),
     },
 

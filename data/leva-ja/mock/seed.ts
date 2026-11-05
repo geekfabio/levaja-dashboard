@@ -1528,6 +1528,11 @@ export function generateSeed(nowDate: Date = new Date(), seed = DEFAULT_SEED): M
     webhooks: [],
     tickets: [],
     sos: [],
+    emergencyContacts: [
+      { id: "emc-demo-police", label: "Polícia (demonstração)", phoneNumber: "100 000 000" },
+      { id: "emc-demo-ambulance", label: "Ambulância (demonstração)", phoneNumber: "100 000 001" },
+      { id: "emc-demo-support", label: "AngoLeva — apoio (demonstração)", phoneNumber: "100 000 002" },
+    ],
     reviewNotes: {},
     documentSubmittedAt: submittedAt,
     adminUsers,
