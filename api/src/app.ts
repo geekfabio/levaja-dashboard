@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import { loadEnv } from "./env";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { authRoutes } from "./routes/auth";
+import { accountsRoutes } from "./routes/accounts";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { adminApplicationRoutes } from "./routes/admin-applications";
 import { applicationRoutes } from "./routes/applications";
@@ -62,6 +63,7 @@ export async function buildApp() {
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(accountsRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
   await app.register(providerRoutes);
