@@ -1,3 +1,4 @@
+import { readAdminCsrfToken } from "@/data/leva-ja/http";
 import type { Repositories } from "../repositories";
 import { createHttpClient } from "./client";
 import { createHttpCompanies } from "./companies";
@@ -11,8 +12,14 @@ import { createHttpOffers } from "./offers";
 import { createHttpOpportunities } from "./opportunities";
 import { createHttpTickets } from "./tickets";
 
-export function createHttpRepositories(options: { baseUrl: string; fetch?: typeof fetch }): Repositories {
-  const http = createHttpClient(options.baseUrl, options.fetch);
+export type CrmHttpRepositoriesOptions = {
+  baseUrl: string;
+  fetch?: typeof fetch;
+  storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
+};
+
+export function createHttpRepositories(options: CrmHttpRepositoriesOptions): Repositories {
+  const http = createHttpClient(options.baseUrl, options.fetch, () => readAdminCsrfToken(options.storage ?? null));
   return {
     tickets: createHttpTickets(http),
     opportunities: createHttpOpportunities(http),

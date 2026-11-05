@@ -40,7 +40,6 @@ export type Contact = {
   phone: string;
   whatsapp: string;
   email: string;
-  preferredLanguage: string;
   contactability: ContactabilityStatus;
   consent: Record<ConsentChannel, ConsentState>;
 };
@@ -55,7 +54,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 921 334 221",
     whatsapp: "+244 921 334 221",
     email: "fernanda.quitumba@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-06-02", origin: "Formulário de registo" },
@@ -72,7 +70,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 912 556 783",
     whatsapp: "+244 912 556 783",
     email: "manuel.cassoma@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-05-20", origin: "Visita comercial" },
@@ -89,7 +86,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 999 221 440",
     whatsapp: "+244 999 221 440",
     email: "isabel.capinda@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-03-11", origin: "Importação inicial" },
@@ -106,7 +102,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 923 118 902",
     whatsapp: "+244 923 118 902",
     email: "pedro.muanza@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Pediu remoção",
     consent: {
       email: { granted: false, date: "2026-08-02", origin: "Pedido de remoção" },
@@ -123,7 +118,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 941 772 309",
     whatsapp: "+244 941 772 309",
     email: "joana.capemba@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-07-04", origin: "Formulário de registo" },
@@ -140,7 +134,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 912 445 668",
     whatsapp: "+244 912 445 668",
     email: "albino.sachipengo@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-04-18", origin: "Visita comercial" },
@@ -157,7 +150,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 999 887 112",
     whatsapp: "+244 999 887 112",
     email: "rosa.bumba@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Inválido",
     consent: {
       email: { granted: false, date: "2026-07-22", origin: "Devolução de e-mail" },
@@ -174,7 +166,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 923 665 390",
     whatsapp: "+244 923 665 390",
     email: "domingos.kiezi@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Saiu da empresa",
     consent: {
       email: { granted: true, date: "2026-02-14", origin: "Importação inicial" },
@@ -191,7 +182,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 912 230 774",
     whatsapp: "+244 912 230 774",
     email: "teresa.mbala@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: false, date: "2026-05-29", origin: "Formulário de registo" },
@@ -208,7 +198,6 @@ export const CONTACTS: Contact[] = [
     phone: "+244 941 556 221",
     whatsapp: "+244 941 556 221",
     email: "agostinho.zola@mail.co.ao",
-    preferredLanguage: "Português",
     contactability: "Válido",
     consent: {
       email: { granted: true, date: "2026-08-19", origin: "Visita comercial" },
