@@ -38,6 +38,7 @@ import { healthRoutes } from "./routes/health";
 import { providerRoutes } from "./routes/providers";
 import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
+import { supportMobileRoutes } from "./routes/support-mobile";
 import { uploadRoutes } from "./routes/uploads";
 import { crmCompaniesRoutes } from "./routes/crm-companies";
 import { crmContactsRoutes } from "./routes/crm-contacts";
@@ -64,6 +65,7 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(adminAuthRoutes);
   await app.register(requestRoutes);
+  await app.register(supportMobileRoutes);
   await app.register(providerRoutes);
   await app.register(applicationRoutes);
   await app.register(uploadRoutes);
