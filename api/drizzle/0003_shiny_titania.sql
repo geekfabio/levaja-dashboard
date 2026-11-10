@@ -1,0 +1,1 @@
+ALTER TABLE "angoleva"."crm_contacts" DROP COLUMN IF EXISTS "preferred_language";

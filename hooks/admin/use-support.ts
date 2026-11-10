@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { repositories } from "@/data/leva-ja";
-import type { PageQuery, TicketFilters } from "@/data/leva-ja";
+import type { EmergencyContactInput, PageQuery, TicketFilters } from "@/data/leva-ja";
 import type { SosStatus } from "@/types/leva-ja";
 import { useAdminMutation } from "./use-admin-mutation";
 
@@ -86,5 +86,29 @@ export function useMarkReviewHandled() {
   return useAdminMutation(({ id, note }: { id: string; note: string }) => repositories().support.markReviewHandled(id, note), {
     success: "Avaliação revista",
     description: (item) => item.requestCode,
+  });
+}
+
+export function useEmergencyContacts() {
+  return useQuery({ queryKey: ["admin", "support", "emergency-contacts"], queryFn: () => repositories().support.emergencyContacts() });
+}
+
+export function useCreateEmergencyContact() {
+  return useAdminMutation(
+    ({ input, reason }: { input: EmergencyContactInput; reason: string }) => repositories().support.createEmergencyContact(input, reason),
+    { success: (contact) => `Contacto ${contact.label} criado` },
+  );
+}
+
+export function useUpdateEmergencyContact() {
+  return useAdminMutation(
+    ({ id, input, reason }: { id: string; input: EmergencyContactInput; reason: string }) => repositories().support.updateEmergencyContact(id, input, reason),
+    { success: (contact) => `Contacto ${contact.label} actualizado` },
+  );
+}
+
+export function useRemoveEmergencyContact() {
+  return useAdminMutation(({ id, reason }: { id: string; reason: string }) => repositories().support.removeEmergencyContact(id, reason), {
+    success: "Contacto removido",
   });
 }

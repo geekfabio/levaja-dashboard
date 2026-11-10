@@ -11,6 +11,7 @@ import SosAlerts from "./sos/sos-alerts";
 import TicketsPanel from "./tickets/tickets-panel";
 import LowRatingsPanel from "./reviews/low-ratings-panel";
 import SatisfactionPanel from "./satisfaction/satisfaction-panel";
+import EmergencyContactsPanel from "./emergency-contacts/emergency-contacts-panel";
 
 export default function Support() {
   const user = useAdminSessionStore((state) => state.session?.user);
@@ -19,7 +20,8 @@ export default function Support() {
   const { role } = user;
   const tickets = hasPermission(role, "support.tickets");
   const reviews = hasPermission(role, "support.reviews");
-  const current = tickets ? tab : "avaliacoes";
+  const sos = hasPermission(role, "support.sos");
+  const current = tickets ? tab : reviews ? "avaliacoes" : "emergencia";
   const canOpenRequest = hasPermission(role, "requests.view");
   const canOpenRequester = (ticket: Ticket) => canAccessSection(role, ticket.requesterKind === "client" ? "clients" : "providers");
 
@@ -28,8 +30,8 @@ export default function Support() {
       <AdminHeader title="Suporte" />
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-6 p-5">
-          {hasPermission(role, "support.sos") && <SosAlerts canOpenRequest={canOpenRequest} />}
-          {(tickets || reviews) && (
+          {sos && <SosAlerts canOpenRequest={canOpenRequest} />}
+          {(tickets || reviews || sos) && (
             <Tabs value={current} onValueChange={setTab}>
               <TabsList aria-label="Secções do suporte" className="border-border border-b">
                 {tickets && (
@@ -47,6 +49,11 @@ export default function Support() {
                     Avaliações baixas
                   </TabsTrigger>
                 )}
+                {sos && (
+                  <TabsTrigger value="emergencia" className="focus-visible:ring-ring/60 focus-visible:ring-2 focus-visible:ring-inset">
+                    Contactos de emergência
+                  </TabsTrigger>
+                )}
               </TabsList>
               {tickets && (
                 <TabsContent value="ocorrencias" className="pt-4">
@@ -61,6 +68,11 @@ export default function Support() {
               {reviews && (
                 <TabsContent value="avaliacoes" className="pt-4">
                   <LowRatingsPanel canOpenRequest={canOpenRequest} canOpenProvider={hasPermission(role, "providers.view")} />
+                </TabsContent>
+              )}
+              {sos && (
+                <TabsContent value="emergencia" className="pt-4">
+                  <EmergencyContactsPanel canEdit={sos} />
                 </TabsContent>
               )}
             </Tabs>

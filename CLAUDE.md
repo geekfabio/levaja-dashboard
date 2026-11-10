@@ -82,9 +82,12 @@ data/leva-ja/           repositórios do painel
 lib/leva-ja/            regras de negócio do painel
 hooks/admin/            hooks de TanStack Query do painel
 tests/leva-ja-*.test.ts testes de contrato e de domínio do painel
+api/                    API real (Fastify + Drizzle + Neon), processo e package.json próprios — ver api/README.md e PLANO_API.md
 ```
 
 Cada módulo segue o padrão de `components/companies/`: um `<modulo>.tsx` que compõe `header/`, `toolbar/`, `table/`, `detail/` e os diálogos.
+
+`api/` não é Next.js nem CRM/painel: é um serviço Node à parte, com as suas próprias regras (identificadores e comentários em inglês, nada de pt-PT nas respostas JSON, que são dados, não UI). As regras de produto e de código abaixo (idioma, `formatKz`, `Button`, etc.) aplicam-se a `app/`, `components/`, `data/`, `lib/`, `hooks/`, `stores/` — não a `api/`.
 
 ## Regras de código
 

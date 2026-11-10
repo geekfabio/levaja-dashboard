@@ -179,7 +179,6 @@ export default function ImportDialog() {
           phone: row.contact.phone,
           whatsapp: row.contact.phone,
           email: row.contact.email,
-          preferredLanguage: "Português",
           contactability: "Válido",
           consent: { email: blankConsent(today), sms: blankConsent(today), whatsapp: blankConsent(today) },
         });

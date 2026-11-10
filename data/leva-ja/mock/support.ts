@@ -1,7 +1,7 @@
 import { TICKET_STATUS_LABELS } from "@/lib/leva-ja/services";
 import { hasPermission } from "@/lib/leva-ja/permissions";
 import { csatStats, ticketResponseSla } from "@/lib/leva-ja/trust";
-import type { SosAlert, Ticket } from "@/types/leva-ja";
+import type { EmergencyContact, SosAlert, Ticket } from "@/types/leva-ja";
 import type { LowRatingItem, SupportRepository } from "../repositories/support";
 import { RepositoryError } from "../repositories/errors";
 import type { MockContext, MockDatabase } from "./database";
@@ -208,6 +208,45 @@ export function createMockSupport(db: MockDatabase): SupportRepository {
               at: ticket.satisfaction?.at ?? ticket.updatedAt,
             })),
         };
+      }),
+
+    emergencyContacts: () => db.run({ permission: "support.sos" }, ({ state }) => state.emergencyContacts),
+
+    createEmergencyContact: (input, reason) =>
+      db.run({ permission: "support.sos" }, (ctx) => {
+        const why = requireReason(reason, "o motivo");
+        const contact: EmergencyContact = { id: db.nextId("emc"), label: input.label, phoneNumber: input.phoneNumber };
+        ctx.state.emergencyContacts.push(contact);
+        db.audit(ctx, "emergency_contact.create", { kind: "emergency_contact", id: contact.id, label: contact.label }, why, [
+          { field: "Contacto", from: "—", to: `${contact.label}: ${contact.phoneNumber}` },
+        ]);
+        db.commit("support");
+        return contact;
+      }),
+
+    updateEmergencyContact: (id, input, reason) =>
+      db.run({ permission: "support.sos" }, (ctx) => {
+        const contact = findOr404(ctx.state.emergencyContacts, id, "Contacto");
+        const why = requireReason(reason, "o motivo");
+        const before = `${contact.label}: ${contact.phoneNumber}`;
+        contact.label = input.label;
+        contact.phoneNumber = input.phoneNumber;
+        db.audit(ctx, "emergency_contact.update", { kind: "emergency_contact", id: contact.id, label: contact.label }, why, [
+          { field: "Contacto", from: before, to: `${contact.label}: ${contact.phoneNumber}` },
+        ]);
+        db.commit("support");
+        return contact;
+      }),
+
+    removeEmergencyContact: (id, reason) =>
+      db.run({ permission: "support.sos" }, (ctx) => {
+        const contact = findOr404(ctx.state.emergencyContacts, id, "Contacto");
+        const why = requireReason(reason, "o motivo");
+        ctx.state.emergencyContacts = ctx.state.emergencyContacts.filter((item) => item.id !== id);
+        db.audit(ctx, "emergency_contact.remove", { kind: "emergency_contact", id: contact.id, label: contact.label }, why, [
+          { field: "Contacto", from: `${contact.label}: ${contact.phoneNumber}`, to: "—" },
+        ]);
+        db.commit("support");
       }),
 
     subscribe: (listener) => db.subscribe("support", listener),

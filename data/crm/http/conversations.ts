@@ -7,8 +7,8 @@ const id = encodeURIComponent;
 export function createHttpConversations(http: HttpClient): ConversationsRepository {
   return {
     list: () => http.get<Conversation[]>("/crm/conversations"),
-    markRead: (conversationId) => http.post<void>(`/crm/conversations/${id(conversationId)}/read`, {}),
-    start: (contactId, channel: ConversationChannel) => http.post<Conversation>("/crm/conversations/start", { contactId, channel }),
+    markRead: (conversationId) => http.patch<void>(`/crm/conversations/${id(conversationId)}/read`, {}),
+    start: (contactId, channel: ConversationChannel) => http.post<Conversation>("/crm/conversations", { contactId, channel }),
     reply: (conversationId, body) => http.post<Conversation>(`/crm/conversations/${id(conversationId)}/reply`, { body }),
     receive: (contactId, channel: ConversationChannel, body) =>
       http.post<{ conversation: Conversation; optedOut: boolean }>("/crm/conversations/receive", { contactId, channel, body }),

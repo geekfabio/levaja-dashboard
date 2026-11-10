@@ -28,7 +28,6 @@ export function contactDataExport(contact: Contact, sources: ExportSources) {
       telefone: contact.phone,
       whatsapp: contact.whatsapp,
       email: contact.email,
-      idioma: contact.preferredLanguage,
       contactabilidade: contact.contactability,
     },
     consentimentos: Object.entries(contact.consent).map(([canal, estado]) => ({

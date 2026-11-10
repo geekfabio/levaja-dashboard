@@ -11,6 +11,7 @@ import type {
   Claim,
   Fleet,
   ClientAccount,
+  EmergencyContact,
   PlatformSettings,
   RolePermissions,
   PricingConfig,
@@ -68,6 +69,7 @@ export type MockState = {
   webhooks: Webhook[];
   tickets: Ticket[];
   sos: SosAlert[];
+  emergencyContacts: EmergencyContact[];
   reviewNotes: Record<string, string>;
   documentSubmittedAt: Record<string, string>;
   adminUsers: AdminUser[];

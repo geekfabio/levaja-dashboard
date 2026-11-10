@@ -404,7 +404,7 @@ export type AdminPermission =
 
 export type RolePermissions = Record<AdminRole, AdminPermission[]>;
 
-export type AdminSession = { token: string; user: AdminUser; expiresAt: string; rolePermissions?: RolePermissions };
+export type AdminSession = { token: string; user: AdminUser; expiresAt: string; rolePermissions?: RolePermissions; csrfToken?: string };
 
 export type ProviderAvailability = "online" | "offline";
 export type ProviderAccountStatus = "pending_approval" | "active" | "suspended";
@@ -571,6 +571,8 @@ export type SosAlert = {
   resolution?: string;
 };
 
+export type EmergencyContact = { id: string; label: string; phoneNumber: string };
+
 export type WithdrawalStatus = "pending" | "approved" | "rejected" | "paid";
 
 export type Withdrawal = {
@@ -709,6 +711,7 @@ export type AuditEntityKind =
   | "zone"
   | "ticket"
   | "sos"
+  | "emergency_contact"
   | "review"
   | "admin_user"
   | "settings"
@@ -796,6 +799,9 @@ export type AuditAction =
   | "ticket.resolve"
   | "sos.acknowledge"
   | "sos.resolve"
+  | "emergency_contact.create"
+  | "emergency_contact.update"
+  | "emergency_contact.remove"
   | "review.handled"
   | "admin_user.create"
   | "admin_user.role"
