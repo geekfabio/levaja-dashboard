@@ -364,6 +364,37 @@ test("GET /zones é pública — um candidato a prestador sem sessão também co
   assert.ok(zone);
 });
 
+test("PUT /providers/:id/location actualiza a posição e aparece no pedido atribuído", async () => {
+  const client = await createClient("localizacao");
+  const provider = await createProvider("localizacao");
+
+  const update = await app.inject({
+    method: "PUT",
+    url: `/providers/${provider.id}/location`,
+    headers: auth(provider.token),
+    payload: { lat: -8.85, lng: 13.24 },
+  });
+  assert.equal(update.statusCode, 204);
+
+  const state = await app.inject({ method: "GET", url: `/providers/${provider.id}/state`, headers: auth(provider.token) });
+  assert.equal(state.statusCode, 200);
+  assert.equal(state.json().data.profile.location.lat, -8.85);
+  assert.equal(state.json().data.profile.location.lng, 13.24);
+
+  const requestId = await createServiceRequest(client.id, { status: "assigned", providerAccountId: provider.id });
+  const detail = await app.inject({ method: "GET", url: `/requests/${requestId}`, headers: auth(client.token) });
+  assert.equal(detail.statusCode, 200);
+  assert.equal(detail.json().data.provider.location.lat, -8.85);
+});
+
+test("PUT /providers/:id/location de outra conta devolve forbidden", async () => {
+  const providerA = await createProvider("localizacao-a");
+  const providerB = await createProvider("localizacao-b");
+
+  const res = await app.inject({ method: "PUT", url: `/providers/${providerA.id}/location`, headers: auth(providerB.token), payload: { lat: -8.8, lng: 13.2 } });
+  assert.equal(res.statusCode, 403);
+});
+
 test("um prestador não acede ao estado, cobertura ou carteira de outro", async () => {
   const providerA = await createProvider("acesso-a");
   const providerB = await createProvider("acesso-b");

@@ -4,6 +4,9 @@ import { angoleva } from "./schema";
 
 export const serviceTypeEnum = angoleva.enum("service_type", ["tow", "cargo", "small_move", "house_move"]);
 
+export const negotiationByEnum = angoleva.enum("negotiation_by", ["client", "provider"]);
+export const negotiationStatusEnum = angoleva.enum("negotiation_status", ["pending", "accepted", "declined", "cancelled"]);
+
 export const requestStatusEnum = angoleva.enum("request_status", [
   "searching",
   "assigned",
@@ -215,6 +218,30 @@ export const serviceRequestEvents = angoleva.table(
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("service_request_events_request_idx").on(table.requestId)],
+);
+
+export const requestNegotiations = angoleva.table(
+  "request_negotiations",
+  {
+    id: text("id").primaryKey(),
+    requestId: text("request_id")
+      .notNull()
+      .references(() => serviceRequests.id, { onDelete: "cascade" }),
+    providerAccountId: text("provider_account_id")
+      .notNull()
+      .references(() => accounts.id),
+    amountKz: integer("amount_kz").notNull(),
+    minKz: integer("min_kz").notNull(),
+    maxKz: integer("max_kz").notNull(),
+    by: negotiationByEnum("by").notNull(),
+    status: negotiationStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("request_negotiations_request_idx").on(table.requestId),
+    index("request_negotiations_provider_idx").on(table.providerAccountId),
+  ],
 );
 
 export const payments = angoleva.table(

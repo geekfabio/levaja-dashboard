@@ -15,6 +15,7 @@ const vehicleClassEnum = z.enum(["tow_truck", "tuk_tuk", "pickup", "van", "truck
 const serviceTypeEnum = z.enum(["tow", "cargo", "small_move", "house_move"]);
 
 const availabilityBodySchema = z.object({ online: z.boolean() });
+const locationBodySchema = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
 
 const vehiclePatchBodySchema = z.object({
   brand: z.string().min(1).optional(),
@@ -231,6 +232,15 @@ export async function providerRoutes(app: FastifyInstance) {
     const body = availabilityBodySchema.parse(request.body);
     await loadProviderOrNotFound(id);
     await db.update(providers).set({ online: body.online }).where(eq(providers.accountId, id));
+    reply.status(204).send();
+  });
+
+  app.put("/providers/:id/location", { preHandler: authenticate }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    requireSelf(request.account!, id);
+    const body = locationBodySchema.parse(request.body);
+    await loadProviderOrNotFound(id);
+    await db.update(providers).set({ lat: body.lat.toString(), lng: body.lng.toString() }).where(eq(providers.accountId, id));
     reply.status(204).send();
   });
 
