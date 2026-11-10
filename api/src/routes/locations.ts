@@ -6,14 +6,15 @@ import { authenticate } from "../lib/authenticate";
 import { dataEnvelope, listEnvelope } from "../lib/envelope";
 import { reverseGeocode, searchPlaces } from "../lib/geocoding";
 import type { PlaceLike } from "../lib/geocoding";
+import { LUANDA_CENTER as LUANDA_CENTER_POINT } from "../lib/geo";
 
 const LUANDA_CENTER: PlaceLike = {
   id: "luanda-centro",
   label: "Luanda",
   district: "Ingombota",
   city: "Luanda",
-  lat: -8.8368,
-  lng: 13.2343,
+  lat: LUANDA_CENTER_POINT.lat,
+  lng: LUANDA_CENTER_POINT.lng,
 };
 
 const coordsQuerySchema = z.object({ lat: z.coerce.number(), lng: z.coerce.number() });

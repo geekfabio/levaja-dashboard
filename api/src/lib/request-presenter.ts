@@ -2,6 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { providers, serviceRequestEvents, serviceRequests, vehicles } from "../db/schema/ops";
 import { findAccountById, toClientResponse } from "./account";
+import { LUANDA_CENTER } from "./geo";
 
 type ServiceRequestRow = typeof serviceRequests.$inferSelect;
 
@@ -39,9 +40,10 @@ export async function buildProviderDto(providerAccountId: string) {
           year: vehicle.year,
         }
       : null,
-    location: provider?.lat !== null && provider?.lng !== null && provider?.lat !== undefined && provider?.lng !== undefined
-      ? { lat: Number(provider.lat), lng: Number(provider.lng) }
-      : null,
+    location:
+      provider?.lat !== null && provider?.lng !== null && provider?.lat !== undefined && provider?.lng !== undefined
+        ? { lat: Number(provider.lat), lng: Number(provider.lng) }
+        : LUANDA_CENTER,
   };
 }
 

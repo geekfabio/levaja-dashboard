@@ -1,5 +1,8 @@
 export type GeoPoint = { lat: number; lng: number };
 
+/** Usado como posição de recurso quando um prestador ainda não enviou o seu GPS. */
+export const LUANDA_CENTER: GeoPoint = { lat: -8.8368, lng: 13.2343 };
+
 const EARTH_RADIUS_KM = 6371;
 const URBAN_ROAD_FACTOR = 1.3;
 const MIN_DISTANCE_KM = 2;
