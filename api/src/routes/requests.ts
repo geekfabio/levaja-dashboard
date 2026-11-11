@@ -7,6 +7,7 @@ import { authenticate } from "../lib/authenticate";
 import { apiError, dataEnvelope, listEnvelope } from "../lib/envelope";
 import { estimateDistanceKm, estimateDurationMin } from "../lib/geo";
 import { newId } from "../lib/ids";
+import { cashBalanceKz, isBlockedByCashBalance } from "../lib/cash-balance";
 import { NEGOTIATION_STEP_KZ, clampAmount, negotiationBounds } from "../lib/negotiation";
 import type { PriceBreakdown } from "../lib/pricing";
 import { estimatePrice, providerEarningFor } from "../lib/pricing";
@@ -136,8 +137,16 @@ async function cancelOtherPendingNegotiations(requestId: string, exceptId?: stri
   }
 }
 
+async function assertProviderCashBalanceOk(providerAccountId: string) {
+  const { balanceKz } = await cashBalanceKz(providerAccountId);
+  if (isBlockedByCashBalance(balanceKz)) {
+    throw apiError("forbidden", `Saldo de numerário em falta (${Math.abs(balanceKz)} Kz). Deposita para voltares a receber pedidos.`);
+  }
+}
+
 /** Assigns the request to a provider at a negotiated amount (the service price, before the platform fee). */
 async function assignAtNegotiatedAmount(row: ServiceRequestRow, providerAccountId: string, amountKz: number, actor: "client" | "provider") {
+  await assertProviderCashBalanceOk(providerAccountId);
   const currentPricing = row.pricing as PriceBreakdown;
   const nextPricing: PriceBreakdown = {
     ...currentPricing,
@@ -361,6 +370,7 @@ export async function requestRoutes(app: FastifyInstance) {
     if (!provider?.online) {
       throw apiError("forbidden", "Fica disponível para aceitar pedidos.");
     }
+    await assertProviderCashBalanceOk(body.provider_id);
 
     const now = new Date();
     await db
@@ -447,6 +457,8 @@ export async function requestRoutes(app: FastifyInstance) {
       reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
       return;
     }
+
+    await assertProviderCashBalanceOk(row.providerAccountId!);
 
     const currentPricing = row.pricing as PriceBreakdown;
     const nextPricing: PriceBreakdown = {

@@ -126,7 +126,12 @@ export default function CashPanel({ canManage, settlementDays }: { canManage: bo
                         <TableCell className="text-right tabular-nums">{formatNumber(debt.cashRequests)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatKz(debt.owed)}</TableCell>
                         <TableCell className="text-soft text-right tabular-nums">{formatKz(debt.deposited)}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">{formatKz(Math.max(0, debt.balance))}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">
+                          <div className="flex items-center justify-end gap-2">
+                            {formatKz(Math.max(0, debt.balance))}
+                            {debt.balance > 0 && <ToneBadge tone="danger" label="Bloqueado" />}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {debt.oldestUnsettledAt ? (
                             <ToneBadge tone={debt.overdue ? "danger" : "warning"} label={`há ${formatElapsed(debt.oldestUnsettledAt, now)}`} />
