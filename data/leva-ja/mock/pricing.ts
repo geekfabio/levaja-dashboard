@@ -21,6 +21,9 @@ export function createMockPricing(db: MockDatabase): PricingRepository {
           platformFee: update.platformFee,
           commissionRate: update.commissionRate,
           roundTo: update.roundTo,
+          driverBonusKz: update.driverBonusKz,
+          referralInviteeDiscountKz: update.referralInviteeDiscountKz,
+          referralInviterDiscountKz: update.referralInviterDiscountKz,
           updatedAt: ctx.nowIso,
           updatedBy: ctx.session.user.name,
         };

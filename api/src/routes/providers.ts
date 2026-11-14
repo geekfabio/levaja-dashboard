@@ -248,8 +248,10 @@ export async function providerRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     requireSelf(request.account!, id);
     await loadProviderOrNotFound(id);
-    const { owedKz, depositedKz, balanceKz } = await cashBalanceKz(id);
-    reply.send(dataEnvelope({ owed_kz: owedKz, deposited_kz: depositedKz, balance_kz: balanceKz, blocked: isBlockedByCashBalance(balanceKz) }));
+    const { owedKz, depositedKz, creditsKz, bonusKz, balanceKz } = await cashBalanceKz(id);
+    reply.send(
+      dataEnvelope({ owed_kz: owedKz, deposited_kz: depositedKz, credits_kz: creditsKz, bonus_kz: bonusKz, balance_kz: balanceKz, blocked: isBlockedByCashBalance(balanceKz) }),
+    );
   });
 
   app.put("/providers/:id/location", { preHandler: authenticate }, async (request, reply) => {

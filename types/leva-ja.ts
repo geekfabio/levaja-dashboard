@@ -683,6 +683,9 @@ export type PricingConfig = {
   platformFee: number;
   commissionRate: number;
   roundTo: number;
+  driverBonusKz: number;
+  referralInviteeDiscountKz: number;
+  referralInviterDiscountKz: number;
   updatedAt: string;
   updatedBy: string;
 };

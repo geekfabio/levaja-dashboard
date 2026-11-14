@@ -19,6 +19,9 @@ const pricingUpdateSchema = z.object({
   platform_fee: z.number().nonnegative(),
   commission_rate: z.number().min(0).max(1),
   round_to: z.number().positive(),
+  driver_bonus_kz: z.number().int().nonnegative().optional(),
+  referral_invitee_discount_kz: z.number().int().nonnegative().optional(),
+  referral_inviter_discount_kz: z.number().int().nonnegative().optional(),
   reason: z.string().optional(),
 });
 
@@ -55,6 +58,9 @@ export async function adminPricingRoutes(app: FastifyInstance) {
       platform_fee: body.platform_fee,
       commission_rate: body.commission_rate,
       round_to: body.round_to,
+      driver_bonus_kz: body.driver_bonus_kz ?? current.driver_bonus_kz,
+      referral_invitee_discount_kz: body.referral_invitee_discount_kz ?? current.referral_invitee_discount_kz,
+      referral_inviter_discount_kz: body.referral_inviter_discount_kz ?? current.referral_inviter_discount_kz,
       updated_at: new Date().toISOString(),
       updated_by: admin.fullName,
     };
@@ -63,6 +69,13 @@ export async function adminPricingRoutes(app: FastifyInstance) {
     if (current.platform_fee !== next.platform_fee) changes.push({ field: "Taxa da plataforma", from: String(current.platform_fee), to: String(next.platform_fee) });
     if (current.commission_rate !== next.commission_rate) changes.push({ field: "Comissão", from: String(current.commission_rate), to: String(next.commission_rate) });
     if (current.round_to !== next.round_to) changes.push({ field: "Arredondamento", from: String(current.round_to), to: String(next.round_to) });
+    if (current.driver_bonus_kz !== next.driver_bonus_kz) changes.push({ field: "Bónus por corrida", from: String(current.driver_bonus_kz), to: String(next.driver_bonus_kz) });
+    if (current.referral_invitee_discount_kz !== next.referral_invitee_discount_kz) {
+      changes.push({ field: "Desconto do convidado", from: String(current.referral_invitee_discount_kz), to: String(next.referral_invitee_discount_kz) });
+    }
+    if (current.referral_inviter_discount_kz !== next.referral_inviter_discount_kz) {
+      changes.push({ field: "Desconto de quem convida", from: String(current.referral_inviter_discount_kz), to: String(next.referral_inviter_discount_kz) });
+    }
     if (stableStringify(current.rules) !== stableStringify(next.rules)) changes.push({ field: "Regras de preço", from: "—", to: "Actualizadas" });
     if (stableStringify(current.extras) !== stableStringify(next.extras)) changes.push({ field: "Extras", from: "—", to: "Actualizados" });
     if (!changes.length) throw apiError("validation", "Não há alterações para guardar.");

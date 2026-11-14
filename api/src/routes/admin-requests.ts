@@ -6,6 +6,7 @@ import { providers, serviceRequestEvents, serviceRequests, zones } from "../db/s
 import { disputes } from "../db/schema/disputes";
 import { platformSettings } from "../db/schema/admin";
 import { authenticateAdmin } from "../lib/authenticate-admin";
+import { releaseDiscountUse } from "../lib/discounts";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { haversineKm } from "../lib/geo";
 import { listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
@@ -198,6 +199,7 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       .set({ status: "cancelled", cancelReason: reason, updatedAt: now })
       .where(eq(serviceRequests.id, id));
     await db.insert(serviceRequestEvents).values({ id: newId("evt"), requestId: id, status: "cancelled", actor: "system", at: now });
+    await releaseDiscountUse(id);
 
     await recordAdminAudit({
       actorAccountId: admin.id,

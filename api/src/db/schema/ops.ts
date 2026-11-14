@@ -26,7 +26,7 @@ export const paymentStatusEnum = angoleva.enum("payment_status", ["pending", "co
 
 export const documentStatusEnum = angoleva.enum("document_status", ["pending", "verified", "rejected"]);
 
-export const transactionTypeEnum = angoleva.enum("wallet_transaction_type", ["earning", "withdrawal", "adjustment"]);
+export const transactionTypeEnum = angoleva.enum("wallet_transaction_type", ["earning", "withdrawal", "adjustment", "bonus"]);
 
 export const transactionStatusEnum = angoleva.enum("wallet_transaction_status", ["pending", "completed", "failed"]);
 
@@ -62,6 +62,8 @@ export const clients = angoleva.table("clients", {
   avatarUrl: text("avatar_url"),
   blocked: boolean("blocked").notNull().default(false),
   blockedReason: text("blocked_reason"),
+  referralCode: varchar("referral_code", { length: 12 }).unique(),
+  referredByAccountId: text("referred_by_account_id"),
 });
 
 export const providers = angoleva.table("providers", {

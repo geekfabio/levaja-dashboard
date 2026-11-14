@@ -35,9 +35,11 @@ import { adminSecurityRoutes } from "./routes/admin-security";
 import { adminSettingsRoutes } from "./routes/admin-settings";
 import { adminSupportRoutes } from "./routes/admin-support";
 import { adminZoneRoutes } from "./routes/admin-zones";
+import { discountRoutes } from "./routes/discounts";
 import { healthRoutes } from "./routes/health";
 import { locationRoutes } from "./routes/locations";
 import { providerRoutes } from "./routes/providers";
+import { realtimeRoutes } from "./routes/realtime";
 import { vehicleRoutes } from "./routes/vehicles";
 import { paymentRoutes } from "./routes/payments";
 import { requestRoutes } from "./routes/requests";
@@ -64,6 +66,8 @@ export async function buildApp() {
 
   registerErrorHandler(app);
 
+  // First, so its onResponse hook sees every route registered after it.
+  await realtimeRoutes(app);
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(accountsRoutes);
@@ -86,6 +90,7 @@ export async function buildApp() {
   await app.register(crmAutomationsRoutes);
   await app.register(crmOffersRoutes);
   await app.register(paymentRoutes);
+  await app.register(discountRoutes);
   await app.register(chatRoutes);
   await app.register(deviceRoutes);
   await app.register(adminRequestRoutes);

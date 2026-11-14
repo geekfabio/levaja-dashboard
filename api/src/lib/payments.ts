@@ -2,7 +2,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { payments, providers, serviceRequests } from "../db/schema/ops";
 import { cashBalanceKz, isBlockedByCashBalance } from "./cash-balance";
+import { rewardInviterFor } from "./discounts";
 import { newId } from "./ids";
+import { notifyRealtimeChange } from "./realtime-bus";
 import { recordRequestEvent } from "./request-events";
 
 const BANK_REFERENCE_ENTITY = "00123";
@@ -67,6 +69,9 @@ export async function confirmPayment(paymentId: string) {
 
   await db.update(serviceRequests).set({ status: "paid", updatedAt: now }).where(eq(serviceRequests.id, payment.requestId));
   await recordRequestEvent(payment.requestId, "paid", "system", now);
+  await rewardInviterFor(request.clientAccountId);
+  // Bank confirmations arrive on a timer, outside any HTTP request: tell the real-time channel by hand.
+  notifyRealtimeChange();
 
   // Cash ride settled: the provider now owes this ride's platform fee + commission.
   // If that tips their cash balance negative, take them offline until they deposit.
