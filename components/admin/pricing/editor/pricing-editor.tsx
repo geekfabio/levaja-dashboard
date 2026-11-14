@@ -25,6 +25,9 @@ function toDraft(config: PricingConfig): PricingEditable {
     platformFee: config.platformFee,
     commissionRate: config.commissionRate,
     roundTo: config.roundTo,
+    driverBonusKz: config.driverBonusKz,
+    referralInviteeDiscountKz: config.referralInviteeDiscountKz,
+    referralInviterDiscountKz: config.referralInviterDiscountKz,
   });
 }
 
@@ -138,6 +141,42 @@ export default function PricingEditor({ config, canEdit }: { config: PricingConf
                 value={Number.isNaN(draft.roundTo) ? "" : String(draft.roundTo)}
                 disabled={!canEdit}
                 onChange={(event) => setDraft((current) => ({ ...current, roundTo: numberValue(event.target.value) }))}
+              />
+            </Field>
+          </div>
+        </SettingsPanel>
+
+        <SettingsPanel
+          title="Bónus e convites"
+          description="Valores pagos pela plataforma. O bónus é creditado ao prestador em cada corrida entregue; os descontos de convite aplicam-se ao pedido seguinte do cliente. Com 0 Kz ficam desligados."
+          className="bg-card"
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Bónus por corrida (Kz)" htmlFor="pricing-bonus" error={issueFor("driverBonusKz")}>
+              <Input
+                id="pricing-bonus"
+                inputMode="numeric"
+                value={Number.isNaN(draft.driverBonusKz) ? "" : String(draft.driverBonusKz)}
+                disabled={!canEdit}
+                onChange={(event) => setDraft((current) => ({ ...current, driverBonusKz: numberValue(event.target.value) }))}
+              />
+            </Field>
+            <Field label="Desconto do convidado (Kz)" htmlFor="pricing-invitee" error={issueFor("referralInviteeDiscountKz")}>
+              <Input
+                id="pricing-invitee"
+                inputMode="numeric"
+                value={Number.isNaN(draft.referralInviteeDiscountKz) ? "" : String(draft.referralInviteeDiscountKz)}
+                disabled={!canEdit}
+                onChange={(event) => setDraft((current) => ({ ...current, referralInviteeDiscountKz: numberValue(event.target.value) }))}
+              />
+            </Field>
+            <Field label="Desconto de quem convida (Kz)" htmlFor="pricing-inviter" error={issueFor("referralInviterDiscountKz")}>
+              <Input
+                id="pricing-inviter"
+                inputMode="numeric"
+                value={Number.isNaN(draft.referralInviterDiscountKz) ? "" : String(draft.referralInviterDiscountKz)}
+                disabled={!canEdit}
+                onChange={(event) => setDraft((current) => ({ ...current, referralInviterDiscountKz: numberValue(event.target.value) }))}
               />
             </Field>
           </div>

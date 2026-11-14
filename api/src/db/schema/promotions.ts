@@ -43,3 +43,26 @@ export const promotionUses = angoleva.table(
   },
   (table) => [index("promotion_uses_promotion_idx").on(table.promotionId)],
 );
+
+export const referralRewardKindEnum = angoleva.enum("referral_reward_kind", ["invitee", "inviter"]);
+
+/**
+ * A discount a client earned through an invite: "invitee" when they redeemed
+ * someone's code, "inviter" when someone they invited finished a first ride.
+ * It is spent on the client's next request (used_request_id).
+ */
+export const referralRewards = angoleva.table(
+  "referral_rewards",
+  {
+    id: text("id").primaryKey(),
+    clientAccountId: text("client_account_id")
+      .notNull()
+      .references(() => clients.accountId, { onDelete: "cascade" }),
+    kind: referralRewardKindEnum("kind").notNull(),
+    sourceAccountId: text("source_account_id").notNull(),
+    amountKz: integer("amount_kz").notNull(),
+    usedRequestId: text("used_request_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("referral_rewards_client_idx").on(table.clientAccountId)],
+);

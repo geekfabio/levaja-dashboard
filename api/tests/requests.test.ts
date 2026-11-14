@@ -62,7 +62,7 @@ function createRequestBody(clientId: string, overrides: Record<string, unknown> 
     moving_details: null,
     photos: [],
     instructions: null,
-    payment_method: "cash",
+    payment_method: null,
     ...overrides,
   };
 }

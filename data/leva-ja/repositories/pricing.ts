@@ -1,6 +1,6 @@
 import type { PricingConfig } from "@/types/leva-ja";
 
-export type PricingUpdate = Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo">;
+export type PricingUpdate = Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo" | "driverBonusKz" | "referralInviteeDiscountKz" | "referralInviterDiscountKz">;
 
 export interface PricingRepository {
   get(): Promise<PricingConfig>;

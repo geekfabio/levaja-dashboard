@@ -9,6 +9,7 @@ import type { AuthenticatedAccount } from "../lib/authenticate";
 import { apiError, dataEnvelope, listEnvelope } from "../lib/envelope";
 import { estimateDistanceKm } from "../lib/geo";
 import { newId } from "../lib/ids";
+import { cashBalanceKz, isBlockedByCashBalance } from "../lib/cash-balance";
 import { buildProviderDto, presentServiceRequest } from "../lib/request-presenter";
 
 const vehicleClassEnum = z.enum(["tow_truck", "tuk_tuk", "pickup", "van", "truck"]);
@@ -231,8 +232,26 @@ export async function providerRoutes(app: FastifyInstance) {
     requireSelf(request.account!, id);
     const body = availabilityBodySchema.parse(request.body);
     await loadProviderOrNotFound(id);
+    if (body.online) {
+      const { balanceKz } = await cashBalanceKz(id);
+      if (isBlockedByCashBalance(balanceKz)) {
+        throw apiError("validation", `Tens ${Math.abs(balanceKz)} Kz de saldo em falta. Deposita para voltares a ficar disponível.`, {
+          issues: [{ field: "online", message: "Saldo insuficiente." }],
+        });
+      }
+    }
     await db.update(providers).set({ online: body.online }).where(eq(providers.accountId, id));
     reply.status(204).send();
+  });
+
+  app.get("/providers/:id/balance", { preHandler: authenticate }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    requireSelf(request.account!, id);
+    await loadProviderOrNotFound(id);
+    const { owedKz, depositedKz, creditsKz, bonusKz, balanceKz } = await cashBalanceKz(id);
+    reply.send(
+      dataEnvelope({ owed_kz: owedKz, deposited_kz: depositedKz, credits_kz: creditsKz, bonus_kz: bonusKz, balance_kz: balanceKz, blocked: isBlockedByCashBalance(balanceKz) }),
+    );
   });
 
   app.put("/providers/:id/location", { preHandler: authenticate }, async (request, reply) => {

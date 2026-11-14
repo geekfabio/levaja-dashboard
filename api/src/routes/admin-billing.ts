@@ -6,6 +6,7 @@ import { accounts } from "../db/schema/auth";
 import { cashDeposits, settlementRecords } from "../db/schema/finance";
 import { providers, serviceRequestEvents, serviceRequests } from "../db/schema/ops";
 import { authenticateAdmin } from "../lib/authenticate-admin";
+import { cashBalanceKz } from "../lib/cash-balance";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { newId } from "../lib/ids";
 import { csvList, pageQuerySchema, paginate } from "../lib/pagination";
@@ -269,12 +270,17 @@ function cashPosition(charges: { at: Date; amount: number }[], deposits: { at: D
 async function cashDebtOf(providerAccountId: string, providerName: string, providerPhone: string, now: Date) {
   const charges = await cashCharges(providerAccountId);
   const deposits = (await db.select().from(cashDeposits).where(eq(cashDeposits.providerAccountId, providerAccountId))).map((row) => ({ at: row.at, amount: row.amountKz }));
+  // What the platform owes the provider (ride bonus, discounts the client did not pay in cash) pays the debt off like a deposit would.
+  const { creditsKz } = await cashBalanceKz(providerAccountId);
+  const position = cashPosition(charges, creditsKz > 0 ? [...deposits, { at: new Date(0), amount: creditsKz }] : deposits, now);
   return {
     provider_id: providerAccountId,
     provider_name: providerName,
     provider_phone: providerPhone,
     cash_requests: charges.length,
-    ...cashPosition(charges, deposits, now),
+    ...position,
+    deposited: position.deposited - creditsKz,
+    credits: creditsKz,
   };
 }
 

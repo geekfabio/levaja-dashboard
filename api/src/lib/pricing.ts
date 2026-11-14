@@ -31,7 +31,11 @@ export type PriceBreakdown = {
   distance_kz: number;
   extras_kz: number;
   platform_fee_kz: number;
+  /** Full price of the service; what the client actually pays is total_kz - discount_kz. */
   total_kz: number;
+  /** Promotion/invite discount, paid for by the platform (credited to the provider's cash balance). */
+  discount_kz?: number;
+  discount_label?: string;
 };
 
 const WEIGHT_EXTRA: Record<NonNullable<CargoDetailsInput["weight_range"]>, number> = {

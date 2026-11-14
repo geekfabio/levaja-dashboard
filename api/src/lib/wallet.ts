@@ -63,3 +63,25 @@ export async function creditEarning(providerAccountId: string, requestId: string
 
   return transaction;
 }
+
+/**
+ * Platform bonus for a delivered ride. It is not added to the wallet balance
+ * (nothing is withdrawable while rides are paid in cash): it counts as credit
+ * in the provider's cash balance and shows up in their transactions.
+ * Idempotent per request.
+ */
+export async function creditBonus(providerAccountId: string, requestId: string, amountKz: number) {
+  const [existing] = await db
+    .select()
+    .from(walletTransactions)
+    .where(and(eq(walletTransactions.requestId, requestId), eq(walletTransactions.type, "bonus")))
+    .limit(1);
+  if (existing) return existing;
+
+  const { title, serviceType } = await requestLabel(requestId);
+  const [transaction] = await db
+    .insert(walletTransactions)
+    .values({ id: newId("tx"), providerAccountId, type: "bonus", title: `Bónus · ${title}`, amountKz, status: "completed", serviceType, requestId })
+    .returning();
+  return transaction;
+}

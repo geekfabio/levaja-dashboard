@@ -7,13 +7,17 @@ import { authenticate } from "../lib/authenticate";
 import { apiError, dataEnvelope, listEnvelope } from "../lib/envelope";
 import { estimateDistanceKm, estimateDurationMin } from "../lib/geo";
 import { newId } from "../lib/ids";
+import { cashBalanceKz, isBlockedByCashBalance } from "../lib/cash-balance";
+import { nextReferralDiscount, recordDiscountUse, releaseDiscountUse, resolvePromotion } from "../lib/discounts";
 import { NEGOTIATION_STEP_KZ, clampAmount, negotiationBounds } from "../lib/negotiation";
 import type { PriceBreakdown } from "../lib/pricing";
 import { estimatePrice, providerEarningFor } from "../lib/pricing";
 import { presentServiceRequest } from "../lib/request-presenter";
 import { recordRequestEvent } from "../lib/request-events";
 import { SERVICE_REQUEST_STATUS_FLOW, TRANSITION_ACTOR, canTransition, isCancellable } from "../lib/request-state";
-import { creditEarning } from "../lib/wallet";
+import { createConfirmedPayment } from "../lib/payments";
+import { loadPricingConfig } from "../lib/pricing-config";
+import { creditBonus, creditEarning } from "../lib/wallet";
 
 type ServiceRequestRow = typeof serviceRequests.$inferSelect;
 
@@ -76,6 +80,7 @@ const createRequestBodySchema = z.object({
   photos: z.array(photoSchema).default([]),
   instructions: z.string().nullable().default(null),
   payment_method: z.enum(["bank_reference", "card", "cash"]).nullable().default(null),
+  promo_code: z.string().trim().min(1).nullable().default(null),
 });
 
 const transitionsBodySchema = z.object({ to: requestStatusSchema, actor: z.enum(["client", "provider", "system"]) });
@@ -136,8 +141,16 @@ async function cancelOtherPendingNegotiations(requestId: string, exceptId?: stri
   }
 }
 
+async function assertProviderCashBalanceOk(providerAccountId: string) {
+  const { balanceKz } = await cashBalanceKz(providerAccountId);
+  if (isBlockedByCashBalance(balanceKz)) {
+    throw apiError("forbidden", `Saldo de numerário em falta (${Math.abs(balanceKz)} Kz). Deposita para voltares a receber pedidos.`);
+  }
+}
+
 /** Assigns the request to a provider at a negotiated amount (the service price, before the platform fee). */
 async function assignAtNegotiatedAmount(row: ServiceRequestRow, providerAccountId: string, amountKz: number, actor: "client" | "provider") {
+  await assertProviderCashBalanceOk(providerAccountId);
   const currentPricing = row.pricing as PriceBreakdown;
   const nextPricing: PriceBreakdown = {
     ...currentPricing,
@@ -275,6 +288,15 @@ export async function requestRoutes(app: FastifyInstance) {
       moving: body.moving_details,
     });
     const providerEarningKz = await providerEarningFor(pricing);
+
+    // One discount per request: an explicit promotion code wins, otherwise an unspent invite discount applies by itself.
+    const discountContext = { clientAccountId: account.id, serviceType: body.service_type, pickup: body.pickup, totalKz: pricing.total_kz };
+    const discount = body.promo_code ? await resolvePromotion(body.promo_code, discountContext) : await nextReferralDiscount(account.id, pricing.total_kz);
+    if (discount) {
+      pricing.discount_kz = discount.discountKz;
+      pricing.discount_label = discount.label;
+    }
+
     const code = await generateRequestCode();
     const id = newId("req");
     const now = new Date();
@@ -306,6 +328,7 @@ export async function requestRoutes(app: FastifyInstance) {
       updatedAt: now,
     });
     await recordRequestEvent(id, "searching", "system", now);
+    if (discount) await recordDiscountUse(id, account.id, discount);
 
     const row = await loadRequestOrNotFound(id);
     reply.status(201).send(dataEnvelope(await presentServiceRequest(row)));
@@ -361,6 +384,7 @@ export async function requestRoutes(app: FastifyInstance) {
     if (!provider?.online) {
       throw apiError("forbidden", "Fica disponível para aceitar pedidos.");
     }
+    await assertProviderCashBalanceOk(body.provider_id);
 
     const now = new Date();
     await db
@@ -395,6 +419,7 @@ export async function requestRoutes(app: FastifyInstance) {
       .set({ status: "cancelled", cancelReason: body.reason, updatedAt: now })
       .where(eq(serviceRequests.id, id));
     await recordRequestEvent(id, "cancelled", isClient ? "client" : "provider", now);
+    await releaseDiscountUse(id);
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
   });
@@ -447,6 +472,8 @@ export async function requestRoutes(app: FastifyInstance) {
       reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
       return;
     }
+
+    await assertProviderCashBalanceOk(row.providerAccountId!);
 
     const currentPricing = row.pricing as PriceBreakdown;
     const nextPricing: PriceBreakdown = {
@@ -654,6 +681,15 @@ export async function requestRoutes(app: FastifyInstance) {
 
     if (row.providerEarningKz !== null) {
       await creditEarning(row.providerAccountId, id, row.providerEarningKz);
+    }
+    const { driver_bonus_kz: driverBonusKz } = await loadPricingConfig();
+    if (driverBonusKz > 0) {
+      await creditBonus(row.providerAccountId, id, driverBonusKz);
+    }
+    // Cash in hand: the client pays the provider at delivery, so there is nothing left to do in the app — the request is settled here.
+    if (row.paymentMethod === "cash") {
+      const pricing = row.pricing as PriceBreakdown | null;
+      await createConfirmedPayment(id, "cash", Math.max(0, (pricing?.total_kz ?? 0) - (pricing?.discount_kz ?? 0)));
     }
 
     reply.send(dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id))));
