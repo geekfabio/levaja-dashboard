@@ -28,9 +28,9 @@ export function defaultPricingConfig(updatedAt: string, updatedBy = "Sistema"): 
     platformFee: DEFAULT_PLATFORM_FEE,
     commissionRate: DEFAULT_COMMISSION_RATE,
     roundTo: DEFAULT_ROUND_TO,
-    driverBonusKz: 0,
-    referralInviteeDiscountKz: 0,
-    referralInviterDiscountKz: 0,
+    driverBonus: 0,
+    referralInviteeDiscount: 0,
+    referralInviterDiscount: 0,
     updatedAt,
     updatedBy,
   };
@@ -97,7 +97,7 @@ export function priceWithProposal(config: PricingConfig, estimate: PriceEstimate
 
 export type PricingValidationIssue = { field: string; message: string };
 
-export function validatePricingConfig(config: Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo" | "driverBonusKz" | "referralInviteeDiscountKz" | "referralInviterDiscountKz">) {
+export function validatePricingConfig(config: Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo" | "driverBonus" | "referralInviteeDiscount" | "referralInviterDiscount">) {
   const issues: PricingValidationIssue[] = [];
   const kinds = new Set(config.rules.map((rule) => rule.kind));
   if (kinds.size !== 4) issues.push({ field: "rules", message: "Cada serviço tem de ter exactamente uma regra de preço." });
@@ -128,9 +128,9 @@ export function validatePricingConfig(config: Pick<PricingConfig, "rules" | "ext
     issues.push({ field: "roundTo", message: "O arredondamento não pode ser negativo." });
   }
   const amounts = [
-    { field: "driverBonusKz", value: config.driverBonusKz, label: "O bónus por corrida" },
-    { field: "referralInviteeDiscountKz", value: config.referralInviteeDiscountKz, label: "O desconto do convidado" },
-    { field: "referralInviterDiscountKz", value: config.referralInviterDiscountKz, label: "O desconto de quem convida" },
+    { field: "driverBonus", value: config.driverBonus, label: "O bónus por corrida" },
+    { field: "referralInviteeDiscount", value: config.referralInviteeDiscount, label: "O desconto do convidado" },
+    { field: "referralInviterDiscount", value: config.referralInviterDiscount, label: "O desconto de quem convida" },
   ];
   for (const amount of amounts) {
     if (!Number.isInteger(amount.value) || amount.value < 0) {
@@ -140,7 +140,7 @@ export function validatePricingConfig(config: Pick<PricingConfig, "rules" | "ext
   return issues;
 }
 
-export type PricingEditable = Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo" | "driverBonusKz" | "referralInviteeDiscountKz" | "referralInviterDiscountKz">;
+export type PricingEditable = Pick<PricingConfig, "rules" | "extras" | "platformFee" | "commissionRate" | "roundTo" | "driverBonus" | "referralInviteeDiscount" | "referralInviterDiscount">;
 
 function percent(value: number) {
   return `${Math.round(value * 1000) / 10} %`;
@@ -167,12 +167,12 @@ export function pricingChanges(before: PricingConfig, after: PricingEditable): A
   if (before.platformFee !== after.platformFee) changes.push({ field: "Taxa da plataforma", from: formatKz(before.platformFee), to: formatKz(after.platformFee) });
   if (before.commissionRate !== after.commissionRate) changes.push({ field: "Comissão", from: percent(before.commissionRate), to: percent(after.commissionRate) });
   if (before.roundTo !== after.roundTo) changes.push({ field: "Arredondamento", from: formatKz(before.roundTo), to: formatKz(after.roundTo) });
-  if (before.driverBonusKz !== after.driverBonusKz) changes.push({ field: "Bónus por corrida", from: formatKz(before.driverBonusKz), to: formatKz(after.driverBonusKz) });
-  if (before.referralInviteeDiscountKz !== after.referralInviteeDiscountKz) {
-    changes.push({ field: "Desconto do convidado", from: formatKz(before.referralInviteeDiscountKz), to: formatKz(after.referralInviteeDiscountKz) });
+  if (before.driverBonus !== after.driverBonus) changes.push({ field: "Bónus por corrida", from: formatKz(before.driverBonus), to: formatKz(after.driverBonus) });
+  if (before.referralInviteeDiscount !== after.referralInviteeDiscount) {
+    changes.push({ field: "Desconto do convidado", from: formatKz(before.referralInviteeDiscount), to: formatKz(after.referralInviteeDiscount) });
   }
-  if (before.referralInviterDiscountKz !== after.referralInviterDiscountKz) {
-    changes.push({ field: "Desconto de quem convida", from: formatKz(before.referralInviterDiscountKz), to: formatKz(after.referralInviterDiscountKz) });
+  if (before.referralInviterDiscount !== after.referralInviterDiscount) {
+    changes.push({ field: "Desconto de quem convida", from: formatKz(before.referralInviterDiscount), to: formatKz(after.referralInviterDiscount) });
   }
   return changes;
 }

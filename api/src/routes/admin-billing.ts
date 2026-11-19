@@ -460,6 +460,7 @@ export async function adminBillingRoutes(app: FastifyInstance) {
     requirePermission(request.adminAccount!.adminRole!, "billing.view");
     const query = cashDepositsQuerySchema.parse(request.query);
     const rows = await db.select().from(cashDeposits).where(eq(cashDeposits.providerAccountId, query.provider_id));
+    const [provider] = await db.select().from(accounts).where(eq(accounts.id, query.provider_id)).limit(1);
     const accountRows = await db.select().from(accounts).where(inArray(accounts.id, rows.map((row) => row.recordedByAccountId).filter((id): id is string => Boolean(id))));
     const accountsById = new Map(accountRows.map((row) => [row.id, row]));
 
@@ -468,6 +469,7 @@ export async function adminBillingRoutes(app: FastifyInstance) {
       .map((row) => ({
         id: row.id,
         provider_id: row.providerAccountId,
+        provider_name: provider?.fullName ?? "Prestador",
         amount_kz: row.amountKz,
         reference: row.reference,
         at: row.at.toISOString(),

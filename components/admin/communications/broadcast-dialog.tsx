@@ -45,7 +45,7 @@ export default function BroadcastDialog({ open, onOpenChange, zones }: { open: b
         if (!next) create.reset();
       }}
       title="Nova comunicação"
-      description="Fica guardada como rascunho. O envio é sempre simulado neste painel: nenhuma mensagem sai para clientes ou prestadores."
+      description="Fica guardada como rascunho. Ainda não há fornecedor de envio ligado, por isso nenhuma mensagem sai para clientes ou prestadores."
       confirmLabel="Guardar rascunho"
       pending={create.isPending}
       error={issues.length ? null : mutationError(create.error)}

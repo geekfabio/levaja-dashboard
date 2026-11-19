@@ -61,23 +61,24 @@ export function toRepositoryError(status: number, body: unknown) {
   const code = (typeof payload.code === "string" && payload.code in ERROR_CODES ? payload.code : STATUS_CODES[status] ?? "network") as RepositoryErrorCode;
   const rawIssues = Array.isArray(payload.details?.issues) ? payload.details.issues : [];
   const issues = rawIssues
-    .map((issue) => deepSnakeToCamel<FieldIssue>(issue))
+    .map((issue) => deepSnakeToCamel<FieldIssue>(issue, { stripKz: true }))
     .filter((issue): issue is FieldIssue => typeof issue?.field === "string" && typeof issue?.message === "string");
   const message = typeof payload.message === "string" ? payload.message : "";
   return new RepositoryError(code, message, issues);
 }
 
-type EnvelopeMeta = { count?: number; total?: number; page?: number; page_size?: number };
+type EnvelopeMeta = { count?: number; total?: number; page?: number; page_size?: number; totals?: unknown };
 
 export function unwrapEnvelope(payload: unknown): unknown {
   if (typeof payload !== "object" || payload === null || !("data" in payload)) {
-    return deepSnakeToCamel(payload);
+    return deepSnakeToCamel(payload, { stripKz: true });
   }
   const envelope = payload as { data: unknown; meta?: EnvelopeMeta };
-  const data = deepSnakeToCamel(envelope.data);
+  const data = deepSnakeToCamel(envelope.data, { stripKz: true });
   const meta = envelope.meta;
   if (meta && typeof meta.total === "number" && typeof meta.page === "number") {
-    return { items: data, total: meta.total, page: meta.page, pageSize: meta.page_size };
+    const totals = meta.totals === undefined ? {} : { totals: deepSnakeToCamel(meta.totals, { stripKz: true }) };
+    return { items: data, total: meta.total, page: meta.page, pageSize: meta.page_size, ...totals };
   }
   return data;
 }

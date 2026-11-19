@@ -10,6 +10,7 @@ import { apiError, dataEnvelope } from "../lib/envelope";
 import { newId } from "../lib/ids";
 import { csvList, listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
 import { recordAdminAudit } from "../lib/admin-audit";
+import { accountName } from "../lib/admin-presenters";
 import { requireCsrf } from "../lib/require-csrf";
 import { requirePermission } from "../lib/require-permission";
 import { requireReason } from "../lib/require-reason";
@@ -87,7 +88,7 @@ function matchesText(q: string | undefined, ...fields: (string | null | undefine
   return fields.some((field) => field && field.toLowerCase().includes(needle));
 }
 
-function presentWithdrawal(row: WithdrawalRow, providerName: string) {
+function presentWithdrawal(row: WithdrawalRow, providerName: string, decidedBy?: string | null) {
   return {
     id: row.id,
     provider_id: row.providerAccountId,
@@ -97,6 +98,7 @@ function presentWithdrawal(row: WithdrawalRow, providerName: string) {
     status: row.status,
     requested_at: row.requestedAt.toISOString(),
     decided_at: row.decidedAt ? row.decidedAt.toISOString() : null,
+    decided_by: decidedBy ?? null,
     paid_at: row.paidAt ? row.paidAt.toISOString() : null,
     payment_reference: row.paymentReference,
     reason: row.reason,
@@ -104,7 +106,7 @@ function presentWithdrawal(row: WithdrawalRow, providerName: string) {
   };
 }
 
-function presentBatch(row: PayoutBatchRow, withdrawalIds: string[]) {
+function presentBatch(row: PayoutBatchRow, withdrawalIds: string[], createdBy?: string) {
   return {
     id: row.id,
     code: row.code,
@@ -113,6 +115,7 @@ function presentBatch(row: PayoutBatchRow, withdrawalIds: string[]) {
     total_kz: row.totalKz,
     count: row.count,
     created_at: row.createdAt.toISOString(),
+    created_by: createdBy ?? null,
     sent_at: row.sentAt ? row.sentAt.toISOString() : null,
     paid_at: row.paidAt ? row.paidAt.toISOString() : null,
     bank_reference: row.bankReference,
@@ -203,9 +206,10 @@ export async function adminFinanceRoutes(app: FastifyInstance) {
 
     const rows = await db.select().from(withdrawals);
     const names = await providerNamesById(rows.map((row) => row.providerAccountId));
+    const deciders = new Map(await Promise.all([...new Set(rows.map((row) => row.decidedByAccountId).filter((value): value is string => Boolean(value)))].map(async (accountId) => [accountId, await accountName(accountId)] as const)));
     const presented = rows
       .filter((row) => !statusFilter?.length || statusFilter.includes(row.status))
-      .map((row) => presentWithdrawal(row, names.get(row.providerAccountId) ?? "Prestador"))
+      .map((row) => presentWithdrawal(row, names.get(row.providerAccountId) ?? "Prestador", row.decidedByAccountId ? deciders.get(row.decidedByAccountId) : null))
       .filter((item) => matchesText(query.q, item.provider_name, item.iban, item.payment_reference))
       .sort((a, b) => (a.requested_at < b.requested_at ? 1 : -1));
 
@@ -273,7 +277,7 @@ export async function adminFinanceRoutes(app: FastifyInstance) {
     });
 
     const updated = await loadWithdrawalOrNotFound(id);
-    return dataEnvelope(presentWithdrawal(updated, providerName));
+    return dataEnvelope(presentWithdrawal(updated, providerName, await accountName(updated.decidedByAccountId)));
   });
 
   app.post("/admin/finance/withdrawals/:id/reject", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -307,7 +311,7 @@ export async function adminFinanceRoutes(app: FastifyInstance) {
     });
 
     const updated = await loadWithdrawalOrNotFound(id);
-    return dataEnvelope(presentWithdrawal(updated, providerName));
+    return dataEnvelope(presentWithdrawal(updated, providerName, await accountName(updated.decidedByAccountId)));
   });
 
   app.post("/admin/finance/withdrawals/:id/mark-paid", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -353,7 +357,7 @@ export async function adminFinanceRoutes(app: FastifyInstance) {
     });
 
     const updated = await loadWithdrawalOrNotFound(id);
-    return dataEnvelope(presentWithdrawal(updated, providerName));
+    return dataEnvelope(presentWithdrawal(updated, providerName, await accountName(updated.decidedByAccountId)));
   });
 
   app.get("/admin/finance/transactions", { preHandler: [authenticateAdmin] }, async (request) => {
@@ -427,9 +431,10 @@ export async function adminFinanceRoutes(app: FastifyInstance) {
 
     const rows = await db.select().from(payoutBatches);
     const withdrawalRows = await db.select().from(withdrawals);
+    const creators = new Map(await Promise.all([...new Set(rows.map((row) => row.createdByAccountId).filter((value): value is string => Boolean(value)))].map(async (accountId) => [accountId, await accountName(accountId)] as const)));
     const presented = rows
       .filter((row) => !statusFilter?.length || statusFilter.includes(row.status))
-      .map((row) => presentBatch(row, withdrawalRows.filter((item) => item.batchId === row.id).map((item) => item.id)))
+      .map((row) => presentBatch(row, withdrawalRows.filter((item) => item.batchId === row.id).map((item) => item.id), creators.get(row.createdByAccountId ?? "")))
       .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
     return listPageEnvelope(paginate(presented, query));

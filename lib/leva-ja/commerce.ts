@@ -33,7 +33,7 @@ export const BROADCAST_SEGMENT_LABELS: Record<BroadcastSegment, string> = {
 export const BROADCAST_STATUS_LABELS: Record<BroadcastStatus, string> = {
   draft: "Rascunho",
   scheduled: "Agendada",
-  sent: "Envio simulado",
+  sent: "Enviada",
   cancelled: "Cancelada",
 };
 

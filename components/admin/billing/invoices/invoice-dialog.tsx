@@ -69,7 +69,7 @@ export default function InvoiceDialog({ invoiceId, onClose }: { invoiceId: strin
                   <dt className="lead-style font-medium">Total</dt>
                   <dd className="lead-style text-right font-medium">{formatKz(invoice.total)}</dd>
                 </dl>
-                <p className="caption-style text-subtle">Documento de demonstração gerado a partir dos dados fictícios do painel; não tem validade fiscal.</p>
+                <p className="caption-style text-subtle">Documento gerado pelo painel a partir dos pedidos pagos; ainda não tem validade fiscal.</p>
               </>
             )}
           </AsyncState>

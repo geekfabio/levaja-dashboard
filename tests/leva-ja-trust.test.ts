@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createMockRepositories } from "@/data/leva-ja/mock";
+import { createMockRepositories } from "@/tests/support/leva-ja-mock";
 import { isRepositoryError } from "@/data/leva-ja/repositories";
 import type { RepositoryErrorCode } from "@/data/leva-ja/repositories";
 import { csatStats, privacyUrgency, ticketResponseSla, webhookUrlIssue } from "@/lib/leva-ja/trust";

@@ -4,8 +4,8 @@ import { formatDateTimeNumeric, formatKz } from "@/lib/format";
 import { defaultPricingConfig, estimatePrice, priceWithProposal, validatePricingConfig } from "@/lib/leva-ja/pricing";
 import { canCancel, canTransition, nextStatus, STATUS_LABELS } from "@/lib/leva-ja/status";
 import { canAccessSection, hasPermission } from "@/lib/leva-ja/permissions";
-import { generateSeed } from "@/data/leva-ja/mock/seed";
-import { createMockRepositories } from "@/data/leva-ja/mock";
+import { generateSeed } from "@/tests/support/leva-ja-mock/seed";
+import { createMockRepositories } from "@/tests/support/leva-ja-mock";
 
 const NOW = new Date("2026-10-22T13:30:00.000Z");
 const config = defaultPricingConfig("2026-10-01T00:00:00.000Z");

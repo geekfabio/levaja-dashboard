@@ -8,7 +8,7 @@ import { authenticateAdmin } from "../lib/authenticate-admin";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { presentClient } from "../lib/client-presenter";
 import { listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
-import { presentServiceRequest } from "../lib/request-presenter";
+import { presentAdminRequest } from "../lib/admin-presenters";
 import { recordAdminAudit } from "../lib/admin-audit";
 import { requireCsrf } from "../lib/require-csrf";
 import { requirePermission } from "../lib/require-permission";
@@ -72,7 +72,7 @@ export async function adminClientRoutes(app: FastifyInstance) {
 
     const rows = await db.select().from(serviceRequests).where(eq(serviceRequests.clientAccountId, id));
     const sorted = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    const items = await Promise.all(sorted.map(presentServiceRequest));
+    const items = await Promise.all(sorted.map(presentAdminRequest));
 
     return listPageEnvelope(paginate(items, query));
   });

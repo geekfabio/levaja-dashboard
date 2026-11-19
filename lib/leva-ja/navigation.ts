@@ -86,7 +86,7 @@ export const SECTION_DESCRIPTIONS: Record<AdminSection, string> = {
   privacy: "Pedidos de acesso, rectificação e eliminação de dados pessoais (Lei n.º 22/11).",
   integrations: "Chaves de API e webhooks para sistemas de parceiros.",
   audit: "Registo de quem fez o quê, quando e porquê.",
-  settings: "Plataforma, regras de operação, pagamentos, papéis e dados de demonstração.",
+  settings: "Plataforma, regras de operação, pagamentos, papéis e permissões.",
 };
 
 export type NavGroup = { title?: string; sections: AdminSection[] };
@@ -94,7 +94,7 @@ export type NavGroup = { title?: string; sections: AdminSection[] };
 export const NAV_GROUPS: NavGroup[] = [
   { sections: ["overview", "requests", "scheduled", "disputes", "map"] },
   { title: "Rede", sections: ["applications", "providers", "fleets", "documents", "clients", "business"] },
-  { title: "Negócio", sections: ["finance", "billing", "refunds", "pricing", "promotions", "reports"] },
+  { title: "Negócio", sections: ["finance", "billing", "refunds", "pricing", "promotions"] },
   { title: "Apoio", sections: ["support", "claims", "communications", "privacy"] },
 ];
 

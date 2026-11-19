@@ -186,3 +186,51 @@ test("aprovar candidatura com email já usado por um prestador existente é vali
   assert.equal(approve.statusCode, 422);
   assert.equal(approve.json().error.code, "validation");
 });
+
+test("o painel recebe as candidaturas no formato que lê, com filtros por etapa, zona e pesquisa", async () => {
+  const admin = await insertAdminAccount("operations", "lista-candidatura");
+  adminAccountIds.push(admin.id);
+  const session = await createAdminSession(app, admin.id);
+  const zone = `zone-${randomUUID().slice(0, 8)}`;
+  const created = await createApplication("painel", { zone_ids: [zone] });
+
+  const list = await app.inject({ method: "GET", url: `/admin/applications?stage=submitted&zone=${zone}`, cookies: session.cookies });
+  assert.equal(list.statusCode, 200);
+  const item = list.json().data.find((row: { id: string }) => row.id === created.id);
+  assert.ok(item);
+  assert.equal(item.stage, "submitted");
+  assert.equal(item.zone_id, zone);
+  assert.equal(item.plate, "LD-11-22-AA");
+  assert.equal(item.vehicle_label, "Toyota Hilux");
+  assert.equal(item.history[0].stage, "submitted");
+  assert.equal(item.status, "pending");
+
+  const otherStage = await app.inject({ method: "GET", url: `/admin/applications?stage=interview&zone=${zone}`, cookies: session.cookies });
+  assert.equal(otherStage.json().data.length, 0);
+
+  const search = await app.inject({ method: "GET", url: "/admin/applications?q=LD-11-22-AA", cookies: session.cookies });
+  assert.ok(search.json().data.some((row: { id: string }) => row.id === created.id));
+});
+
+test("GET /admin/applications/summary: em curso, funil e médias; sem permissão é recusado", async () => {
+  const admin = await insertAdminAccount("operations", "resumo-candidatura");
+  adminAccountIds.push(admin.id);
+  const session = await createAdminSession(app, admin.id);
+  const support = await insertAdminAccount("support", "resumo-candidatura-suporte");
+  adminAccountIds.push(support.id);
+  const supportSession = await createAdminSession(app, support.id);
+  await createApplication("resumo");
+
+  const denied = await app.inject({ method: "GET", url: "/admin/applications/summary", cookies: supportSession.cookies });
+  assert.equal(denied.statusCode, 403);
+
+  const res = await app.inject({ method: "GET", url: "/admin/applications/summary", cookies: session.cookies });
+  assert.equal(res.statusCode, 200);
+  const data = res.json().data;
+  assert.ok(data.open >= 1);
+  assert.deepEqual(data.funnel.map((step: { stage: string }) => step.stage), ["submitted", "documents", "interview", "inspection", "approved"]);
+  assert.ok(data.funnel[0].count >= data.open);
+  assert.equal(data.funnel[1].count, 0);
+  assert.equal(typeof data.approved_last30, "number");
+  assert.equal(typeof data.rejected_last30, "number");
+});

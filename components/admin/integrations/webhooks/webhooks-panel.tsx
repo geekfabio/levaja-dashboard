@@ -73,7 +73,7 @@ function WebhookCard({ webhook }: { webhook: Webhook }) {
               <li key={delivery.id} className="caption-style flex flex-wrap items-center justify-between gap-2 py-1.5">
                 <span className="text-soft">
                   {delivery.event === "ping" ? "Teste" : (EVENT_LABELS[delivery.event] ?? delivery.event)}
-                  {delivery.simulated ? <span className="text-subtle"> · simulado</span> : null}
+                  {delivery.simulated ? <span className="text-subtle"> · sem pedido real</span> : null}
                 </span>
                 <span className="flex items-center gap-3 tabular-nums">
                   <span className="text-subtle">{formatDateTimeNumeric(delivery.at)}</span>
@@ -95,7 +95,7 @@ function WebhookCard({ webhook }: { webhook: Webhook }) {
           {webhook.active ? "Desactivar" : "Activar"}
         </Button>
         <Button variant="secondary" size="sm" disabled={test.isPending || !webhook.active} onClick={() => test.mutate(webhook.id)}>
-          {test.isPending ? "A testar…" : "Enviar teste simulado"}
+          {test.isPending ? "A testar…" : "Enviar teste"}
         </Button>
       </div>
     </li>
@@ -114,7 +114,7 @@ export default function WebhooksPanel() {
           <h2 id="webhooks-title" className="eyebrow-style text-faint font-normal">
             Webhooks
           </h2>
-          <p className="caption-style text-subtle max-w-[60em]">Em demonstração, os testes não fazem pedidos reais: o resultado é simulado e fica marcado como tal.</p>
+          <p className="caption-style text-subtle max-w-[60em]">O teste ainda não faz um pedido ao endereço: o resultado fica registado e marcado como «sem pedido real».</p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
           <PlusIcon aria-hidden className="size-3" />

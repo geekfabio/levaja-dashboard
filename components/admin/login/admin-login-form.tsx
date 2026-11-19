@@ -10,22 +10,14 @@ import { safeNextRoute } from "@/lib/leva-ja/navigation";
 import { ROLE_LABELS } from "@/lib/leva-ja/permissions";
 import { useAdminSessionStore } from "@/stores/admin-session-store";
 import { toast } from "@/stores/toast-store";
-import type { AdminRole } from "@/types/leva-ja";
 
 type Step = "email" | "code" | "otp";
-
-export const DEMO_ACCOUNTS: { email: string; role: AdminRole }[] = [
-  { email: "admin@angoleva.ao", role: "admin" },
-  { email: "operacoes@angoleva.ao", role: "operations" },
-  { email: "suporte@angoleva.ao", role: "support" },
-  { email: "financas@angoleva.ao", role: "finance" },
-];
 
 function nextParam() {
   return new URLSearchParams(window.location.search).get("next");
 }
 
-export default function AdminLoginForm({ demo }: { demo: boolean }) {
+export default function AdminLoginForm() {
   const router = useRouter();
   const status = useAdminSessionStore((state) => state.status);
   const session = useAdminSessionStore((state) => state.session);
@@ -144,7 +136,6 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
           <Button type="submit" variant="primary" size="md" disabled={pending} className="justify-center">
             {pending ? "A verificar…" : "Confirmar"}
           </Button>
-          {demo && <p className="caption-style text-subtle text-center">Em demonstração, o código da aplicação é 246810.</p>}
           <Button
             variant="link"
             size="none"
@@ -197,33 +188,6 @@ export default function AdminLoginForm({ demo }: { demo: boolean }) {
             Usar outro e-mail
           </Button>
         </form>
-      )}
-
-      {demo && (
-        <div className="border-border flex flex-col gap-3 border-t pt-5">
-          <p className="caption-style text-subtle">
-            Contas de demonstração (código <strong className="text-foreground font-medium tabular-nums">123456</strong>):
-          </p>
-          <ul className="flex flex-col gap-1">
-            {DEMO_ACCOUNTS.map((account) => (
-              <li key={account.email}>
-                <Button
-                  variant="item"
-                  size="md"
-                  className="justify-between"
-                  disabled={pending}
-                  onClick={() => {
-                    setCode("");
-                    requestCode(undefined, account.email);
-                  }}
-                >
-                  <span className="truncate">{account.email}</span>
-                  <span className="caption-style text-subtle shrink-0">{ROLE_LABELS[account.role]}</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
       )}
     </div>
   );

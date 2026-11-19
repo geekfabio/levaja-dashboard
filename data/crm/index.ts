@@ -7,7 +7,7 @@ let instance: Repositories | null = null;
 export const DEFAULT_API_URL = "http://localhost:4000/api";
 
 export function dataSource(): DataSource {
-  return process.env.NEXT_PUBLIC_DATA_SOURCE === "http" ? "http" : "mock";
+  return process.env.NEXT_PUBLIC_CRM_DATA_SOURCE === "http" ? "http" : "mock";
 }
 
 function browserStorage() {
