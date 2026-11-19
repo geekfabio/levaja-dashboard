@@ -45,10 +45,19 @@ test("http: login guarda sessão e csrf; pedidos usam cookies e cabeçalho csrf 
   assert.equal(session.csrfToken, "csrf-abc");
   assert.equal(session.user.id, "adm-1");
 
-  const listResponse = { data: [{ id: "req-1" }], meta: { count: 1, total: 1, page: 1, page_size: 20 } };
+  const listResponse = {
+    data: [{ id: "req-1", code: "LJ-1", service_type: "tow", status: "searching", client_id: "c1", pickup: { id: "a", label: "A", lat: 1, lng: 2 }, dropoff: { id: "b", label: "B", lat: 3, lng: 4 }, pricing: { total_kz: 1000 }, zone_id: "z1" }],
+    meta: { count: 1, total: 1, page: 1, page_size: 20 } };
   const repos = createHttpRepositories({ baseUrl: "https://api.angoleva.ao", fetch: fakeFetch(200, listResponse, calls), storage });
   const page = await repos.requests.list({ status: ["searching"], page: 1 });
-  assert.deepEqual(page, { items: [{ id: "req-1" }], total: 1, page: 1, pageSize: 20 });
+  assert.equal(page.total, 1);
+  assert.equal(page.pageSize, 20);
+  assert.equal(page.items[0]?.id, "req-1");
+  assert.equal(page.items[0]?.kind, "tow");
+  assert.equal(page.items[0]?.origin.coords.longitude, 2);
+  assert.equal(page.items[0]?.destination.label, "B");
+  assert.equal(page.items[0]?.price.total, 1000);
+  assert.equal(page.items[0]?.zoneId, "z1");
   await repos.requests.cancel("req-1", "Cliente desistiu");
 
   assert.equal(calls[0].url, "https://api.angoleva.ao/admin/auth/login");
@@ -92,6 +101,6 @@ test("http: respostas em snake_case chegam convertidas para camelCase", async ()
   const storage = memoryStorage();
   const body = { data: { client_account_id: "c1", provider_earning_kz: 1000, pickup: { lat: 1, lng: 2 } } };
   const repos = createHttpRepositories({ baseUrl: "https://api", fetch: fakeFetch(200, body), storage });
-  const result = await repos.requests.get("req-1");
-  assert.deepEqual(result, { clientAccountId: "c1", providerEarningKz: 1000, pickup: { lat: 1, lng: 2 } });
+  const result = await repos.pricing.get();
+  assert.deepEqual(result, { clientAccountId: "c1", providerEarning: 1000, pickup: { lat: 1, lng: 2 } });
 });

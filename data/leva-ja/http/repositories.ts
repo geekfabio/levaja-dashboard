@@ -1,12 +1,31 @@
 import { dispatchStartsAt } from "@/lib/leva-ja/scheduling";
 import { isDisputeOverdue } from "@/lib/leva-ja/refunds";
-import type { AdminSession, ServiceRequest, SosAlert } from "@/types/leva-ja";
+import type { AdminSession, ServiceRequest, SosAlert, Transaction } from "@/types/leva-ja";
 import type { DisputeCase } from "../repositories/disputes";
 import type { Repositories } from "../repositories";
+import type { Page } from "../repositories/common";
+import type { RequestRefunds } from "../repositories/refunds";
+import type { ScheduledReport } from "../repositories/operations";
+import type { ReassignCandidate } from "../repositories/requests";
 import type { AttentionItems } from "../repositories/metrics";
 import type { HttpClient, HttpClientOptions } from "./client";
 import { createHttpClient, polling } from "./client";
 import { createOsrmRouting } from "./routing";
+import {
+  mapPage,
+  toClientAccount,
+  toDisputeCase,
+  toDisputedRequest,
+  toProviderAccount,
+  toProviderPosition,
+  toRefund,
+  toReviewItem,
+  toServiceRequest,
+  toSession,
+  toSos,
+  toZone,
+  type Dto,
+} from "./mappers";
 
 export type HttpRepositoriesOptions = Omit<HttpClientOptions, "getCsrfToken" | "onUnauthorized"> & {
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
@@ -47,7 +66,7 @@ function sessionStore(storage: HttpRepositoriesOptions["storage"]) {
   };
 }
 
-type Listed<T> = { items: T[]; total: number };
+type Listed<T> = Page<T>;
 
 async function attention(http: HttpClient): Promise<AttentionItems> {
   const STALLED_FALLBACK_MINUTES = 15;
@@ -59,16 +78,16 @@ async function attention(http: HttpClient): Promise<AttentionItems> {
       return fallback;
     }
   };
-  const empty = <T>(): Listed<T> => ({ items: [], total: 0 });
+  const empty = <T>(): Listed<T> => ({ items: [], total: 0, page: 1, pageSize: 0 });
   const [searching, settings, sos, documents, withdrawals, disputes, overdue, refunds] = await Promise.all([
-    settled(http.get<Listed<ServiceRequest>>("/admin/requests", { status: ["searching"], pageSize: 100 }), empty<ServiceRequest>()),
+    settled(http.get<Listed<Dto>>("/admin/requests", { status: ["searching"], pageSize: 100 }).then((page) => mapPage(page, toServiceRequest)), empty<ServiceRequest>()),
     settled(http.get<{ dispatch: { stalledAfterMinutes: number; scheduleLeadMinutes: number } }>("/admin/settings"), null),
-    settled(http.get<SosAlert[]>("/admin/support/sos", { status: ["open", "acknowledged"] }), [] as SosAlert[]),
-    settled(http.get<Listed<AttentionItems["pendingDocuments"][number]>>("/admin/documents", { state: ["pending", "needs_update"], pageSize: 5 }), empty<AttentionItems["pendingDocuments"][number]>()),
+    settled(http.get<Dto[]>("/admin/support/sos", { status: ["open", "acknowledged"] }).then((list) => list.map(toSos)), [] as SosAlert[]),
+    settled(http.get<Listed<Dto>>("/admin/documents", { state: ["pending", "needs_update"], pageSize: 5 }).then((page) => mapPage(page, toReviewItem)), empty<AttentionItems["pendingDocuments"][number]>()),
     settled(http.get<Listed<AttentionItems["pendingWithdrawals"][number]>>("/admin/finance/withdrawals", { status: ["pending"], pageSize: 5 }), empty<AttentionItems["pendingWithdrawals"][number]>()),
-    settled(http.get<Listed<DisputeCase>>("/admin/disputes", { state: "open", pageSize: 5 }), empty<DisputeCase>()),
-    settled(http.get<Listed<DisputeCase>>("/admin/disputes", { state: "overdue", pageSize: 1 }), empty<DisputeCase>()),
-    settled(http.get<Listed<AttentionItems["pendingRefunds"][number]>>("/admin/refunds", { status: ["pending"], pageSize: 5 }), empty<AttentionItems["pendingRefunds"][number]>()),
+    settled(http.get<Listed<Dto>>("/admin/disputes", { state: "open", pageSize: 5 }).then((page) => mapPage(page, toDisputeCase)), empty<DisputeCase>()),
+    settled(http.get<Listed<Dto>>("/admin/disputes", { state: "overdue", pageSize: 1 }).then((page) => mapPage(page, toDisputeCase)), empty<DisputeCase>()),
+    settled(http.get<Listed<Dto>>("/admin/refunds", { status: ["pending"], pageSize: 5 }).then((page) => mapPage(page, toRefund)), empty<AttentionItems["pendingRefunds"][number]>()),
   ]);
   const stalledAfter = (settings?.dispatch.stalledAfterMinutes ?? STALLED_FALLBACK_MINUTES) * 60_000;
   const lead = settings?.dispatch.scheduleLeadMinutes ?? LEAD_FALLBACK_MINUTES;
@@ -127,14 +146,15 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     requests: {
-      list: (filters = {}) => http.get("/admin/requests", filters),
-      get: (requestId) => http.get(`/admin/requests/${id(requestId)}`),
-      reassignCandidates: (requestId) => http.get(`/admin/requests/${id(requestId)}/reassign-candidates`),
-      reassign: (requestId, providerId, reason) => http.post(`/admin/requests/${id(requestId)}/reassign`, { providerId, reason }),
-      cancel: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/cancel`, { reason }),
-      openDispute: (requestId, reason, category) => http.post(`/admin/requests/${id(requestId)}/dispute`, { reason, category }),
-      forceComplete: (requestId, reason) => http.post(`/admin/requests/${id(requestId)}/force-complete`, { reason }),
-      active: () => http.get("/admin/requests/active"),
+      list: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/requests", filters), toServiceRequest),
+      get: async (requestId) => toServiceRequest(await http.get<Dto>(`/admin/requests/${id(requestId)}`)),
+      reassignCandidates: async (requestId) =>
+        (await http.get<Dto[]>(`/admin/requests/${id(requestId)}/reassign-candidates`)).map((candidate) => ({ ...candidate, provider: toProviderAccount(candidate.provider) }) as ReassignCandidate),
+      reassign: async (requestId, providerId, reason) => toServiceRequest(await http.post<Dto>(`/admin/requests/${id(requestId)}/reassign`, { providerId, reason })),
+      cancel: async (requestId, reason) => toServiceRequest(await http.post<Dto>(`/admin/requests/${id(requestId)}/cancel`, { reason })),
+      openDispute: async (requestId, reason, category) => toServiceRequest(await http.post<Dto>(`/admin/requests/${id(requestId)}/dispute`, { reason, category })),
+      forceComplete: async (requestId, reason) => toServiceRequest(await http.post<Dto>(`/admin/requests/${id(requestId)}/force-complete`, { reason })),
+      active: async () => (await http.get<Dto[]>("/admin/requests/active")).map(toServiceRequest),
       subscribe: (listener) => subscribe("requests", listener),
     },
 
@@ -149,8 +169,8 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     security: {
-      sessions: () => http.get("/admin/security/sessions"),
-      revokeSession: (sessionId, reason) => http.post(`/admin/security/sessions/${id(sessionId)}/revoke`, { reason }),
+      sessions: async () => (await http.get<Dto[]>("/admin/security/sessions")).map(toSession),
+      revokeSession: async (sessionId, reason) => (await http.post<Dto[]>(`/admin/security/sessions/${id(sessionId)}/revoke`, { reason })).map(toSession),
       accessLog: (filters = {}) => http.get("/admin/security/access-log", filters),
       setTwoFactor: (userId, enabled, reason) => http.post(`/admin/security/users/${id(userId)}/two-factor`, { enabled, reason }),
     },
@@ -215,7 +235,10 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     operations: {
-      scheduled: (filters = {}) => http.get("/admin/operations/scheduled", filters),
+      scheduled: async (filters = {}) => {
+        const report = await http.get<{ items: Dto[]; totals: ScheduledReport["totals"] }>("/admin/operations/scheduled", filters);
+        return { ...report, items: report.items.map(toServiceRequest) };
+      },
       sla: (range) => http.get("/admin/operations/sla", range),
       heatmap: (query) => http.get("/admin/operations/heatmap", query),
     },
@@ -270,63 +293,71 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
     },
 
     disputes: {
-      list: (filters = {}) => http.get("/admin/disputes", filters),
+      list: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/disputes", filters), toDisputeCase),
       summary: () => http.get("/admin/disputes/summary"),
-      addNote: (requestId, text) => http.post(`/admin/disputes/${id(requestId)}/notes`, { text }),
-      setCategory: (requestId, category) => http.patch(`/admin/disputes/${id(requestId)}/category`, { category }),
-      resolve: (requestId, input) =>
-        http.post(`/admin/disputes/${id(requestId)}/resolve`, {
-          outcome: input.outcome,
-          amountKz: input.amount,
-          chargeProvider: input.chargeProvider,
-          resolution: input.resolution,
-        }),
+      addNote: async (requestId, text) => toDisputedRequest(await http.post<Dto>(`/admin/disputes/${id(requestId)}/notes`, { text })),
+      setCategory: async (requestId, category) => toDisputedRequest(await http.patch<Dto>(`/admin/disputes/${id(requestId)}/category`, { category })),
+      resolve: async (requestId, input) =>
+        toDisputedRequest(
+          await http.post<Dto>(`/admin/disputes/${id(requestId)}/resolve`, {
+            outcome: input.outcome,
+            amountKz: input.amount,
+            chargeProvider: input.chargeProvider,
+            resolution: input.resolution,
+          }),
+        ),
     },
 
     refunds: {
-      list: (filters = {}) => http.get("/admin/refunds", filters),
+      list: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/refunds", filters), toRefund),
       summary: () => http.get("/admin/refunds/summary"),
-      forRequest: (requestId) => http.get(`/admin/requests/${id(requestId)}/refunds`),
-      create: (input) =>
-        http.post("/admin/refunds", {
-          requestId: input.requestId,
-          amountKz: input.amount,
-          reason: input.reason,
-          chargeProvider: input.chargeProvider,
-        }),
-      approve: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/approve`, { reason }),
-      reject: (refundId, reason) => http.post(`/admin/refunds/${id(refundId)}/reject`, { reason }),
-      markPaid: (refundId, paymentReference) => http.post(`/admin/refunds/${id(refundId)}/mark-paid`, { paymentReference }),
+      forRequest: async (requestId) => {
+        const result = await http.get<Dto>(`/admin/requests/${id(requestId)}/refunds`);
+        return { ...result, refunds: (result.refunds ?? []).map(toRefund) } as RequestRefunds;
+      },
+      create: async (input) =>
+        toRefund(
+          await http.post<Dto>("/admin/refunds", {
+            requestId: input.requestId,
+            amountKz: input.amount,
+            reason: input.reason,
+            chargeProvider: input.chargeProvider,
+          }),
+        ),
+      approve: async (refundId, reason) => toRefund(await http.post<Dto>(`/admin/refunds/${id(refundId)}/approve`, { reason })),
+      reject: async (refundId, reason) => toRefund(await http.post<Dto>(`/admin/refunds/${id(refundId)}/reject`, { reason })),
+      markPaid: async (refundId, paymentReference) => toRefund(await http.post<Dto>(`/admin/refunds/${id(refundId)}/mark-paid`, { paymentReference })),
     },
 
     providers: {
-      list: (filters = {}) => http.get("/admin/providers", filters),
-      get: (providerId) => http.get(`/admin/providers/${id(providerId)}`),
-      approve: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/approve`, { reason }),
-      suspend: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/suspend`, { reason }),
-      reactivate: (providerId, reason) => http.post(`/admin/providers/${id(providerId)}/reactivate`, { reason }),
-      transactions: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/transactions`, query),
+      list: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/providers", filters), toProviderAccount),
+      get: async (providerId) => toProviderAccount(await http.get<Dto>(`/admin/providers/${id(providerId)}`)),
+      approve: async (providerId, reason) => toProviderAccount(await http.post<Dto>(`/admin/providers/${id(providerId)}/approve`, { reason })),
+      suspend: async (providerId, reason) => toProviderAccount(await http.post<Dto>(`/admin/providers/${id(providerId)}/suspend`, { reason })),
+      reactivate: async (providerId, reason) => toProviderAccount(await http.post<Dto>(`/admin/providers/${id(providerId)}/reactivate`, { reason })),
+      transactions: async (providerId, query = {}) =>
+        mapPage(await http.get<Page<Dto>>(`/admin/providers/${id(providerId)}/transactions`, query), (item) => ({ ...item, serviceKind: item.serviceType ?? undefined }) as Transaction),
       reviews: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/reviews`, query),
-      requests: (providerId, query = {}) => http.get(`/admin/providers/${id(providerId)}/requests`, query),
-      positions: () => http.get("/admin/providers/positions"),
+      requests: async (providerId, query = {}) => mapPage(await http.get<Page<Dto>>(`/admin/providers/${id(providerId)}/requests`, query), toServiceRequest),
+      positions: async () => (await http.get<Dto[]>("/admin/providers/positions")).map(toProviderPosition),
       subscribe: (listener) => subscribe("providers", listener),
     },
 
     documents: {
-      queue: (filters = {}) => http.get("/admin/documents", filters),
-      expiring: (withinDays) => http.get("/admin/documents/expiring", { withinDays }),
-      approve: (documentId, validUntil) => http.post(`/admin/documents/${id(documentId)}/approve`, { validUntil }),
-      reject: (documentId, reason) => http.post(`/admin/documents/${id(documentId)}/reject`, { reason }),
+      queue: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/documents", filters), toReviewItem),
+      expiring: async (withinDays) => (await http.get<Dto[]>("/admin/documents/expiring", { withinDays })).map(toReviewItem),
+      approve: async (documentId, validUntil) => toReviewItem(await http.post<Dto>(`/admin/documents/${id(documentId)}/approve`, { validUntil })),
+      reject: async (documentId, reason) => toReviewItem(await http.post<Dto>(`/admin/documents/${id(documentId)}/reject`, { reason })),
     },
 
     clients: {
-      list: (filters = {}) => http.get("/admin/clients", filters),
-      get: (clientId) => http.get(`/admin/clients/${id(clientId)}`),
-      requests: (clientId, query = {}) => http.get(`/admin/clients/${id(clientId)}/requests`, query),
+      list: async (filters = {}) => mapPage(await http.get<Page<Dto>>("/admin/clients", filters), toClientAccount),
+      get: async (clientId) => toClientAccount(await http.get<Dto>(`/admin/clients/${id(clientId)}`)),
+      requests: async (clientId, query = {}) => mapPage(await http.get<Page<Dto>>(`/admin/clients/${id(clientId)}/requests`, query), toServiceRequest),
       reviewsGiven: (clientId) => http.get(`/admin/clients/${id(clientId)}/reviews`),
       tickets: (clientId) => http.get(`/admin/clients/${id(clientId)}/tickets`),
-      block: (clientId, reason) => http.post(`/admin/clients/${id(clientId)}/block`, { reason }),
-      unblock: (clientId, reason) => http.post(`/admin/clients/${id(clientId)}/unblock`, { reason }),
+      block: async (clientId, reason) => toClientAccount(await http.post<Dto>(`/admin/clients/${id(clientId)}/block`, { reason })),
+      unblock: async (clientId, reason) => toClientAccount(await http.post<Dto>(`/admin/clients/${id(clientId)}/unblock`, { reason })),
     },
 
     finance: {
@@ -360,13 +391,16 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     pricing: {
       get: () => http.get("/admin/pricing"),
-      update: (update, reason) => http.put("/admin/pricing", { ...update, reason }),
+      update: (update, reason) => {
+        const { driverBonus, referralInviteeDiscount, referralInviterDiscount, ...rest } = update;
+        return http.put("/admin/pricing", { ...rest, driverBonusKz: driverBonus, referralInviteeDiscountKz: referralInviteeDiscount, referralInviterDiscountKz: referralInviterDiscount, reason });
+      },
     },
 
     zones: {
-      list: () => http.get("/admin/zones"),
-      create: (input, reason) => http.post("/admin/zones", { ...input, reason }),
-      update: (zoneId, input, reason) => http.patch(`/admin/zones/${id(zoneId)}`, { ...input, reason }),
+      list: async () => (await http.get<Dto[]>("/admin/zones")).map(toZone),
+      create: async (input, reason) => toZone(await http.post<Dto>("/admin/zones", { ...input, reason })),
+      update: async (zoneId, input, reason) => toZone(await http.patch<Dto>(`/admin/zones/${id(zoneId)}`, { ...input, reason })),
       remove: (zoneId, reason) => http.del(`/admin/zones/${id(zoneId)}`, { reason }),
     },
 
@@ -377,9 +411,9 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
       assignTicket: (ticketId, adminId) => http.post(`/admin/support/tickets/${id(ticketId)}/assign`, { assigneeId: adminId }),
       replyTicket: (ticketId, body) => http.post(`/admin/support/tickets/${id(ticketId)}/reply`, { body }),
       resolveTicket: (ticketId, resolution) => http.post(`/admin/support/tickets/${id(ticketId)}/resolve`, { resolution }),
-      sosAlerts: (status) => http.get("/admin/support/sos", { status }),
-      acknowledgeSos: (sosId) => http.post(`/admin/support/sos/${id(sosId)}/acknowledge`),
-      resolveSos: (sosId, resolution) => http.post(`/admin/support/sos/${id(sosId)}/resolve`, { resolution }),
+      sosAlerts: async (status) => (await http.get<Dto[]>("/admin/support/sos", { status })).map(toSos),
+      acknowledgeSos: async (sosId) => toSos(await http.post<Dto>(`/admin/support/sos/${id(sosId)}/acknowledge`)),
+      resolveSos: async (sosId, resolution) => toSos(await http.post<Dto>(`/admin/support/sos/${id(sosId)}/resolve`, { resolution })),
       lowRatings: (query = {}) => http.get("/admin/support/low-ratings", query),
       responseSummary: () => http.get("/admin/support/response-summary"),
       satisfaction: () => http.get("/admin/support/satisfaction"),
