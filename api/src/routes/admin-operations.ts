@@ -7,6 +7,7 @@ import { providers, serviceRequestEvents, serviceRequests, serviceTypeEnum, zone
 import { authenticateAdmin } from "../lib/authenticate-admin";
 import { addDays, daysBetween, dispatchStartsAt, luandaDay, luandaHour, nearestZoneId, scheduleRisk, slaStats } from "../lib/dispatch";
 import { dataEnvelope } from "../lib/envelope";
+import { presentAdminRequest } from "../lib/admin-presenters";
 import { requirePermission } from "../lib/require-permission";
 
 type ServiceRequestRow = typeof serviceRequests.$inferSelect;
@@ -41,22 +42,6 @@ function presentZones(zoneRows: ZoneRow[]) {
 function zoneIdFor(row: ServiceRequestRow, zoneRows: { id: string; lat: number; lng: number; radiusKm: number }[]) {
   const point = pickupPoint(row);
   return point ? nearestZoneId(point, zoneRows) : null;
-}
-
-function presentRequest(row: ServiceRequestRow, zoneName: string | null, risk: boolean) {
-  return {
-    id: row.id,
-    code: row.code,
-    service_type: row.serviceType,
-    status: row.status,
-    client_id: row.clientAccountId,
-    provider_id: row.providerAccountId,
-    pickup: row.pickup,
-    scheduled_for: row.scheduledFor ? row.scheduledFor.toISOString() : null,
-    created_at: row.createdAt.toISOString(),
-    zone_name: zoneName,
-    risk,
-  };
 }
 
 const scheduledQuerySchema = z.object({
@@ -105,7 +90,13 @@ export async function adminOperationsRoutes(app: FastifyInstance) {
     const weekEnd = addDays(today, 6);
 
     return dataEnvelope({
-      items: items.map((item) => presentRequest(item.row, item.zoneId ? zoneName.get(item.zoneId) ?? null : null, scheduleRisk(item.row, nowMs))),
+      items: await Promise.all(
+        items.map(async (item) => ({
+          ...(await presentAdminRequest(item.row)),
+          zone_name: item.zoneId ? zoneName.get(item.zoneId) ?? null : null,
+          risk: scheduleRisk(item.row, nowMs),
+        })),
+      ),
       totals: {
         today: upcoming.filter((item) => luandaDay(item.row.scheduledFor!) === today).length,
         next7: upcoming.filter((item) => luandaDay(item.row.scheduledFor!) <= weekEnd).length,

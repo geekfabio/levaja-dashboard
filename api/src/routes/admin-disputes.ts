@@ -2,7 +2,6 @@ import { desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client";
-import { accounts } from "../db/schema/auth";
 import { serviceRequests } from "../db/schema/ops";
 import { disputes } from "../db/schema/disputes";
 import { refunds } from "../db/schema/refunds";
@@ -10,7 +9,7 @@ import { authenticateAdmin } from "../lib/authenticate-admin";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { newId } from "../lib/ids";
 import { listPageEnvelope, pageQuerySchema, csvList, paginate } from "../lib/pagination";
-import { presentServiceRequest } from "../lib/request-presenter";
+import { presentAdminRequest, presentDispute } from "../lib/admin-presenters";
 import { recordAdminAudit } from "../lib/admin-audit";
 import { committedRefundsKz, isDisputeOverdue, refundableAmountKz } from "../lib/refunds";
 import { hasPermission } from "../lib/admin-roles";
@@ -59,35 +58,13 @@ async function loadOpenDisputeOrFail(requestId: string): Promise<DisputeRow> {
   return row;
 }
 
-async function accountName(accountId: string | null | undefined) {
-  if (!accountId) return undefined;
-  const [row] = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
-  return row?.fullName;
-}
-
-async function presentDispute(dispute: DisputeRow) {
-  const [openedBy, resolvedBy] = await Promise.all([accountName(dispute.openedByAccountId), accountName(dispute.resolvedByAccountId)]);
-  return {
-    reason: dispute.reason,
-    category: dispute.category,
-    opened_at: dispute.openedAt.toISOString(),
-    opened_by: openedBy ?? null,
-    notes: dispute.notes,
-    resolved_at: dispute.resolvedAt ? dispute.resolvedAt.toISOString() : null,
-    resolved_by: resolvedBy ?? null,
-    resolution: dispute.resolution,
-    outcome: dispute.outcome,
-    refund_id: dispute.refundId,
-  };
-}
-
 async function presentCase(dispute: DisputeRow, now: Date) {
   const requestRow = await loadRequestOrNotFound(dispute.requestId);
   const requestRefunds = await db.select().from(refunds).where(eq(refunds.requestId, dispute.requestId));
   const totalKz = (requestRow.pricing as { total_kz?: number } | null)?.total_kz ?? 0;
 
   return {
-    request: await presentServiceRequest(requestRow),
+    request: await presentAdminRequest(requestRow),
     dispute: await presentDispute(dispute),
     refundable_kz: refundableAmountKz({ status: requestRow.status, totalKz }, requestRefunds, dispute.requestId),
     refunded_kz: committedRefundsKz(requestRefunds, dispute.requestId),

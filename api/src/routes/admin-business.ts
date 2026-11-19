@@ -176,7 +176,7 @@ async function statementsOf(business: BusinessRow, now: Date): Promise<BusinessS
     });
 }
 
-function summaryOf(business: BusinessRow, statements: Awaited<ReturnType<typeof statementsOf>>, memberCount: number, now: Date) {
+function summaryOf(business: BusinessRow, statements: Awaited<ReturnType<typeof statementsOf>>, memberIds: string[], now: Date) {
   const current = monthOf(now);
   const unpaid = statements.filter((statement) => statement.status !== "paid");
   const outstanding = unpaid.filter((statement) => statement.month !== current).reduce((sum, statement) => sum + statement.net, 0);
@@ -194,7 +194,8 @@ function summaryOf(business: BusinessRow, statements: Awaited<ReturnType<typeof 
     suspension_reason: business.suspensionReason,
     contract: contractOf(business),
     created_at: business.createdAt.toISOString(),
-    members: memberCount,
+    members: memberIds.length,
+    client_ids: memberIds,
     current_month: { gross: currentMonth.gross, discount: currentMonth.discount, net: currentMonth.net, count: currentMonth.count },
     outstanding,
     overdue: unpaid.filter((statement) => statement.status === "overdue").reduce((sum, statement) => sum + statement.net, 0),
@@ -218,7 +219,7 @@ async function detailOf(business: BusinessRow, now: Date) {
     return [{ id: clientId, name: account.fullName, phone: account.phone ?? "", requests_30: requests30 }];
   });
 
-  return { ...summaryOf(business, statements, memberIds.length, now), statements, member_clients: memberClients };
+  return { ...summaryOf(business, statements, memberIds, now), statements, member_clients: memberClients };
 }
 
 async function findBusinessOrNotFound(id: string): Promise<BusinessRow> {
@@ -246,7 +247,7 @@ export async function adminBusinessRoutes(app: FastifyInstance) {
     const now = new Date();
     const filtered = rows.filter((row) => (!statusFilter?.length || statusFilter.includes(row.status)) && matchesText(query.q, row.name, row.nif, row.contactName, row.sector));
     const presented = await Promise.all(
-      filtered.map(async (row) => summaryOf(row, await statementsOf(row, now), (await memberIdsOf(row.id)).length, now)),
+      filtered.map(async (row) => summaryOf(row, await statementsOf(row, now), await memberIdsOf(row.id), now)),
     );
     const sorted = presented.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 

@@ -12,7 +12,7 @@ import { haversineKm } from "../lib/geo";
 import { listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
 import { documentsVerified } from "../lib/provider-documents";
 import { loadProviderAccounts, presentProvider } from "../lib/provider-presenter";
-import { presentServiceRequest } from "../lib/request-presenter";
+import { presentAdminRequest } from "../lib/admin-presenters";
 import {
   ACTIVE_REQUEST_STATUSES,
   PROVIDER_BUSY_STATUSES,
@@ -159,7 +159,7 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       return true;
     });
 
-    const presented = await Promise.all(filteredRows.map(presentServiceRequest));
+    const presented = await Promise.all(filteredRows.map(presentAdminRequest));
     const matched = presented.filter((item) =>
       matchesText(query.q, item.code, item.client?.full_name, item.client?.phone, item.provider?.full_name, item.provider?.vehicle?.plate),
     );
@@ -171,14 +171,14 @@ export async function adminRequestRoutes(app: FastifyInstance) {
     requirePermission(request.adminAccount!.adminRole!, "requests.view");
     const rows = await db.select().from(serviceRequests).orderBy(desc(serviceRequests.createdAt));
     const active = rows.filter((row) => (ACTIVE_REQUEST_STATUSES as readonly string[]).includes(row.status));
-    return dataEnvelope(await Promise.all(active.map(presentServiceRequest)));
+    return dataEnvelope(await Promise.all(active.map(presentAdminRequest)));
   });
 
   app.get("/admin/requests/:id", { preHandler: [authenticateAdmin] }, async (request) => {
     requirePermission(request.adminAccount!.adminRole!, "requests.view");
     const { id } = request.params as { id: string };
     const row = await loadRequestOrNotFound(id);
-    return dataEnvelope(await presentServiceRequest(row));
+    return dataEnvelope(await presentAdminRequest(row));
   });
 
   app.post("/admin/requests/:id/cancel", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -212,7 +212,7 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    return dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id)));
+    return dataEnvelope(await presentAdminRequest(await loadRequestOrNotFound(id)));
   });
 
   app.get("/admin/requests/:id/reassign-candidates", { preHandler: [authenticateAdmin] }, async (request) => {
@@ -310,7 +310,7 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    return dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id)));
+    return dataEnvelope(await presentAdminRequest(await loadRequestOrNotFound(id)));
   });
 
   app.post("/admin/requests/:id/dispute", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -350,7 +350,7 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    return dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id)));
+    return dataEnvelope(await presentAdminRequest(await loadRequestOrNotFound(id)));
   });
 
   app.post("/admin/requests/:id/force-complete", { preHandler: [authenticateAdmin, requireCsrf] }, async (request) => {
@@ -413,6 +413,6 @@ export async function adminRequestRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    return dataEnvelope(await presentServiceRequest(await loadRequestOrNotFound(id)));
+    return dataEnvelope(await presentAdminRequest(await loadRequestOrNotFound(id)));
   });
 }

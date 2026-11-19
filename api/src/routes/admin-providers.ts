@@ -3,15 +3,16 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client";
 import { accounts } from "../db/schema/auth";
-import { providers, serviceRequests, walletTransactions } from "../db/schema/ops";
+import { providers, serviceRequests, vehicles, walletTransactions } from "../db/schema/ops";
 import { authenticateAdmin } from "../lib/authenticate-admin";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
 import { documentsVerified } from "../lib/provider-documents";
 import { loadProviderAccounts, presentProvider } from "../lib/provider-presenter";
-import { presentServiceRequest } from "../lib/request-presenter";
+import { presentAdminRequest } from "../lib/admin-presenters";
 import { PROVIDER_BUSY_STATUSES } from "../lib/request-state";
 import { recordAdminAudit } from "../lib/admin-audit";
+import { initialsOf } from "../lib/admin-users";
 import { requireCsrf } from "../lib/require-csrf";
 import { requirePermission } from "../lib/require-permission";
 import { requireReason } from "../lib/require-reason";
@@ -103,8 +104,11 @@ export async function adminProviderRoutes(app: FastifyInstance) {
         if (!account) return null;
         const own = await db.select().from(serviceRequests).where(eq(serviceRequests.providerAccountId, provider.accountId));
         const busy = own.find((row) => (PROVIDER_BUSY_STATUSES as readonly string[]).includes(row.status));
+        const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.providerAccountId, provider.accountId)).limit(1);
         return {
           id: account.id,
+          vehicle_label: vehicle ? `${vehicle.brand} ${vehicle.model} · ${vehicle.plate}` : "—",
+          vehicle_class: vehicle?.vehicleClass ?? "pickup",
           full_name: account.fullName,
           rating: provider.rating !== null ? Number(provider.rating) : null,
           coords: provider.lat !== null && provider.lng !== null ? { lat: Number(provider.lat), lng: Number(provider.lng) } : null,
@@ -160,6 +164,7 @@ export async function adminProviderRoutes(app: FastifyInstance) {
         id: `rv-${row.id}`,
         request_id: row.id,
         author_name: clientsById.get(row.clientAccountId)?.fullName ?? "Cliente",
+        author_initials: initialsOf(clientsById.get(row.clientAccountId)?.fullName ?? "Cliente"),
         rating: row.rating,
         comment: row.review ?? "",
         at: row.updatedAt.toISOString(),
@@ -177,7 +182,7 @@ export async function adminProviderRoutes(app: FastifyInstance) {
 
     const rows = await db.select().from(serviceRequests).where(eq(serviceRequests.providerAccountId, id));
     const sorted = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    const items = await Promise.all(sorted.map(presentServiceRequest));
+    const items = await Promise.all(sorted.map(presentAdminRequest));
 
     return listPageEnvelope(paginate(items, query));
   });
