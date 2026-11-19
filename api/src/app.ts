@@ -58,9 +58,12 @@ import { crmOffersRoutes } from "./routes/crm-offers";
 
 export async function buildApp() {
   const env = loadEnv();
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: true, trustProxy: env.TRUST_PROXY });
+  if (env.OTP_FIXED_CODE) {
+    app.log.warn("OTP_FIXED_CODE activo: todos os códigos de acesso são fixos. Usar só até haver fornecedor de e-mail.");
+  }
 
-  await app.register(cors, { origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : true, credentials: true });
+  await app.register(cors, { origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : false, credentials: true });
   await app.register(cookie, { secret: env.ADMIN_SESSION_SECRET });
   await app.register(multipart, { limits: { fileSize: 15 * 1024 * 1024 } });
 

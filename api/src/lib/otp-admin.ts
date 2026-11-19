@@ -1,10 +1,11 @@
-import { createHash, randomInt } from "node:crypto";
+import { createHash } from "node:crypto";
+import { newOtpCode } from "./tokens";
 
 export const OTP_TTL_MINUTES = 10;
 export const OTP_MAX_ATTEMPTS = 5;
 
 export function generateOtpCode() {
-  return randomInt(0, 1_000_000).toString().padStart(6, "0");
+  return newOtpCode();
 }
 
 export function hashOtpCode(code: string) {

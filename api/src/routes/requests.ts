@@ -83,6 +83,16 @@ const createRequestBodySchema = z.object({
   promo_code: z.string().trim().min(1).nullable().default(null),
 });
 
+const estimateBodySchema = createRequestBodySchema.pick({
+  service_type: true,
+  pickup: true,
+  dropoff: true,
+  stops: true,
+  tow_details: true,
+  cargo_details: true,
+  moving_details: true,
+});
+
 const transitionsBodySchema = z.object({ to: requestStatusSchema, actor: z.enum(["client", "provider", "system"]) });
 const acceptBodySchema = z.object({ provider_id: z.string() });
 const cancelBodySchema = z.object({ reason: z.string().min(1, "Indica o motivo do cancelamento.") });
@@ -268,6 +278,21 @@ export async function requestRoutes(app: FastifyInstance) {
       throw apiError("forbidden", "Não tens acesso a este pedido.");
     }
     reply.send(dataEnvelope(await presentServiceRequest(row)));
+  });
+
+  // What the app shows before the client confirms: the same distance, duration and price POST /requests will compute.
+  app.post("/pricing/estimate", { preHandler: authenticate }, async (request, reply) => {
+    if (request.account!.kind !== "client") throw apiError("forbidden", "Só os clientes pedem estimativas.");
+    const body = estimateBodySchema.parse(request.body);
+    const distanceKm = estimateDistanceKm(body.pickup, body.dropoff, body.stops);
+    const pricing = await estimatePrice({
+      serviceType: body.service_type,
+      distanceKm,
+      tow: body.tow_details,
+      cargo: body.cargo_details,
+      moving: body.moving_details,
+    });
+    reply.send(dataEnvelope({ distance_km: distanceKm, duration_min: estimateDurationMin(distanceKm), pricing }));
   });
 
   app.post("/requests", { preHandler: authenticate }, async (request, reply) => {
