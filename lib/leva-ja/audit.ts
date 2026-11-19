@@ -49,7 +49,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "promotion.end": "Promoção terminada",
   "broadcast.create": "Comunicação criada",
   "broadcast.schedule": "Comunicação agendada",
-  "broadcast.send": "Comunicação enviada (demonstração)",
+  "broadcast.send": "Comunicação enviada",
   "broadcast.cancel": "Comunicação cancelada",
   "privacy.start": "Pedido de dados em tratamento",
   "privacy.complete": "Pedido de dados concluído",

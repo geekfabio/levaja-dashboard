@@ -1,7 +1,7 @@
 import Asset from "@/components/_ui/asset";
 import AdminLoginForm from "./admin-login-form";
 
-export default function AdminLogin({ demo }: { demo: boolean }) {
+export default function AdminLogin() {
   return (
     <main id="conteudo" className="flex min-h-dvh items-center justify-center p-4">
       <div className="flex w-full max-w-[400px] flex-col gap-8">
@@ -21,7 +21,7 @@ export default function AdminLogin({ demo }: { demo: boolean }) {
           </div>
         </div>
         <div className="border-border bg-card rounded-xl border p-6 shadow-overlay">
-          <AdminLoginForm demo={demo} />
+          <AdminLoginForm />
         </div>
         <p className="caption-style text-subtle text-center">Acesso restrito à equipa do AngoLeva.</p>
       </div>

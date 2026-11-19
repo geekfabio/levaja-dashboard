@@ -1,5 +1,9 @@
-import type { AdminSession } from "@/types/leva-ja";
+import { dispatchStartsAt } from "@/lib/leva-ja/scheduling";
+import { isDisputeOverdue } from "@/lib/leva-ja/refunds";
+import type { AdminSession, ServiceRequest, SosAlert } from "@/types/leva-ja";
+import type { DisputeCase } from "../repositories/disputes";
 import type { Repositories } from "../repositories";
+import type { AttentionItems } from "../repositories/metrics";
 import type { HttpClient, HttpClientOptions } from "./client";
 import { createHttpClient, polling } from "./client";
 import { createOsrmRouting } from "./routing";
@@ -40,6 +44,47 @@ function sessionStore(storage: HttpRepositoriesOptions["storage"]) {
         else storage?.removeItem(HTTP_SESSION_KEY);
       } catch {}
     },
+  };
+}
+
+type Listed<T> = { items: T[]; total: number };
+
+async function attention(http: HttpClient): Promise<AttentionItems> {
+  const STALLED_FALLBACK_MINUTES = 15;
+  const LEAD_FALLBACK_MINUTES = 60;
+  const settled = async <T>(request: Promise<T>, fallback: T) => {
+    try {
+      return await request;
+    } catch {
+      return fallback;
+    }
+  };
+  const empty = <T>(): Listed<T> => ({ items: [], total: 0 });
+  const [searching, settings, sos, documents, withdrawals, disputes, overdue, refunds] = await Promise.all([
+    settled(http.get<Listed<ServiceRequest>>("/admin/requests", { status: ["searching"], pageSize: 100 }), empty<ServiceRequest>()),
+    settled(http.get<{ dispatch: { stalledAfterMinutes: number; scheduleLeadMinutes: number } }>("/admin/settings"), null),
+    settled(http.get<SosAlert[]>("/admin/support/sos", { status: ["open", "acknowledged"] }), [] as SosAlert[]),
+    settled(http.get<Listed<AttentionItems["pendingDocuments"][number]>>("/admin/documents", { state: ["pending", "needs_update"], pageSize: 5 }), empty<AttentionItems["pendingDocuments"][number]>()),
+    settled(http.get<Listed<AttentionItems["pendingWithdrawals"][number]>>("/admin/finance/withdrawals", { status: ["pending"], pageSize: 5 }), empty<AttentionItems["pendingWithdrawals"][number]>()),
+    settled(http.get<Listed<DisputeCase>>("/admin/disputes", { state: "open", pageSize: 5 }), empty<DisputeCase>()),
+    settled(http.get<Listed<DisputeCase>>("/admin/disputes", { state: "overdue", pageSize: 1 }), empty<DisputeCase>()),
+    settled(http.get<Listed<AttentionItems["pendingRefunds"][number]>>("/admin/refunds", { status: ["pending"], pageSize: 5 }), empty<AttentionItems["pendingRefunds"][number]>()),
+  ]);
+  const stalledAfter = (settings?.dispatch.stalledAfterMinutes ?? STALLED_FALLBACK_MINUTES) * 60_000;
+  const lead = settings?.dispatch.scheduleLeadMinutes ?? LEAD_FALLBACK_MINUTES;
+  const threshold = Date.now() - stalledAfter;
+  return {
+    stalledSearching: searching.items.filter((request) => dispatchStartsAt(request, lead) <= threshold).sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
+    openSos: sos,
+    pendingDocuments: documents.items,
+    pendingDocumentsTotal: documents.total,
+    pendingWithdrawals: withdrawals.items,
+    pendingWithdrawalsTotal: withdrawals.total,
+    openDisputes: disputes.items.map((item) => item.request),
+    openDisputesTotal: disputes.total,
+    overdueDisputesTotal: overdue.total || disputes.items.filter((item) => item.request.dispute && isDisputeOverdue(item.request.dispute, Date.now())).length,
+    pendingRefunds: refunds.items,
+    pendingRefundsTotal: refunds.total,
   };
 }
 
@@ -348,7 +393,7 @@ function build(http: HttpClient, session: ReturnType<typeof sessionStore>, pollM
 
     metrics: {
       overview: (range) => http.get("/admin/metrics", range),
-      attention: () => http.get("/admin/metrics/attention"),
+      attention: () => attention(http),
     },
 
     audit: {

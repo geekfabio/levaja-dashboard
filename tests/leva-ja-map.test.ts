@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { clusterByGrid, fitView, fromScreen, metersPerPixel, niceScale, project, toScreen, unproject, visibleTiles, zoomAround } from "@/lib/map-projection";
 import { estimateRoute, routePlan } from "@/lib/leva-ja/routing";
 import { createOsrmRouting, parseOsrmRoute } from "@/data/leva-ja/http/routing";
-import { createMockRepositories } from "@/data/leva-ja/mock";
+import { createMockRepositories } from "@/tests/support/leva-ja-mock";
 
 const LUANDA = { latitude: -8.8147, longitude: 13.2302 };
 const SIZE = { width: 800, height: 600 };

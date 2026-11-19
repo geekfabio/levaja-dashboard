@@ -130,7 +130,7 @@ export function useSetWebhookActive() {
 
 export function useTestWebhook() {
   return useAdminMutation((id: string) => repositories().integrations.testWebhook(id), {
-    success: (delivery) => (delivery.status === 200 ? "Teste simulado com sucesso" : "Teste simulado com falha"),
-    description: "Nenhum pedido foi enviado para o endereço: é uma simulação.",
+    success: (delivery) => (delivery.status === 200 ? "Teste registado" : "Teste registado com falha"),
+    description: "Nenhum pedido foi enviado para o endereço.",
   });
 }

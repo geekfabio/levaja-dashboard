@@ -26,7 +26,7 @@ import BroadcastDialog from "./broadcast-dialog";
 const STATUS_OPTIONS = [{ value: "all", label: "Todas" }, ...(Object.keys(BROADCAST_STATUS_LABELS) as BroadcastStatus[]).map((status) => ({ value: status, label: BROADCAST_STATUS_LABELS[status] }))];
 const CHANNEL_OPTIONS = [{ value: "all", label: "Todos" }, ...(Object.keys(BROADCAST_CHANNEL_LABELS) as BroadcastChannel[]).map((channel) => ({ value: channel, label: BROADCAST_CHANNEL_LABELS[channel] }))];
 
-type Action = { broadcast: Broadcast; kind: "send" | "schedule" | "cancel" } | null;
+type Action = { broadcast: Broadcast; kind: "schedule" | "cancel" } | null;
 
 export default function Communications() {
   const zones = useZones();
@@ -58,9 +58,9 @@ export default function Communications() {
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-5 p-5">
           <div role="note" className="flex flex-col gap-1 rounded-xl border border-(--tag-amber-border) bg-(--tag-amber-bg) p-4 text-(--tag-amber-text)">
-            <span className="lead-style font-medium">Modo de demonstração</span>
+            <span className="lead-style font-medium">Envio indisponível</span>
             <span className="caption-style">
-              Os envios são simulados: o painel calcula o público e regista o resultado, mas nenhuma notificação, SMS ou e-mail sai para clientes ou prestadores.
+              Ainda não há fornecedor de notificações, SMS ou e-mail ligado. Pode preparar e agendar comunicações, mas o envio fica desactivado até haver um.
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -151,7 +151,7 @@ export default function Communications() {
                             <TableCell>
                               {open && (
                                 <span className="flex flex-wrap justify-end gap-1.5">
-                                  <Button variant="primary" size="sm" onClick={() => setAction({ broadcast, kind: "send" })} aria-label={`Simular envio de ${broadcast.title}`}>
+                                  <Button variant="primary" size="sm" disabled title="Sem fornecedor de envio ligado" aria-label={`Enviar ${broadcast.title}: indisponível, sem fornecedor de envio ligado`}>
                                     Enviar
                                   </Button>
                                   {broadcast.status === "draft" && (
@@ -178,16 +178,6 @@ export default function Communications() {
         </div>
       </ScrollArea>
       <BroadcastDialog key={creating ? "open" : "closed"} open={creating} onOpenChange={setCreating} zones={zones.data ?? []} />
-      <ConfirmDialog
-        open={action?.kind === "send"}
-        onOpenChange={close}
-        title="Simular envio"
-        description="O painel calcula os destinatários e regista uma entrega simulada. Nenhuma mensagem real é enviada."
-        confirmLabel="Simular envio"
-        pending={mutate.isPending}
-        error={mutationError(mutate.error)}
-        onConfirm={() => (action ? mutate.mutateAsync({ id: action.broadcast.id, action: "send" }).then(() => setAction(null), () => undefined) : undefined)}
-      />
       <ConfirmDialog
         open={action?.kind === "schedule"}
         onOpenChange={close}

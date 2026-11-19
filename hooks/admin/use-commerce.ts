@@ -99,7 +99,7 @@ export function useBroadcastAction() {
           : repositories().communications.cancel(id, reason ?? ""),
     {
       success: (broadcast) => `${broadcast.title}: ${BROADCAST_STATUS_LABELS[broadcast.status].toLowerCase()}`,
-      description: (broadcast) => (broadcast.status === "sent" ? "Envio simulado: nenhuma mensagem saiu do painel." : undefined),
+      description: (broadcast) => (broadcast.status === "sent" ? "Nenhuma mensagem saiu do painel: não há fornecedor de envio ligado." : undefined),
     },
   );
 }
