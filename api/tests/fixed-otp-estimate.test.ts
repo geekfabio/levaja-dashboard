@@ -8,7 +8,7 @@ import { db, schema } from "../src/db/client";
 import { loadEnv } from "../src/env";
 import { newOtpCode } from "../src/lib/tokens";
 import { generateOtpCode } from "../src/lib/otp-admin";
-import { createAdminSession, insertAdminAccount, insertClientAccount, placeFixture } from "./helpers/admin";
+import { insertAdminAccount, insertClientAccount, placeFixture } from "./helpers/admin";
 
 let app: FastifyInstance;
 const adminIds: string[] = [];
