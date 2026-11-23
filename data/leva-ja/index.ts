@@ -3,7 +3,8 @@ import { createHttpRepositories } from "./http";
 
 let instance: Repositories | null = null;
 
-export const DEFAULT_API_URL = "http://localhost:4000";
+/** Mesmo domínio que o painel (ver Dockerfile). Em desenvolvimento, NEXT_PUBLIC_API_URL=http://localhost:4000. */
+export const DEFAULT_API_URL = "/api";
 
 function browserStorage() {
   try {
