@@ -3,7 +3,7 @@
 	admin off
 }
 
-:8080 {
+:8080, :3000 {
 	encode gzip
 
 	handle_path /api/* {
@@ -17,6 +17,6 @@
 	}
 
 	handle {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3001
 	}
 }

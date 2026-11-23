@@ -34,5 +34,5 @@ COPY --from=app /out/app /srv/app
 COPY Caddyfile /srv/Caddyfile
 COPY docker/start.sh /usr/local/bin/start.sh
 ENV NODE_ENV=production
-EXPOSE 8080
+EXPOSE 8080 3000
 CMD ["/usr/local/bin/start.sh"]

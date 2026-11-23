@@ -8,7 +8,7 @@ npm run --silent db:seed
 PORT=4000 npm start &
 
 cd /srv/panel
-npx next start -H 127.0.0.1 -p 3000 &
+npx next start -H 127.0.0.1 -p 3001 &
 
 caddy run --config /srv/Caddyfile --adapter caddyfile &
 

@@ -149,6 +149,8 @@ Como tudo está no mesmo domínio, não há CORS entre painel e API, e o cookie 
 
 Variáveis de execução (no Coolify, em Environment Variables): `DATABASE_URL`, `DB_SCHEMA=angoleva`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_SESSION_SECRET` (32 caracteres ou mais), `TRUST_PROXY=true`, e `OTP_FIXED_CODE` enquanto não houver e-mail. Com `OTP_FIXED_CODE` definido, quem souber o e-mail de um administrador entra com esse código: retirar assim que o e-mail estiver ligado.
 
+O Caddy escuta em `8080` e em `3000` (o painel fica internamente na `3001`): no Coolify, "Ports Exposes" pode ser `8080` ou `3000`, e o proxy chega ao contentor nos dois casos.
+
 Ao arrancar, o contentor corre `db:migrate` e `db:seed` (ambos idempotentes). Se algum falhar, o contentor para.
 
 O build clona a app pelo argumento `APP_REF` (por omissão `real-data-no-mocks`; depois de fundir a PR, `main`).
