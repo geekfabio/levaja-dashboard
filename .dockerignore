@@ -1,0 +1,9 @@
+.git
+.env*
+**/node_modules
+.next
+dist
+dist-e2e
+scratchpad
+api/uploads
+**/*.log
