@@ -29,43 +29,39 @@ Abra [http://localhost:3000/admin](http://localhost:3000/admin) para o painel ou
 
 Antes de dar uma alteração por terminada, os quatro (`tsc`, `lint`, `test`, `build`) têm de passar.
 
-## Credenciais de demonstração
+## Entrar no painel
 
-Em modo mock, todas as contas usam o código **`123456`**. Cada papel só vê as suas secções. `nelson.cardoso@angoleva.ao` (Operações) tem o segundo factor activo: depois do código, peça-se o da aplicação de autenticação, que em demonstração é **`246810`**.
+O painel fala sempre com a API real (`api/`, base de dados Neon). O login é por e-mail e código de 6 dígitos, sem palavra-passe. Enquanto não há fornecedor de e-mail, o código aparece no log da API, ou é fixo se a API tiver `OTP_FIXED_CODE` definido (ver `api/README.md`). O primeiro administrador cria-se com `npm run db:seed` em `api/`. Cada papel só vê as suas secções.
 
-| E-mail | Papel | O que vê |
-| --- | --- | --- |
-| `admin@angoleva.ao` | Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
-| `operacoes@angoleva.ao` | Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
-| `suporte@angoleva.ao` | Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
-| `financas@angoleva.ao` | Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
+| Papel | O que vê |
+| --- | --- |
+| Administrador | Tudo, incluindo utilizadores do painel, sessões e acessos, integrações e auditoria |
+| Operações | Pedidos, disputas, mapa, candidaturas, prestadores e qualidade, frotas, documentos, clientes, zonas e SOS |
+| Suporte | Ocorrências com prazos e satisfação, SOS, avaliações baixas, clientes e protecção de dados |
+| Finanças | Receita, facturação, reembolsos, levantamentos, lotes de pagamento e transacções |
 
-Os dados de demonstração são gerados com uma semente fixa (os mesmos a cada arranque), ficam guardados no navegador e podem ser repostos em **Definições → Repor dados de demonstração**. Nas mesmas definições pode simular uma rede lenta ou com falhas para ver os estados de carregamento e de erro.
+Só o CRM comercial (`/`, `/oportunidades`, …) mantém dados de demonstração, até cada módulo passar a ler da API (`NEXT_PUBLIC_CRM_DATA_SOURCE`).
 
 ## Dados: padrão Repository
 
 ```
 data/leva-ja/
   repositories/   contratos por área e RepositoryError
-  mock/           MockDatabase semeada com as regras de negócio e tempo real simulado
   http/           implementação REST com fetch
-  index.ts        repositories(): escolhe mock ou http
+  index.ts        repositories(): sempre HTTP
+tests/support/leva-ja-mock/   MockDatabase dos testes de contrato; a aplicação não a importa
 ```
 
-Páginas e componentes nunca importam a implementação: usam os hooks de `hooks/admin/`, que chamam `repositories()`. As regras de negócio (estados, preços, elegibilidade e permissões) estão em `lib/leva-ja/` e são as mesmas na UI e no mock.
+Páginas e componentes nunca importam a implementação: usam os hooks de `hooks/admin/`, que chamam `repositories()`. As regras de negócio (estados, preços, elegibilidade e permissões) estão em `lib/leva-ja/` e são as mesmas na UI e nos testes.
 
-### Ligar à API real
+### Configuração
 
-1. Crie `.env.local` (fica fora do Git):
+1. Copie `.env.example` para `.env.local` (fica fora do Git) e ajuste `NEXT_PUBLIC_API_URL` (por omissão `http://localhost:4000`, sem `/api`).
+2. Arranque a API (`cd api && npm run dev`) e o painel (`npm run dev`).
 
-   ```bash
-   NEXT_PUBLIC_DATA_SOURCE=http
-   NEXT_PUBLIC_API_URL=https://api.angoleva.ao
-   ```
+O cookie de sessão do painel é `SameSite=Strict` e `Secure`: o painel e a API têm de partilhar o mesmo site (em desenvolvimento, `localhost:3000` e `localhost:4000`; em produção, subdomínios do mesmo domínio, por HTTPS).
 
-2. Reinicie o servidor. `repositories()` passa a usar `data/leva-ja/http/`, sem mudanças na UI.
-
-A implementação HTTP envia `Authorization: Bearer <token>` com o token devolvido por `POST /auth/login`, converte os erros em `RepositoryError` (`400`/`422` → `validation` com `issues`, `401` → `unauthorized`, `403` → `forbidden`, `404` → `not_found`, `409` → `invalid_transition`, falha de rede ou `5xx` → `network`) e, como ainda não há canal de tempo real, actualiza as listas por consulta periódica.
+A implementação HTTP usa o cookie de sessão e o cabeçalho `x-csrf-token` nas escritas, converte os erros em `RepositoryError` (`400`/`422` → `validation` com `issues`, `401` → `unauthorized`, `403` → `forbidden`, `404` → `not_found`, `409` → `invalid_transition`, falha de rede ou `5xx` → `network`) e actualiza as listas por consulta periódica.
 
 Endpoints usados (os da app móvel mantêm os nomes):
 

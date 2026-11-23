@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "api/**",
   ]),
+  {
+    files: ["data/leva-ja/http/mappers.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
 ]);
 
 export default eslintConfig;

@@ -1,14 +1,9 @@
-import type { DataSource, Repositories } from "./repositories";
-import { createHttpRepositories, createOsrmRouting } from "./http";
-import { createMockRepositories } from "./mock";
+import type { Repositories } from "./repositories";
+import { createHttpRepositories } from "./http";
 
 let instance: Repositories | null = null;
 
-export const DEFAULT_API_URL = "http://localhost:4000/api";
-
-export function dataSource(): DataSource {
-  return process.env.NEXT_PUBLIC_DATA_SOURCE === "http" ? "http" : "mock";
-}
+export const DEFAULT_API_URL = "http://localhost:4000";
 
 function browserStorage() {
   try {
@@ -20,14 +15,11 @@ function browserStorage() {
 
 export function repositories(): Repositories {
   if (instance) return instance;
-  instance =
-    dataSource() === "http"
-      ? createHttpRepositories({
-          baseUrl: process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL,
-          routingUrl: process.env.NEXT_PUBLIC_ROUTING_URL,
-          storage: browserStorage(),
-        })
-      : createMockRepositories({ storage: browserStorage(), routing: createOsrmRouting({ baseUrl: process.env.NEXT_PUBLIC_ROUTING_URL }) });
+  instance = createHttpRepositories({
+    baseUrl: process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL,
+    routingUrl: process.env.NEXT_PUBLIC_ROUTING_URL,
+    storage: browserStorage(),
+  });
   return instance;
 }
 

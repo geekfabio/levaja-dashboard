@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createMockRepositories } from "@/data/leva-ja/mock";
+import { createMockRepositories } from "@/tests/support/leva-ja-mock";
 import { isRepositoryError } from "@/data/leva-ja/repositories";
 import type { RepositoryErrorCode } from "@/data/leva-ja/repositories";
-import { SEED_ELIGIBLE_AFTER_APPROVAL } from "@/data/leva-ja/mock/seed";
+import { SEED_ELIGIBLE_AFTER_APPROVAL } from "@/tests/support/leva-ja-mock/seed";
 import { isEligible } from "@/lib/leva-ja/eligibility";
 import { STATUS_FLOW } from "@/lib/leva-ja/status";
 

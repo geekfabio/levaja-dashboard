@@ -66,7 +66,7 @@ function ReviewForm({ item, onDone }: { item: DocumentReviewItem; onDone: () => 
       <div className="flex flex-col gap-5 px-6 py-5">
         <div
           role="img"
-          aria-label={`Pré-visualização simulada do documento ${item.document.title} de ${item.providerName}`}
+          aria-label={`Pré-visualização indisponível do documento ${item.document.title} de ${item.providerName}`}
           className="border-line-strong bg-muted relative flex aspect-[16/10] flex-col justify-between overflow-hidden rounded-lg border p-4"
         >
           <span className="eyebrow-style text-faint">República de Angola</span>
@@ -81,7 +81,7 @@ function ReviewForm({ item, onDone }: { item: DocumentReviewItem; onDone: () => 
             </span>
             <span className="caption-style text-subtle">Válido até {formatDateNumeric(item.document.validUntil)}</span>
           </span>
-          <span className="caption-style text-subtle bg-card absolute top-3 right-3 rounded-full px-2 py-1">Pré-visualização simulada</span>
+          <span className="caption-style text-subtle bg-card absolute top-3 right-3 rounded-full px-2 py-1">Pré-visualização indisponível</span>
         </div>
         <DetailList
           items={[

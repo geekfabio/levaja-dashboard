@@ -193,6 +193,7 @@ export function formatDateTimeNumeric(iso: string) {
 }
 
 export function formatDateNumeric(iso: string) {
+  if (!iso) return "—";
   const { day, month, year } = luandaParts(iso.length === 10 ? `${iso}T12:00:00Z` : iso);
   return `${day}/${month}/${year}`;
 }

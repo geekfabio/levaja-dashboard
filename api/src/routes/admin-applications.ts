@@ -8,12 +8,12 @@ import { accounts } from "../db/schema/auth";
 import { providerApplications, providers, vehicles } from "../db/schema/ops";
 import { findAccountByEmailAndKind } from "../lib/account";
 import { recordAdminAudit } from "../lib/admin-audit";
-import { presentApplication } from "../lib/application-presenter";
+import { applicationStage, presentAdminApplication } from "../lib/application-presenter";
 import { authenticateAdmin } from "../lib/authenticate-admin";
 import { apiError, dataEnvelope } from "../lib/envelope";
 import { newId } from "../lib/ids";
 import { sendMail } from "../lib/mailer";
-import { listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
+import { csvList, listPageEnvelope, pageQuerySchema, paginate } from "../lib/pagination";
 import { requireCsrf } from "../lib/require-csrf";
 import { requirePermission } from "../lib/require-permission";
 import { requireReason } from "../lib/require-reason";
@@ -22,7 +22,13 @@ type ApplicationRow = typeof providerApplications.$inferSelect;
 
 const listQuerySchema = pageQuerySchema.extend({
   status: z.enum(["pending", "approved", "rejected"]).optional(),
+  stage: z.string().optional(),
+  zone: z.string().optional(),
+  q: z.string().optional(),
 });
+
+const FUNNEL_STAGES = ["submitted", "documents", "interview", "inspection", "approved"] as const;
+const DAY_MS = 86_400_000;
 
 const reasonBodySchema = z.object({ reason: z.string().optional() });
 
@@ -46,19 +52,52 @@ export async function adminApplicationRoutes(app: FastifyInstance) {
     requirePermission(request.adminAccount!.adminRole!, "applications.manage");
     const query = listQuerySchema.parse(request.query);
 
+    const stages = csvList(query.stage);
+    const zones = csvList(query.zone);
+    const needle = query.q?.trim().toLowerCase();
+
     const rows = await db.select().from(providerApplications);
-    const filtered = query.status ? rows.filter((row) => row.status === query.status) : rows;
+    const filtered = rows
+      .filter((row) => !query.status || row.status === query.status)
+      .filter((row) => !stages?.length || stages.includes(applicationStage(row)))
+      .filter((row) => !zones?.length || row.zoneIds.some((zoneId) => zones.includes(zoneId)))
+      .filter((row) => {
+        if (!needle) return true;
+        const plate = (row.vehicle as { plate?: string } | null)?.plate ?? "";
+        return [row.fullName, row.email, row.phone, plate].some((field) => field.toLowerCase().includes(needle));
+      });
     const sorted = [...filtered].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    const items = sorted.map(presentApplication);
+    const items = sorted.map(presentAdminApplication);
 
     return listPageEnvelope(paginate(items, query));
+  });
+
+  app.get("/admin/applications/summary", { preHandler: [authenticateAdmin] }, async (request) => {
+    requirePermission(request.adminAccount!.adminRole!, "applications.manage");
+    const rows = await db.select().from(providerApplications);
+    const since = Date.now() - 30 * DAY_MS;
+    const closedAt = (row: ApplicationRow) => (row.reviewedAt ?? row.createdAt).getTime();
+    const approved = rows.filter((row) => row.status === "approved");
+    const rejected = rows.filter((row) => row.status === "rejected");
+    const durations = approved.map((row) => (closedAt(row) - row.createdAt.getTime()) / DAY_MS);
+
+    return dataEnvelope({
+      funnel: FUNNEL_STAGES.map((stage) => ({
+        stage,
+        count: stage === "submitted" ? rows.length : stage === "approved" ? approved.length : 0,
+      })),
+      open: rows.filter((row) => row.status === "pending").length,
+      approved_last30: approved.filter((row) => closedAt(row) >= since).length,
+      rejected_last30: rejected.filter((row) => closedAt(row) >= since).length,
+      average_days_to_approve: durations.length ? Math.round((durations.reduce((sum, value) => sum + value, 0) / durations.length) * 10) / 10 : null,
+    });
   });
 
   app.get("/admin/applications/:id", { preHandler: [authenticateAdmin] }, async (request) => {
     requirePermission(request.adminAccount!.adminRole!, "applications.manage");
     const { id } = request.params as { id: string };
     const row = await loadApplicationOrNotFound(id);
-    return dataEnvelope(presentApplication(row));
+    return dataEnvelope(presentAdminApplication(row));
   });
 
   app.post("/admin/applications/:id/approve", { preHandler: [authenticateAdmin, requireCsrf] }, async (request, reply) => {
@@ -143,7 +182,7 @@ export async function adminApplicationRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    reply.send(dataEnvelope(presentApplication(updated!)));
+    reply.send(dataEnvelope(presentAdminApplication(updated!)));
   });
 
   app.post("/admin/applications/:id/reject", { preHandler: [authenticateAdmin, requireCsrf] }, async (request, reply) => {
@@ -180,6 +219,6 @@ export async function adminApplicationRoutes(app: FastifyInstance) {
       sensitive: true,
     });
 
-    reply.send(dataEnvelope(presentApplication(updated!)));
+    reply.send(dataEnvelope(presentAdminApplication(updated!)));
   });
 }

@@ -24,6 +24,10 @@ before(async () => {
 });
 
 after(async () => {
+  // Zones first: nothing references them, so a failure in a later step can no longer leave them behind.
+  if (zoneIds.length > 0) {
+    await db.delete(schema.zones).where(inArray(schema.zones.id, zoneIds));
+  }
   if (disputeIds.length > 0) {
     await db.delete(schema.disputes).where(inArray(schema.disputes.id, disputeIds));
   }
@@ -31,9 +35,6 @@ after(async () => {
     await db.delete(schema.walletTransactions).where(inArray(schema.walletTransactions.requestId, requestIds));
     await db.delete(schema.serviceRequestEvents).where(inArray(schema.serviceRequestEvents.requestId, requestIds));
     await db.delete(schema.serviceRequests).where(inArray(schema.serviceRequests.id, requestIds));
-  }
-  if (zoneIds.length > 0) {
-    await db.delete(schema.zones).where(inArray(schema.zones.id, zoneIds));
   }
   if (userAccountIds.length > 0) {
     await db.delete(schema.providerDocuments).where(inArray(schema.providerDocuments.providerAccountId, userAccountIds));

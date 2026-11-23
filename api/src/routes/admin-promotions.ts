@@ -107,6 +107,7 @@ async function summary(promotion: PromotionRow, now: number) {
     ended_at: promotion.endedAt ? promotion.endedAt.toISOString() : null,
     created_at: promotion.createdAt.toISOString(),
     created_by_account_id: promotion.createdByAccountId,
+    created_by: (await db.select().from(accounts).where(eq(accounts.id, promotion.createdByAccountId)).limit(1))[0]?.fullName ?? "—",
     status: promotionStatus(promotion, spentKz, now),
     spent_kz: spentKz,
     uses_count: uses.length,

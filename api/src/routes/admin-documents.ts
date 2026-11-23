@@ -66,7 +66,8 @@ export async function adminDocumentRoutes(app: FastifyInstance) {
     requirePermission(request.adminAccount!.adminRole!, "documents.review");
     const query = listQuerySchema.parse(request.query);
 
-    const stateFilter = csv(query.state) ?? ["pending", "rejected"];
+    // The panel calls a rejected document "needs_update".
+    const stateFilter = (csv(query.state) ?? ["pending", "rejected"]).map((value) => (value === "needs_update" ? "rejected" : value));
     if (!stateFilter.every((value) => (DOCUMENT_STATUSES as readonly string[]).includes(value))) {
       throw apiError("validation", "Estado de documento inválido.");
     }
