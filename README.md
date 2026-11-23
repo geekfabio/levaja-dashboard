@@ -136,3 +136,19 @@ tests/                  testes (leva-ja-*.test.ts para o painel)
 ## Marca
 
 Logótipo provisório em `public/assets/images/_common/brand/leva-ja-logo.svg` (e o símbolo `leva-ja-mark.svg`). Primário `#0A8743`, verde vivo `#12A150` (só em elementos sem texto), tinta `#0F2A1E`, fundo `#F8F9F7`. Os tokens estão em `app/globals.css`.
+
+## Deploy num só contentor
+
+O `Dockerfile` da raiz compila o painel, a versão web da app (sob `/app`) e a API, e arranca tudo num contentor atrás de um Caddy na porta `8080`:
+
+- `/` → painel
+- `/app/` → app (versão web)
+- `/api/*` → API (o prefixo `/api` é retirado; o WebSocket fica em `/api/realtime`)
+
+Como tudo está no mesmo domínio, não há CORS entre painel e API, e o cookie de sessão funciona (`SameSite=Strict`).
+
+Variáveis de execução (no Coolify, em Environment Variables): `DATABASE_URL`, `DB_SCHEMA=angoleva`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_SESSION_SECRET` (32 caracteres ou mais), `TRUST_PROXY=true`, e `OTP_FIXED_CODE` enquanto não houver e-mail. Com `OTP_FIXED_CODE` definido, quem souber o e-mail de um administrador entra com esse código: retirar assim que o e-mail estiver ligado.
+
+Ao arrancar, o contentor corre `db:migrate` e `db:seed` (ambos idempotentes). Se algum falhar, o contentor para.
+
+O build clona a app pelo argumento `APP_REF` (por omissão `real-data-no-mocks`; depois de fundir a PR, `main`).
